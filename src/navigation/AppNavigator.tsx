@@ -96,11 +96,21 @@ function MainTabNavigator() {
 
 // Main App Navigator with Authentication
 function AppNavigator() {
-  const { session, loading } = useAuth();
+  const { session, loading, user } = useAuth();
+
+  console.log('AppNavigator state:', { 
+    hasSession: !!session, 
+    loading, 
+    userId: user?.id,
+    userEmail: user?.email 
+  });
 
   if (loading) {
+    console.log('Showing loading screen...');
     return <LoadingScreen />;
   }
+
+  console.log('Rendering navigator:', session ? 'MainTabNavigator' : 'AuthScreen');
 
   return (
     <NavigationContainer>

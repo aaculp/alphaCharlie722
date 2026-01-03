@@ -37,11 +37,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+    }).catch((error) => {
+      console.error('Error getting initial session:', error);
+      setLoading(false);
     });
 
     // Listen for auth changes
     const { data: { subscription } } = AuthService.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.id);
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
@@ -62,9 +66,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const signUp = async (email: string, password: string, name?: string) => {
-    setLoading(true);
     try {
-      await AuthService.signUp(email, password, name);
+      const result = await AuthService.signUp(email, password, name);
+      // Don't set loading here - let the auth state change handle it
+      return result;
     } catch (error) {
       setLoading(false);
       throw error;

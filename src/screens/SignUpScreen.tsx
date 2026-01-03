@@ -12,6 +12,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
+import { SupabaseTest } from '../utils/supabaseTest';
+import { supabase } from '../lib/supabase';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 interface SignUpScreenProps {
@@ -26,7 +28,7 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({ onSwitchToLogin }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { signUp } = useAuth();
+  const { signUp, signIn } = useAuth();
 
   const validateForm = () => {
     if (!name.trim()) {
@@ -63,14 +65,98 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({ onSwitchToLogin }) => {
 
     setLoading(true);
     try {
-      await signUp(email, password, name);
+      console.log('🚀 Starting signup process:', { email, name });
+      
+      const result = await signUp(email, password, name);
+      
+      console.log('📋 Signup completed:', { 
+        hasUser: !!result.user, 
+        hasSession: !!result.session,
+        autoSignedIn: result.autoSignedIn,
+        needsManualLogin: result.needsManualLogin
+      });
+
+      // Check if user was automatically signed in
+      if (result.session && result.autoSignedIn) {
+        console.log('✅ User successfully signed up and automatically logged in');
+        // The AuthContext will automatically redirect to home screen
+        // No alert needed - just let the navigation happen
+      } else if (result.needsManualLogin) {
+        console.log('🔄 Account created, attempting manual sign-in...');
+        console.log('📧 Using credentials:', { email, passwordLength: password.length });
+        
+        try {
+          await signIn(email, password);
+          console.log('✅ Manual sign-in after signup successful');
+          // User will be automatically redirected to home screen by AuthContext
+        } catch (signInError) {
+          console.error('❌ Manual sign-in failed:', signInError);
+          const errorMsg = (signInError as Error).message;
+          
+          if (errorMsg.includes('Invalid login credentials') || errorMsg.includes('invalid')) {
+            Alert.alert(
+              'Email Confirmation Required',
+              'Your account has been created but needs email confirmation. Please check your email and click the confirmation link, then sign in.',
+              [{ text: 'OK', onPress: onSwitchToLogin }]
+            );
+          } else {
+            Alert.alert(
+              'Account Created!',
+              'Your account has been created successfully. Please sign in to continue.',
+              [{ text: 'Sign In', onPress: onSwitchToLogin }]
+            );
+          }
+        }
+      } else {
+        // Fallback case
+        console.log('⚠️ Unexpected signup result');
+        Alert.alert(
+          'Account Created',
+          'Account created! Please sign in to continue.',
+          [{ text: 'Sign In', onPress: onSwitchToLogin }]
+        );
+      }
+    } catch (error) {
+      console.error('❌ Signup error:', error);
+      const errorMessage = (error as Error).message;
+      
+      // If the error mentions auto-login failed, try to sign them in manually
+      if (errorMessage.includes('auto-login failed')) {
+        console.log('🔄 Auto-login failed, attempting manual sign-in...');
+        try {
+          await signIn(email, password);
+          console.log('✅ Manual sign-in after signup successful');
+          // User will be automatically redirected to home screen
+        } catch (signInError) {
+          console.error('❌ Manual sign-in also failed:', signInError);
+          Alert.alert(
+            'Account Created!',
+            'Your account has been created. Please sign in to continue.',
+            [{ text: 'Sign In', onPress: onSwitchToLogin }]
+          );
+        }
+      } else {
+        Alert.alert('Sign Up Failed', errorMessage);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTestSupabase = async () => {
+    setLoading(true);
+    try {
+      console.log('Running Supabase tests...');
+      const results = await SupabaseTest.runAllTests();
+      
       Alert.alert(
-        'Success',
-        'Account created successfully! Please check your email to verify your account.',
-        [{ text: 'OK', onPress: onSwitchToLogin }]
+        'Test Results',
+        `Connection: ${results.connection.success ? '✅' : '❌'}\n` +
+        `Tables: ${Object.values(results.tables).every(Boolean) ? '✅' : '❌'}\n` +
+        'Check console for details'
       );
     } catch (error) {
-      Alert.alert('Sign Up Failed', (error as Error).message);
+      Alert.alert('Test Error', (error as Error).message);
     } finally {
       setLoading(false);
     }
@@ -172,6 +258,72 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({ onSwitchToLogin }) => {
               <Text style={styles.signUpButtonText}>
                 {loading ? 'Creating Account...' : 'Create Account'}
               </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.testButton}
+              onPress={handleTestSupabase}
+              disabled={loading}
+            >
+              <Text style={styles.testButtonText}>Test Supabase Connection</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.testButton}
+              onPress={async () => {
+                setLoading(true);
+                try {
+                  // Test signup with immediate check
+                  const testEmail = `test${Date.now()}@example.com`;
+                  const { data, error } = await supabase.auth.signUp({
+                    email: testEmail,
+                    password: 'password123'
+                  });
+                  
+                  console.log('Test signup result:', {
+                    user: data.user?.id,
+                    session: !!data.session,
+                    emailConfirmed: data.user?.email_confirmed_at,
+                    confirmed: data.user?.confirmed_at
+                  });
+                  
+                  Alert.alert(
+                    'Auth Settings Test',
+                    error 
+                      ? `Error: ${error.message}` 
+                      : `User: ${data.user ? 'YES' : 'NO'}\nSession: ${data.session ? 'YES' : 'NO'}\nEmail Confirmed: ${data.user?.email_confirmed_at ? 'YES' : 'NO'}`
+                  );
+                } catch (err) {
+                  Alert.alert('Test Failed', (err as Error).message);
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              disabled={loading}
+            >
+              <Text style={styles.testButtonText}>Test Auth Settings</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.testButton}
+              onPress={async () => {
+                setLoading(true);
+                try {
+                  // Check current auth settings
+                  const { data: { session } } = await supabase.auth.getSession();
+                  Alert.alert(
+                    'Auth Status',
+                    `Current session: ${session ? 'Logged in as ' + session.user.email : 'Not logged in'}`
+                  );
+                } catch (err) {
+                  Alert.alert('Status Check Failed', (err as Error).message);
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              disabled={loading}
+            >
+              <Text style={styles.testButtonText}>Check Auth Status</Text>
             </TouchableOpacity>
 
             <View style={styles.loginContainer}>
@@ -279,6 +431,20 @@ const styles = StyleSheet.create({
     color: '#007AFF',
     fontSize: 14,
     fontWeight: '600',
+  },
+  testButton: {
+    backgroundColor: '#f0f0f0',
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  testButtonText: {
+    color: '#666',
+    fontSize: 14,
+    fontWeight: '500',
   },
 });
 

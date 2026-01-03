@@ -7,7 +7,10 @@ type ProfileInsert = Database['public']['Tables']['profiles']['Insert'];
 export class AuthService {
   // Sign up with email and password
   static async signUp(email: string, password: string, name?: string) {
-    const { data, error } = await supabase.auth.signUp({
+    console.log('🚀 Starting signup process...');
+    
+    // First, try to sign up the user
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -17,20 +20,50 @@ export class AuthService {
       },
     });
 
-    if (error) {
-      throw new Error(`Sign up failed: ${error.message}`);
+    if (signUpError) {
+      console.error('❌ Signup failed:', signUpError);
+      throw new Error(`Sign up failed: ${signUpError.message}`);
     }
 
-    // Create profile after successful signup
-    if (data.user) {
-      await this.createProfile({
-        id: data.user.id,
-        email: data.user.email!,
-        name: name || null,
-      });
+    console.log('📝 Signup response:', { 
+      userId: signUpData.user?.id, 
+      hasSession: !!signUpData.session,
+      emailConfirmed: signUpData.user?.email_confirmed_at,
+      userConfirmed: signUpData.user?.confirmed_at
+    });
+
+    // Create profile first
+    if (signUpData.user) {
+      try {
+        await this.createProfile({
+          id: signUpData.user.id,
+          email: signUpData.user.email!,
+          name: name || null,
+        });
+        console.log('✅ Profile created successfully');
+      } catch (profileError) {
+        console.log('⚠️ Profile creation failed:', profileError);
+      }
     }
 
-    return data;
+    // If we already have a session, we're good to go
+    if (signUpData.session && signUpData.user) {
+      console.log('✅ User automatically signed in after signup');
+      return { 
+        ...signUpData, 
+        autoSignedIn: true 
+      };
+    }
+
+    // If no session, the user was created but needs to sign in
+    // We'll let the UI handle the sign-in process
+    console.log('✅ Account created, manual login required');
+    return { 
+      user: signUpData.user, 
+      session: null, 
+      autoSignedIn: false,
+      needsManualLogin: true 
+    };
   }
 
   // Sign in with email and password
