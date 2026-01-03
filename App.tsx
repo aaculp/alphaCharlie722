@@ -13,7 +13,12 @@ import { ThemeProvider, useTheme } from './src/contexts/ThemeContext';
 import AppNavigator from './src/navigation/AppNavigator';
 
 function AppContent() {
-  const { isDark, theme } = useTheme();
+  const { isDark, theme, isLoading } = useTheme();
+
+  // Show a simple loading screen while theme is loading
+  if (isLoading) {
+    return null; // or a simple loading indicator
+  }
 
   return (
     <>
