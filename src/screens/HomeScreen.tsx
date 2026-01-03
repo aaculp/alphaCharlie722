@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { VenueService } from '../services/venueService';
+import { useTheme } from '../contexts/ThemeContext';
 import type { Database } from '../lib/supabase';
 
 type Venue = Database['public']['Tables']['venues']['Row'];
@@ -19,6 +20,7 @@ const HomeScreen: React.FC = () => {
   const [venues, setVenues] = useState<Venue[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const { theme } = useTheme();
 
   const loadFeaturedVenues = async () => {
     try {
@@ -43,7 +45,7 @@ const HomeScreen: React.FC = () => {
   }, []);
 
   const renderFeedItem = (item: Venue) => (
-    <TouchableOpacity key={item.id} style={styles.feedItem}>
+    <TouchableOpacity key={item.id} style={[styles.feedItem, { backgroundColor: theme.colors.surface }]}>
       <Image 
         source={{ 
           uri: item.image_url || 'https://via.placeholder.com/300x200' 
@@ -51,18 +53,18 @@ const HomeScreen: React.FC = () => {
         style={styles.feedImage} 
       />
       <View style={styles.feedContent}>
-        <Text style={styles.venueName}>{item.name}</Text>
-        <Text style={styles.location}>{item.location}</Text>
+        <Text style={[styles.venueName, { color: theme.colors.text }]}>{item.name}</Text>
+        <Text style={[styles.location, { color: theme.colors.textSecondary }]}>{item.location}</Text>
         <View style={styles.ratingContainer}>
-          <Text style={styles.rating}>⭐ {item.rating}</Text>
-          <Text style={styles.reviewCount}>({item.review_count} reviews)</Text>
+          <Text style={[styles.rating, { color: theme.colors.text }]}>⭐ {item.rating}</Text>
+          <Text style={[styles.reviewCount, { color: theme.colors.textSecondary }]}>({item.review_count} reviews)</Text>
         </View>
-        <Text style={styles.description} numberOfLines={2}>
+        <Text style={[styles.description, { color: theme.colors.textSecondary }]} numberOfLines={2}>
           {item.description}
         </Text>
         <View style={styles.categoryContainer}>
-          <Text style={styles.category}>{item.category}</Text>
-          <Text style={styles.priceRange}>{item.price_range}</Text>
+          <Text style={[styles.category, { color: theme.colors.primary, backgroundColor: theme.colors.primary + '20' }]}>{item.category}</Text>
+          <Text style={[styles.priceRange, { color: theme.colors.text }]}>{item.price_range}</Text>
         </View>
       </View>
     </TouchableOpacity>
@@ -70,21 +72,21 @@ const HomeScreen: React.FC = () => {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Feed</Text>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <View style={[styles.header, { backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.border }]}>
+          <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Feed</Text>
         </View>
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Loading venues...</Text>
+          <Text style={[styles.loadingText, { color: theme.colors.textSecondary }]}>Loading venues...</Text>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Feed</Text>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <View style={[styles.header, { backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.border }]}>
+        <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Feed</Text>
       </View>
       <ScrollView 
         style={styles.scrollView} 
@@ -97,8 +99,8 @@ const HomeScreen: React.FC = () => {
           venues.map(renderFeedItem)
         ) : (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No venues found</Text>
-            <Text style={styles.emptySubtext}>Pull to refresh</Text>
+            <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>No venues found</Text>
+            <Text style={[styles.emptySubtext, { color: theme.colors.textSecondary }]}>Pull to refresh</Text>
           </View>
         )}
       </ScrollView>
@@ -109,25 +111,20 @@ const HomeScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   header: {
-    backgroundColor: '#fff',
     paddingHorizontal: 20,
     paddingVertical: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
   },
   scrollView: {
     flex: 1,
   },
   feedItem: {
-    backgroundColor: '#fff',
     marginHorizontal: 15,
     marginVertical: 8,
     borderRadius: 12,
@@ -152,12 +149,10 @@ const styles = StyleSheet.create({
   venueName: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
     marginBottom: 5,
   },
   location: {
     fontSize: 14,
-    color: '#666',
     marginBottom: 8,
   },
   ratingContainer: {
@@ -167,16 +162,13 @@ const styles = StyleSheet.create({
   },
   rating: {
     fontSize: 14,
-    color: '#333',
     marginRight: 8,
   },
   reviewCount: {
     fontSize: 12,
-    color: '#666',
   },
   description: {
     fontSize: 14,
-    color: '#666',
     lineHeight: 20,
     marginBottom: 8,
   },
@@ -187,8 +179,6 @@ const styles = StyleSheet.create({
   },
   category: {
     fontSize: 12,
-    color: '#007AFF',
-    backgroundColor: '#f0f8ff',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
@@ -196,7 +186,6 @@ const styles = StyleSheet.create({
   },
   priceRange: {
     fontSize: 14,
-    color: '#333',
     fontWeight: '600',
   },
   loadingContainer: {
@@ -206,7 +195,6 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 16,
-    color: '#666',
   },
   emptyContainer: {
     flex: 1,
@@ -217,12 +205,10 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#666',
     marginBottom: 8,
   },
   emptySubtext: {
     fontSize: 14,
-    color: '#999',
   },
 });
 

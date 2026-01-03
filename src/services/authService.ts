@@ -91,11 +91,21 @@ export class AuthService {
 
   // Get current session
   static async getCurrentSession() {
+    console.log('🔍 AuthService: Getting current session...');
     const { data: { session }, error } = await supabase.auth.getSession();
 
     if (error) {
+      console.error('❌ AuthService: Failed to get session:', error);
       throw new Error(`Failed to get session: ${error.message}`);
     }
+
+    console.log('📋 AuthService: Session result:', {
+      hasSession: !!session,
+      userId: session?.user?.id,
+      userEmail: session?.user?.email,
+      expiresAt: session?.expires_at,
+      isExpired: session?.expires_at ? new Date(session.expires_at * 1000) < new Date() : 'N/A'
+    });
 
     return session;
   }

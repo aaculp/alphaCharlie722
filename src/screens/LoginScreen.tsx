@@ -63,8 +63,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSwitchToSignUp }) => {
       >
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.header}>
-            <Text style={styles.title}>Welcome Back</Text>
-            <Text style={styles.subtitle}>Sign in to discover amazing venues</Text>
+            <Text style={styles.title}>OTW</Text>
+            <Text style={styles.subtitle}>Live Feed</Text>
           </View>
 
           <View style={styles.form}>

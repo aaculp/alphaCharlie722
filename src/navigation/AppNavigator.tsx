@@ -4,10 +4,11 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 
 // Import screens
-import { HomeScreen, SearchScreen, VenueDetailScreen, SettingsScreen } from '../screens';
+import { HomeScreen, SearchScreen, VenueDetailScreen, SettingsScreen, SplashScreen } from '../screens';
 import AuthScreen from '../screens/AuthScreen';
 
 // Type definitions
@@ -26,16 +27,33 @@ const Tab = createBottomTabNavigator<RootTabParamList>();
 const SearchStack = createNativeStackNavigator<SearchStackParamList>();
 
 // Loading component
-const LoadingScreen = () => (
-  <View style={styles.loadingContainer}>
-    <ActivityIndicator size="large" color="#007AFF" />
-  </View>
-);
+const LoadingScreen = () => {
+  const { theme } = useTheme();
+  
+  return (
+    <View style={[styles.loadingContainer, { backgroundColor: theme.colors.background }]}>
+      <ActivityIndicator size="large" color={theme.colors.primary} />
+    </View>
+  );
+};
 
 // Search Stack Navigator
 function SearchStackNavigator() {
+  const { theme } = useTheme();
+  
   return (
-    <SearchStack.Navigator>
+    <SearchStack.Navigator
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: theme.colors.surface,
+        },
+        headerTintColor: theme.colors.text,
+        headerTitleStyle: {
+          fontWeight: 'bold',
+        },
+        headerShadowVisible: true,
+      }}
+    >
       <SearchStack.Screen 
         name="SearchList" 
         component={SearchScreen}
@@ -52,6 +70,8 @@ function SearchStackNavigator() {
 
 // Main Tab Navigator
 function MainTabNavigator() {
+  const { theme } = useTheme();
+  
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -70,8 +90,12 @@ function MainTabNavigator() {
 
           return <Icon name={iconName} size={size} color={color} />;
         },
-        tabBarActiveTintColor: '#007AFF',
-        tabBarInactiveTintColor: 'gray',
+        tabBarActiveTintColor: theme.colors.tabBarActive,
+        tabBarInactiveTintColor: theme.colors.tabBarInactive,
+        tabBarStyle: {
+          backgroundColor: theme.colors.surface,
+          borderTopColor: theme.colors.border,
+        },
         headerShown: false,
       })}
     >
@@ -96,25 +120,38 @@ function MainTabNavigator() {
 
 // Main App Navigator with Authentication
 function AppNavigator() {
-  const { session, loading, user } = useAuth();
+  const { session, loading, initializing, user } = useAuth();
 
-  console.log('AppNavigator state:', { 
+  console.log('🧭 AppNavigator render:', { 
     hasSession: !!session, 
     loading, 
+    initializing,
     userId: user?.id,
-    userEmail: user?.email 
+    userEmail: user?.email,
+    timestamp: new Date().toISOString()
   });
 
+  // Show splash screen while initializing
+  if (initializing) {
+    console.log('🎬 AppNavigator: Showing splash screen (initializing)');
+    return <SplashScreen />;
+  }
+
+  // Show loading for auth operations
   if (loading) {
-    console.log('Showing loading screen...');
+    console.log('⏳ AppNavigator: Showing loading screen (auth operation)');
     return <LoadingScreen />;
   }
 
-  console.log('Rendering navigator:', session ? 'MainTabNavigator' : 'AuthScreen');
+  const shouldShowMainApp = !!session;
+  console.log('🎯 AppNavigator: Navigation decision:', {
+    shouldShowMainApp,
+    component: shouldShowMainApp ? 'MainTabNavigator' : 'AuthScreen'
+  });
 
   return (
     <NavigationContainer>
-      {session ? <MainTabNavigator /> : <AuthScreen />}
+      {shouldShowMainApp ? <MainTabNavigator /> : <AuthScreen />}
     </NavigationContainer>
   );
 }
@@ -124,7 +161,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
   },
 });
 

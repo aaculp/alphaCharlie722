@@ -8,10 +8,10 @@ import {
   TouchableOpacity,
   Image,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SearchStackParamList } from '../navigation/AppNavigator';
+import { useTheme } from '../contexts/ThemeContext';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 type SearchScreenNavigationProp = NativeStackNavigationProp<
@@ -72,6 +72,7 @@ const SearchScreen: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredVenues, setFilteredVenues] = useState(venuesData);
   const navigation = useNavigation<SearchScreenNavigationProp>();
+  const { theme } = useTheme();
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -97,44 +98,40 @@ const SearchScreen: React.FC = () => {
 
   const renderVenueItem = ({ item }: { item: typeof venuesData[0] }) => (
     <TouchableOpacity
-      style={styles.venueItem}
+      style={[styles.venueItem, { backgroundColor: theme.colors.surface }]}
       onPress={() => handleVenuePress(item)}
     >
       <Image source={{ uri: item.image }} style={styles.venueImage} />
       <View style={styles.venueInfo}>
-        <Text style={styles.venueName}>{item.name}</Text>
-        <Text style={styles.venueCategory}>{item.category}</Text>
-        <Text style={styles.venueLocation}>{item.location}</Text>
+        <Text style={[styles.venueName, { color: theme.colors.text }]}>{item.name}</Text>
+        <Text style={[styles.venueCategory, { color: theme.colors.primary }]}>{item.category}</Text>
+        <Text style={[styles.venueLocation, { color: theme.colors.textSecondary }]}>{item.location}</Text>
         <View style={styles.venueDetails}>
-          <Text style={styles.rating}>⭐ {item.rating}</Text>
-          <Text style={styles.distance}>{item.distance}</Text>
+          <Text style={[styles.rating, { color: theme.colors.text }]}>⭐ {item.rating}</Text>
+          <Text style={[styles.distance, { color: theme.colors.textSecondary }]}>{item.distance}</Text>
         </View>
       </View>
-      <Icon name="chevron-forward" size={20} color="#ccc" />
+      <Icon name="chevron-forward" size={20} color={theme.colors.textSecondary} />
     </TouchableOpacity>
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Search Venues</Text>
-      </View>
-      
-      <View style={styles.searchContainer}>
-        <Icon name="search" size={20} color="#666" style={styles.searchIcon} />
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <View style={[styles.searchContainer, { backgroundColor: theme.colors.surface }]}>
+        <Icon name="search" size={20} color={theme.colors.textSecondary} style={styles.searchIcon} />
         <TextInput
-          style={styles.searchInput}
+          style={[styles.searchInput, { color: theme.colors.text }]}
           placeholder="Search venues, categories, locations..."
           value={searchQuery}
           onChangeText={handleSearch}
-          placeholderTextColor="#999"
+          placeholderTextColor={theme.colors.textSecondary}
         />
         {searchQuery.length > 0 && (
           <TouchableOpacity
             onPress={() => handleSearch('')}
             style={styles.clearButton}
           >
-            <Icon name="close-circle" size={20} color="#666" />
+            <Icon name="close-circle" size={20} color={theme.colors.textSecondary} />
           </TouchableOpacity>
         )}
       </View>
@@ -144,39 +141,26 @@ const SearchScreen: React.FC = () => {
         renderItem={renderVenueItem}
         keyExtractor={item => item.id}
         style={styles.venuesList}
+        contentContainerStyle={filteredVenues.length === 0 ? styles.emptyListContainer : styles.listContent}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No venues found</Text>
-            <Text style={styles.emptySubtext}>Try adjusting your search</Text>
+            <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>No venues found</Text>
+            <Text style={[styles.emptySubtext, { color: theme.colors.textSecondary }]}>Try adjusting your search</Text>
           </View>
         }
       />
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  header: {
-    backgroundColor: '#fff',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
     marginHorizontal: 15,
     marginVertical: 10,
     paddingHorizontal: 15,
@@ -197,7 +181,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 12,
     fontSize: 16,
-    color: '#333',
   },
   clearButton: {
     padding: 5,
@@ -208,7 +191,6 @@ const styles = StyleSheet.create({
   venueItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
     marginHorizontal: 15,
     marginVertical: 5,
     padding: 15,
@@ -234,17 +216,14 @@ const styles = StyleSheet.create({
   venueName: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#333',
     marginBottom: 4,
   },
   venueCategory: {
     fontSize: 14,
-    color: '#007AFF',
     marginBottom: 2,
   },
   venueLocation: {
     fontSize: 14,
-    color: '#666',
     marginBottom: 4,
   },
   venueDetails: {
@@ -253,11 +232,9 @@ const styles = StyleSheet.create({
   },
   rating: {
     fontSize: 14,
-    color: '#333',
   },
   distance: {
     fontSize: 14,
-    color: '#666',
   },
   emptyContainer: {
     flex: 1,
@@ -268,12 +245,18 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#666',
     marginBottom: 8,
   },
   emptySubtext: {
     fontSize: 14,
-    color: '#999',
+  },
+  emptyListContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  listContent: {
+    paddingBottom: 20,
   },
 });
 

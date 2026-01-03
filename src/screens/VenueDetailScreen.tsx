@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, RouteProp } from '@react-navigation/native';
 import { SearchStackParamList } from '../navigation/AppNavigator';
+import { useTheme } from '../contexts/ThemeContext';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 type VenueDetailRouteProp = RouteProp<SearchStackParamList, 'VenueDetail'>;
@@ -74,14 +75,15 @@ const getVenueDetails = (venueId: string) => {
 const VenueDetailScreen: React.FC = () => {
   const route = useRoute<VenueDetailRouteProp>();
   const { venueId } = route.params;
+  const { theme } = useTheme();
   
   const venue = getVenueDetails(venueId);
 
   if (!venue) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Venue not found</Text>
+          <Text style={[styles.errorText, { color: theme.colors.textSecondary }]}>Venue not found</Text>
         </View>
       </SafeAreaView>
     );
