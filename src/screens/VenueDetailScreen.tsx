@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -76,8 +76,16 @@ const VenueDetailScreen: React.FC = () => {
   const route = useRoute<VenueDetailRouteProp>();
   const { venueId } = route.params;
   const { theme } = useTheme();
+  const scrollViewRef = useRef<ScrollView>(null);
   
   const venue = getVenueDetails(venueId);
+
+  // Scroll to top when screen loads
+  useEffect(() => {
+    if (scrollViewRef.current) {
+      scrollViewRef.current.scrollTo({ y: 0, animated: false });
+    }
+  }, [venueId]);
 
   if (!venue) {
     return (
@@ -103,54 +111,58 @@ const VenueDetailScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <ScrollView 
+        ref={scrollViewRef}
+        style={styles.scrollView} 
+        showsVerticalScrollIndicator={false}
+      >
         <Image source={{ uri: venue.image }} style={styles.heroImage} />
         
-        <View style={styles.content}>
+        <View style={[styles.content, { backgroundColor: theme.colors.surface }]}>
           <View style={styles.header}>
-            <Text style={styles.venueName}>{venue.name}</Text>
-            <Text style={styles.category}>{venue.category} • {venue.price}</Text>
+            <Text style={[styles.venueName, { color: theme.colors.text }]}>{venue.name}</Text>
+            <Text style={[styles.category, { color: theme.colors.textSecondary }]}>{venue.category} • {venue.price}</Text>
             <View style={styles.ratingContainer}>
-              <Text style={styles.rating}>⭐ {venue.rating}</Text>
-              <Text style={styles.reviewCount}>({venue.reviewCount} reviews)</Text>
+              <Text style={[styles.rating, { color: theme.colors.text }]}>⭐ {venue.rating}</Text>
+              <Text style={[styles.reviewCount, { color: theme.colors.textSecondary }]}>({venue.reviewCount} reviews)</Text>
             </View>
           </View>
 
-          <Text style={styles.description}>{venue.description}</Text>
+          <Text style={[styles.description, { color: theme.colors.textSecondary }]}>{venue.description}</Text>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Contact Information</Text>
-            <TouchableOpacity style={styles.contactItem} onPress={handleCall}>
-              <Icon name="call" size={20} color="#007AFF" />
-              <Text style={styles.contactText}>{venue.phone}</Text>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Contact Information</Text>
+            <TouchableOpacity style={[styles.contactItem, { borderBottomColor: theme.colors.border }]} onPress={handleCall}>
+              <Icon name="call" size={20} color={theme.colors.primary} />
+              <Text style={[styles.contactText, { color: theme.colors.text }]}>{venue.phone}</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.contactItem} onPress={handleDirections}>
-              <Icon name="location" size={20} color="#007AFF" />
-              <Text style={styles.contactText}>{venue.address}</Text>
+            <TouchableOpacity style={[styles.contactItem, { borderBottomColor: theme.colors.border }]} onPress={handleDirections}>
+              <Icon name="location" size={20} color={theme.colors.primary} />
+              <Text style={[styles.contactText, { color: theme.colors.text }]}>{venue.address}</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.contactItem} onPress={handleWebsite}>
-              <Icon name="globe" size={20} color="#007AFF" />
-              <Text style={styles.contactText}>{venue.website}</Text>
+            <TouchableOpacity style={[styles.contactItem, { borderBottomColor: theme.colors.border }]} onPress={handleWebsite}>
+              <Icon name="globe" size={20} color={theme.colors.primary} />
+              <Text style={[styles.contactText, { color: theme.colors.text }]}>{venue.website}</Text>
             </TouchableOpacity>
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Hours</Text>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Hours</Text>
             {Object.entries(venue.hours).map(([day, hours]) => (
-              <View key={day} style={styles.hoursItem}>
-                <Text style={styles.dayText}>{day}</Text>
-                <Text style={styles.hoursText}>{hours as string}</Text>
+              <View key={day} style={[styles.hoursItem, { borderBottomColor: theme.colors.border }]}>
+                <Text style={[styles.dayText, { color: theme.colors.text }]}>{day}</Text>
+                <Text style={[styles.hoursText, { color: theme.colors.textSecondary }]}>{hours as string}</Text>
               </View>
             ))}
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Amenities</Text>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Amenities</Text>
             <View style={styles.amenitiesContainer}>
               {venue.amenities.map((amenity: string, index: number) => (
-                <View key={index} style={styles.amenityTag}>
-                  <Text style={styles.amenityText}>{amenity}</Text>
+                <View key={index} style={[styles.amenityTag, { backgroundColor: theme.colors.card, borderColor: theme.colors.primary, borderWidth: 1 }]}>
+                  <Text style={[styles.amenityText, { color: theme.colors.primary }]}>{amenity}</Text>
                 </View>
               ))}
             </View>
@@ -164,7 +176,6 @@ const VenueDetailScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   scrollView: {
     flex: 1,
@@ -174,7 +185,6 @@ const styles = StyleSheet.create({
     height: 250,
   },
   content: {
-    backgroundColor: '#fff',
     marginTop: -20,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
@@ -188,12 +198,10 @@ const styles = StyleSheet.create({
   venueName: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#333',
     marginBottom: 5,
   },
   category: {
     fontSize: 16,
-    color: '#666',
     marginBottom: 10,
   },
   ratingContainer: {
@@ -203,16 +211,13 @@ const styles = StyleSheet.create({
   rating: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
     marginRight: 8,
   },
   reviewCount: {
     fontSize: 14,
-    color: '#666',
   },
   description: {
     fontSize: 16,
-    color: '#666',
     lineHeight: 24,
     marginBottom: 30,
   },
@@ -222,7 +227,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
     marginBottom: 15,
   },
   contactItem: {
@@ -230,11 +234,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
   },
   contactText: {
     fontSize: 16,
-    color: '#333',
     marginLeft: 15,
     flex: 1,
   },
@@ -243,23 +245,19 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
   },
   dayText: {
     fontSize: 16,
-    color: '#333',
     fontWeight: '500',
   },
   hoursText: {
     fontSize: 16,
-    color: '#666',
   },
   amenitiesContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
   },
   amenityTag: {
-    backgroundColor: '#f0f8ff',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 15,
@@ -268,7 +266,6 @@ const styles = StyleSheet.create({
   },
   amenityText: {
     fontSize: 14,
-    color: '#007AFF',
     fontWeight: '500',
   },
   errorContainer: {
@@ -278,7 +275,6 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 18,
-    color: '#666',
   },
 });
 
