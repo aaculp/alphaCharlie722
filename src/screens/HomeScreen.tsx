@@ -10,10 +10,14 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { VenueService } from '../services/venueService';
 import { useTheme } from '../contexts/ThemeContext';
+import { HomeStackParamList } from '../navigation/AppNavigator';
 import type { Database } from '../lib/supabase';
 
+type HomeScreenNavigationProp = NativeStackNavigationProp<HomeStackParamList, 'HomeList'>;
 type Venue = Database['public']['Tables']['venues']['Row'];
 
 const HomeScreen: React.FC = () => {
@@ -21,6 +25,7 @@ const HomeScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const { theme } = useTheme();
+  const navigation = useNavigation<HomeScreenNavigationProp>();
 
   const loadFeaturedVenues = async () => {
     try {
@@ -44,8 +49,20 @@ const HomeScreen: React.FC = () => {
     loadFeaturedVenues();
   }, []);
 
+  const handleVenuePress = (venue: Venue) => {
+    navigation.navigate('VenueDetail', {
+      venueId: venue.id,
+      venueName: venue.name,
+    });
+  };
+
   const renderFeedItem = (item: Venue) => (
-    <TouchableOpacity key={item.id} style={[styles.feedItem, { backgroundColor: theme.colors.surface }]}>
+    <TouchableOpacity 
+      key={item.id} 
+      style={[styles.feedItem, { backgroundColor: theme.colors.surface }]}
+      onPress={() => handleVenuePress(item)}
+      activeOpacity={0.7}
+    >
       <Image 
         source={{ 
           uri: item.image_url || 'https://via.placeholder.com/300x200' 

@@ -18,12 +18,18 @@ export type RootTabParamList = {
   Settings: undefined;
 };
 
+export type HomeStackParamList = {
+  HomeList: undefined;
+  VenueDetail: { venueId: string; venueName: string };
+};
+
 export type SearchStackParamList = {
   SearchList: undefined;
   VenueDetail: { venueId: string; venueName: string };
 };
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
+const HomeStack = createNativeStackNavigator<HomeStackParamList>();
 const SearchStack = createNativeStackNavigator<SearchStackParamList>();
 
 // Loading component
@@ -36,6 +42,37 @@ const LoadingScreen = () => {
     </View>
   );
 };
+
+// Home Stack Navigator
+function HomeStackNavigator() {
+  const { theme } = useTheme();
+  
+  return (
+    <HomeStack.Navigator
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: theme.colors.surface,
+        },
+        headerTintColor: theme.colors.text,
+        headerTitleStyle: {
+          fontWeight: 'bold',
+        },
+        headerShadowVisible: true,
+      }}
+    >
+      <HomeStack.Screen 
+        name="HomeList" 
+        component={HomeScreen}
+        options={{ title: 'Feed' }}
+      />
+      <HomeStack.Screen 
+        name="VenueDetail" 
+        component={VenueDetailScreen}
+        options={({ route }) => ({ title: route.params.venueName })}
+      />
+    </HomeStack.Navigator>
+  );
+}
 
 // Search Stack Navigator
 function SearchStackNavigator() {
@@ -101,7 +138,7 @@ function MainTabNavigator() {
     >
       <Tab.Screen 
         name="Home" 
-        component={HomeScreen}
+        component={HomeStackNavigator}
         options={{ title: 'Feed' }}
       />
       <Tab.Screen 

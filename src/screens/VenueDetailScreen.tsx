@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -7,17 +7,21 @@ import {
   Image,
   TouchableOpacity,
   Linking,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, RouteProp } from '@react-navigation/native';
-import { SearchStackParamList } from '../navigation/AppNavigator';
+import { SearchStackParamList, HomeStackParamList } from '../navigation/AppNavigator';
 import { useTheme } from '../contexts/ThemeContext';
+import { VenueService } from '../services/venueService';
 import Icon from 'react-native-vector-icons/Ionicons';
+import type { Database } from '../lib/supabase';
 
-type VenueDetailRouteProp = RouteProp<SearchStackParamList, 'VenueDetail'>;
+type VenueDetailRouteProp = RouteProp<SearchStackParamList, 'VenueDetail'> | RouteProp<HomeStackParamList, 'VenueDetail'>;
+type Venue = Database['public']['Tables']['venues']['Row'];
 
-// Mock detailed venue data
-const getVenueDetails = (venueId: string) => {
+// Mock detailed venue data (fallback for search screen)
+const getMockVenueDetails = (venueId: string) => {
   const venueDetails: { [key: string]: any } = {
     '1': {
       id: '1',
@@ -25,8 +29,8 @@ const getVenueDetails = (venueId: string) => {
       location: 'Downtown',
       category: 'Cafe',
       rating: 4.5,
-      reviewCount: 127,
-      image: 'https://via.placeholder.com/400x250',
+      review_count: 127,
+      image_url: 'https://via.placeholder.com/400x250',
       description: 'A cozy coffee house in the heart of downtown, perfect for meetings, studying, or just enjoying a great cup of coffee. We source our beans from local roasters and offer a variety of pastries and light meals.',
       address: '123 Main Street, Downtown',
       phone: '+1 (555) 123-4567',
@@ -41,7 +45,7 @@ const getVenueDetails = (venueId: string) => {
         'Sunday': '8:00 AM - 8:00 PM',
       },
       amenities: ['WiFi', 'Outdoor Seating', 'Pet Friendly', 'Takeout'],
-      price: '$$',
+      price_range: '$',
     },
     '2': {
       id: '2',
@@ -49,8 +53,8 @@ const getVenueDetails = (venueId: string) => {
       location: 'Waterfront',
       category: 'Restaurant',
       rating: 4.8,
-      reviewCount: 89,
-      image: 'https://via.placeholder.com/400x250',
+      review_count: 89,
+      image_url: 'https://via.placeholder.com/400x250',
       description: 'Experience fine dining with breathtaking ocean views. Our menu features fresh seafood and locally sourced ingredients, creating an unforgettable culinary experience.',
       address: '456 Ocean Drive, Waterfront',
       phone: '+1 (555) 987-6543',
@@ -65,7 +69,7 @@ const getVenueDetails = (venueId: string) => {
         'Sunday': '4:00 PM - 9:00 PM',
       },
       amenities: ['Ocean View', 'Valet Parking', 'Full Bar', 'Reservations'],
-      price: '$$$',
+      price_range: '$$$',
     },
   };
 
@@ -77,8 +81,37 @@ const VenueDetailScreen: React.FC = () => {
   const { venueId } = route.params;
   const { theme } = useTheme();
   const scrollViewRef = useRef<ScrollView>(null);
-  
-  const venue = getVenueDetails(venueId);
+  const [venue, setVenue] = useState<Venue | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch venue details (try Supabase first, fallback to mock data)
+  useEffect(() => {
+    const fetchVenueDetails = async () => {
+      try {
+        setLoading(true);
+        
+        // Try to fetch from Supabase first
+        const supabaseVenue = await VenueService.getVenueById(venueId);
+        
+        if (supabaseVenue) {
+          setVenue(supabaseVenue);
+        } else {
+          // Fallback to mock data for search screen
+          const mockVenue = getMockVenueDetails(venueId);
+          setVenue(mockVenue);
+        }
+      } catch (error) {
+        console.error('Error fetching venue details:', error);
+        // Fallback to mock data on error
+        const mockVenue = getMockVenueDetails(venueId);
+        setVenue(mockVenue);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchVenueDetails();
+  }, [venueId]);
 
   // Scroll to top when screen loads
   useEffect(() => {
@@ -86,6 +119,17 @@ const VenueDetailScreen: React.FC = () => {
       scrollViewRef.current.scrollTo({ y: 0, animated: false });
     }
   }, [venueId]);
+
+  if (loading) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+          <Text style={[styles.loadingText, { color: theme.colors.textSecondary }]}>Loading venue details...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (!venue) {
     return (
@@ -98,11 +142,15 @@ const VenueDetailScreen: React.FC = () => {
   }
 
   const handleCall = () => {
-    Linking.openURL(`tel:${venue.phone}`);
+    if (venue.phone) {
+      Linking.openURL(`tel:${venue.phone}`);
+    }
   };
 
   const handleWebsite = () => {
-    Linking.openURL(venue.website);
+    if (venue.website) {
+      Linking.openURL(venue.website);
+    }
   };
 
   const handleDirections = () => {
@@ -117,15 +165,20 @@ const VenueDetailScreen: React.FC = () => {
         style={styles.scrollView} 
         showsVerticalScrollIndicator={false}
       >
-        <Image source={{ uri: venue.image }} style={styles.heroImage} />
+        <Image 
+          source={{ 
+            uri: venue.image_url || 'https://via.placeholder.com/400x250' 
+          }} 
+          style={styles.heroImage} 
+        />
         
         <View style={[styles.content, { backgroundColor: theme.colors.surface }]}>
           <View style={styles.header}>
             <Text style={[styles.venueName, { color: theme.colors.text }]}>{venue.name}</Text>
-            <Text style={[styles.category, { color: theme.colors.textSecondary }]}>{venue.category} • {venue.price}</Text>
+            <Text style={[styles.category, { color: theme.colors.textSecondary }]}>{venue.category} • {venue.price_range}</Text>
             <View style={styles.ratingContainer}>
               <Text style={[styles.rating, { color: theme.colors.text }]}>⭐ {venue.rating}</Text>
-              <Text style={[styles.reviewCount, { color: theme.colors.textSecondary }]}>({venue.reviewCount} reviews)</Text>
+              <Text style={[styles.reviewCount, { color: theme.colors.textSecondary }]}>({venue.review_count} reviews)</Text>
             </View>
           </View>
 
@@ -133,40 +186,48 @@ const VenueDetailScreen: React.FC = () => {
 
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Contact Information</Text>
-            <TouchableOpacity style={[styles.contactItem, { borderBottomColor: theme.colors.border }]} onPress={handleCall}>
-              <Icon name="call" size={20} color={theme.colors.primary} />
-              <Text style={[styles.contactText, { color: theme.colors.text }]}>{venue.phone}</Text>
-            </TouchableOpacity>
+            {venue.phone && (
+              <TouchableOpacity style={[styles.contactItem, { borderBottomColor: theme.colors.border }]} onPress={handleCall}>
+                <Icon name="call" size={20} color={theme.colors.primary} />
+                <Text style={[styles.contactText, { color: theme.colors.text }]}>{venue.phone}</Text>
+              </TouchableOpacity>
+            )}
             <TouchableOpacity style={[styles.contactItem, { borderBottomColor: theme.colors.border }]} onPress={handleDirections}>
               <Icon name="location" size={20} color={theme.colors.primary} />
               <Text style={[styles.contactText, { color: theme.colors.text }]}>{venue.address}</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.contactItem, { borderBottomColor: theme.colors.border }]} onPress={handleWebsite}>
-              <Icon name="globe" size={20} color={theme.colors.primary} />
-              <Text style={[styles.contactText, { color: theme.colors.text }]}>{venue.website}</Text>
-            </TouchableOpacity>
+            {venue.website && (
+              <TouchableOpacity style={[styles.contactItem, { borderBottomColor: theme.colors.border }]} onPress={handleWebsite}>
+                <Icon name="globe" size={20} color={theme.colors.primary} />
+                <Text style={[styles.contactText, { color: theme.colors.text }]}>{venue.website}</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Hours</Text>
-            {Object.entries(venue.hours).map(([day, hours]) => (
-              <View key={day} style={[styles.hoursItem, { borderBottomColor: theme.colors.border }]}>
-                <Text style={[styles.dayText, { color: theme.colors.text }]}>{day}</Text>
-                <Text style={[styles.hoursText, { color: theme.colors.textSecondary }]}>{hours as string}</Text>
-              </View>
-            ))}
-          </View>
-
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Amenities</Text>
-            <View style={styles.amenitiesContainer}>
-              {venue.amenities.map((amenity: string, index: number) => (
-                <View key={index} style={[styles.amenityTag, { backgroundColor: theme.colors.card, borderColor: theme.colors.primary, borderWidth: 1 }]}>
-                  <Text style={[styles.amenityText, { color: theme.colors.primary }]}>{amenity}</Text>
+          {venue.hours && Object.keys(venue.hours).length > 0 && (
+            <View style={styles.section}>
+              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Hours</Text>
+              {Object.entries(venue.hours).map(([day, hours]) => (
+                <View key={day} style={[styles.hoursItem, { borderBottomColor: theme.colors.border }]}>
+                  <Text style={[styles.dayText, { color: theme.colors.text }]}>{day}</Text>
+                  <Text style={[styles.hoursText, { color: theme.colors.textSecondary }]}>{hours as string}</Text>
                 </View>
               ))}
             </View>
-          </View>
+          )}
+
+          {venue.amenities && venue.amenities.length > 0 && (
+            <View style={styles.section}>
+              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Amenities</Text>
+              <View style={styles.amenitiesContainer}>
+                {venue.amenities.map((amenity: string, index: number) => (
+                  <View key={index} style={[styles.amenityTag, { backgroundColor: theme.colors.card, borderColor: theme.colors.primary, borderWidth: 1 }]}>
+                    <Text style={[styles.amenityText, { color: theme.colors.primary }]}>{amenity}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -267,6 +328,15 @@ const styles = StyleSheet.create({
   amenityText: {
     fontSize: 14,
     fontWeight: '500',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 16,
+    marginTop: 10,
   },
   errorContainer: {
     flex: 1,
