@@ -1,0 +1,1 @@
+export { default as OTWLogo } from './OTWLogo';

@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
-import { debugAuthStorage } from '../utils/debugAuth';
 
 interface AuthContextType {
   session: Session | null;
@@ -9,7 +8,7 @@ interface AuthContextType {
   loading: boolean;
   initializing: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, name?: string) => Promise<void>;
+  signUp: (email: string, password: string, name?: string) => Promise<{ user: User | null; session: Session | null; autoSignedIn?: boolean; needsManualLogin?: boolean; }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
 }
@@ -37,16 +36,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     let mounted = true;
 
-    // Initialize auth state
+    // Initialize auth state with minimum splash screen duration
     const initializeAuth = async () => {
       try {
         console.log('🔄 Initializing auth...');
         
-        // Debug what's in storage
-        await debugAuthStorage();
+        // Record start time for minimum splash duration
+        const startTime = Date.now();
+        const MINIMUM_SPLASH_DURATION = 5000; // 5 seconds
         
         // Add a small delay to ensure AsyncStorage is ready
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise<void>(resolve => setTimeout(resolve, 100));
         
         const { data: { session }, error } = await supabase.auth.getSession();
         
@@ -67,6 +67,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setSession(session);
           setUser(session?.user ?? null);
         }
+
+        // Ensure minimum splash screen duration
+        const elapsedTime = Date.now() - startTime;
+        const remainingTime = Math.max(0, MINIMUM_SPLASH_DURATION - elapsedTime);
+        
+        if (remainingTime > 0) {
+          console.log(`⏱️ Showing splash screen for ${remainingTime}ms more to reach minimum duration`);
+          await new Promise<void>(resolve => setTimeout(resolve, remainingTime));
+        }
+        
       } catch (error) {
         console.error('❌ Error initializing auth:', error);
         if (mounted) {
@@ -75,7 +85,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
       } finally {
         if (mounted) {
-          console.log('✅ Auth initialization complete');
+          console.log('✅ Auth initialization complete - hiding splash screen');
           setInitializing(false);
         }
       }

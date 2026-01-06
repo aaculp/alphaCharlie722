@@ -18,6 +18,10 @@ export interface Theme {
     tabBarActive: string;
     tabBarInactive: string;
     shadow: string;
+    // OTW Logo Colors
+    logoRed: string;
+    logoYellow: string;
+    logoGreen: string;
   };
   spacing: {
     xs: number;
@@ -49,6 +53,10 @@ const lightTheme: Theme = {
     tabBarActive: '#007AFF',
     tabBarInactive: 'gray',
     shadow: '#000000',
+    // OTW Logo Colors
+    logoRed: '#DC2626',
+    logoYellow: '#F59E0B',
+    logoGreen: '#059669',
   },
   spacing: {
     xs: 4,
@@ -80,6 +88,10 @@ const darkTheme: Theme = {
     tabBarActive: '#0A84FF',
     tabBarInactive: '#8E8E93',
     shadow: '#000000',
+    // OTW Logo Colors (same in both themes)
+    logoRed: '#DC2626',
+    logoYellow: '#F59E0B',
+    logoGreen: '#059669',
   },
   spacing: {
     xs: 4,

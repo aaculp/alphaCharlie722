@@ -69,14 +69,37 @@ npm start
 
 ### Step 4: Run the App
 
-#### Android
+#### Quick Start (Recommended)
 ```bash
+npm run dev:full
+```
+This command starts the emulator, Metro bundler, and builds/installs the app all at once.
+
+#### Individual Commands
+```bash
+# Start emulator only
+npm run emulator
+
+# Start Metro bundler only  
+npm start
+
+# Build and install app (after emulator and Metro are running)
 npm run android
+
+# For iOS
+npm run ios
 ```
 
-#### iOS
+#### Development Scripts
 ```bash
-npm run ios
+# Start emulator + Metro (you'll need to run android separately)
+npm run dev
+
+# Clean build and fresh start (if you have build issues)
+npm run fresh-start
+
+# Clean build cache only
+npm run clean
 ```
 
 ## Dependencies

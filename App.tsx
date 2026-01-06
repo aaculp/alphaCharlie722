@@ -11,7 +11,7 @@ import { ThemeProvider, useTheme } from './src/contexts/ThemeContext';
 import AppNavigator from './src/navigation/AppNavigator';
 
 function AppContent() {
-  const { isLoading, theme } = useTheme();
+  const { isLoading, theme, isDark } = useTheme();
 
   // Show loading while theme is loading
   if (isLoading) {
@@ -21,7 +21,7 @@ function AppContent() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }} edges={['top']}>
       <StatusBar 
-        barStyle={theme.isDark ? 'light-content' : 'dark-content'}
+        barStyle={isDark ? 'light-content' : 'dark-content'}
         backgroundColor={theme.colors.surface}
         translucent={false}
       />
