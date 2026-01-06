@@ -27,7 +27,7 @@ const venuesData = [
     location: 'Downtown',
     category: 'Cafe',
     rating: 4.5,
-    image: 'https://via.placeholder.com/100x100/8B4513/FFFFFF?text=Coffee',
+    image: 'https://picsum.photos/100/100?random=1',
     distance: '0.5 km',
   },
   {
@@ -36,7 +36,7 @@ const venuesData = [
     location: 'Waterfront',
     category: 'Restaurant',
     rating: 4.8,
-    image: 'https://via.placeholder.com/100x100/FF6347/FFFFFF?text=Sunset',
+    image: 'https://picsum.photos/100/100?random=2',
     distance: '1.2 km',
   },
   {
@@ -45,7 +45,7 @@ const venuesData = [
     location: 'City Center',
     category: 'Fitness',
     rating: 4.2,
-    image: 'https://via.placeholder.com/100x100/32CD32/FFFFFF?text=Gym',
+    image: 'https://picsum.photos/100/100?random=3',
     distance: '0.8 km',
   },
   {
@@ -54,7 +54,7 @@ const venuesData = [
     location: 'Arts District',
     category: 'Bookstore',
     rating: 4.6,
-    image: 'https://via.placeholder.com/100x100/8A2BE2/FFFFFF?text=Books',
+    image: 'https://picsum.photos/100/100?random=4',
     distance: '2.1 km',
   },
   {
@@ -63,7 +63,7 @@ const venuesData = [
     location: 'Main Street',
     category: 'Restaurant',
     rating: 4.3,
-    image: 'https://via.placeholder.com/100x100/FF4500/FFFFFF?text=Pizza',
+    image: 'https://picsum.photos/100/100?random=5',
     distance: '1.5 km',
   },
 ];
