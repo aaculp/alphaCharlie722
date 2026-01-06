@@ -1,5 +1,4 @@
 import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -132,6 +131,14 @@ function MainTabNavigator() {
         tabBarStyle: {
           backgroundColor: theme.colors.surface,
           borderTopColor: theme.colors.border,
+          // Force tab bar to bottom edge
+          paddingBottom: 0,
+          marginBottom: 0,
+          height: 60, // Fixed height
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
         },
         headerShown: false,
       })}
@@ -186,11 +193,8 @@ function AppNavigator() {
     component: shouldShowMainApp ? 'MainTabNavigator' : 'AuthScreen'
   });
 
-  return (
-    <NavigationContainer>
-      {shouldShowMainApp ? <MainTabNavigator /> : <AuthScreen />}
-    </NavigationContainer>
-  );
+  // Return navigator without NavigationContainer (now handled in App.tsx)
+  return shouldShowMainApp ? <MainTabNavigator /> : <AuthScreen />;
 }
 
 const styles = StyleSheet.create({
