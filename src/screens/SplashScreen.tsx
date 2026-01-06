@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, Animated } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import { OTWLogo } from '../components';
@@ -7,7 +7,7 @@ const SplashScreen: React.FC = () => {
   const { theme } = useTheme();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
-  const scrollAnim = useRef(new Animated.Value(0)).current;
+  const textAnim = useRef(new Animated.Value(1)).current;
 
   // OTW phrases for the scrolling animation
   const otwPhrases = [
@@ -25,10 +25,14 @@ const SplashScreen: React.FC = () => {
     "OTW to the beach, sun and waves await",
   ];
 
-  const [currentPhraseIndex, setCurrentPhraseIndex] = React.useState(0);
+  // Start with a random phrase
+  const [currentPhrase, setCurrentPhrase] = useState(() => 
+    otwPhrases[Math.floor(Math.random() * otwPhrases.length)]
+  );
 
   useEffect(() => {
     console.log('🎬 SplashScreen: Rendered');
+    console.log('Initial phrase:', currentPhrase);
     
     // Start logo animations
     Animated.parallel([
@@ -45,38 +49,32 @@ const SplashScreen: React.FC = () => {
       }),
     ]).start();
 
-    // Start text scrolling animation - continuous and fluid
-    const startTextAnimation = () => {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(scrollAnim, {
-            toValue: 1,
-            duration: 2000, // Slower, more natural timing
-            useNativeDriver: true,
-          }),
-          Animated.timing(scrollAnim, {
-            toValue: 0,
-            duration: 0,
-            useNativeDriver: true,
-          }),
-        ]),
-        { iterations: -1 } // Infinite loop
-      ).start();
-    };
-
-    // Change phrase at regular intervals, independent of animation
+    // Change phrase every 1.5 seconds with fade animation
     const phraseInterval = setInterval(() => {
-      setCurrentPhraseIndex((prev) => (prev + 1) % otwPhrases.length);
-    }, 2000); // Change phrase every 2 seconds
-
-    // Start text animation after a short delay
-    const textTimer = setTimeout(startTextAnimation, 1500);
+      // Fade out current text
+      Animated.timing(textAnim, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start(() => {
+        // Change to new random phrase
+        const newPhrase = otwPhrases[Math.floor(Math.random() * otwPhrases.length)];
+        console.log('New phrase:', newPhrase);
+        setCurrentPhrase(newPhrase);
+        
+        // Fade in new text
+        Animated.timing(textAnim, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }).start();
+      });
+    }, 1500);
 
     return () => {
-      clearTimeout(textTimer);
       clearInterval(phraseInterval);
     };
-  }, [fadeAnim, scaleAnim, scrollAnim, otwPhrases.length]);
+  }, [fadeAnim, scaleAnim, textAnim, otwPhrases]);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -97,30 +95,17 @@ const SplashScreen: React.FC = () => {
           Welcome to OTW
         </Text>
         
-        <View style={styles.scrollingTextContainer}>
-          <Animated.Text 
-            style={[
-              styles.scrollingText, 
-              { 
-                color: theme.colors.textSecondary,
-                transform: [
-                  {
-                    translateY: scrollAnim.interpolate({
-                      inputRange: [0, 0.5, 1],
-                      outputRange: [20, 0, -20], // Smoother movement range
-                    }),
-                  },
-                ],
-                opacity: scrollAnim.interpolate({
-                  inputRange: [0, 0.2, 0.8, 1],
-                  outputRange: [0, 1, 1, 0], // Longer visible time
-                }),
-              }
-            ]}
-          >
-            {otwPhrases[currentPhraseIndex]}
-          </Animated.Text>
-        </View>
+        <Animated.Text 
+          style={[
+            styles.scrollingText, 
+            { 
+              color: theme.colors.textSecondary,
+              opacity: textAnim,
+            }
+          ]}
+        >
+          {currentPhrase}
+        </Animated.Text>
       </Animated.View>
       
       <ActivityIndicator 
@@ -146,6 +131,7 @@ const styles = StyleSheet.create({
   textContainer: {
     alignItems: 'center',
     marginBottom: 40,
+    minHeight: 80, // Ensure space for text
   },
   subtitle: {
     fontSize: 24,
@@ -153,23 +139,13 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlign: 'center',
   },
-  scrollingTextContainer: {
-    height: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden',
-  },
   scrollingText: {
     fontSize: 16,
     textAlign: 'center',
     fontStyle: 'italic',
     paddingHorizontal: 10,
     lineHeight: 22,
-  },
-  tagline: {
-    fontSize: 16,
-    textAlign: 'center',
-    opacity: 0.8,
+    minHeight: 44, // Ensure text has space
   },
   loader: {
     marginTop: 20,
