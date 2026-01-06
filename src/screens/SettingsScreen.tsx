@@ -299,6 +299,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
+    fontFamily: 'Poppins-Bold', // Primary font for headings
   },
   logoutHeaderButton: {
     padding: 8,
@@ -338,9 +339,11 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 4,
+    fontFamily: 'Poppins-SemiBold', // Primary font for headings
   },
   userEmail: {
     fontSize: 14,
+    fontFamily: 'Inter-Regular', // Secondary font for body text
   },
   sectionHeader: {
     fontSize: 16,
@@ -350,6 +353,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+    fontFamily: 'Poppins-SemiBold', // Primary font for headings
   },
   section: {
     marginHorizontal: 15,
@@ -386,9 +390,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     marginBottom: 2,
+    fontFamily: 'Inter-Medium', // Secondary font for UI elements
   },
   settingSubtitle: {
     fontSize: 14,
+    fontFamily: 'Inter-Regular', // Secondary font for body text
   },
   settingRight: {
     flexDirection: 'row',
@@ -405,6 +411,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#FF3B30',
     marginLeft: 15,
+    fontFamily: 'Inter-Medium', // Secondary font for UI elements
   },
   bottomSpacing: {
     height: 50,

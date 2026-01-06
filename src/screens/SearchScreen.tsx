@@ -181,6 +181,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 12,
     fontSize: 16,
+    fontFamily: 'Inter-Regular', // Secondary font for UI elements
   },
   clearButton: {
     padding: 5,
@@ -217,14 +218,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 4,
+    fontFamily: 'Poppins-SemiBold', // Primary font for headings
   },
   venueCategory: {
     fontSize: 14,
     marginBottom: 2,
+    fontFamily: 'Inter-Medium', // Secondary font for UI elements
   },
   venueLocation: {
     fontSize: 14,
     marginBottom: 4,
+    fontFamily: 'Inter-Regular', // Secondary font for body text
   },
   venueDetails: {
     flexDirection: 'row',
@@ -232,9 +236,11 @@ const styles = StyleSheet.create({
   },
   rating: {
     fontSize: 14,
+    fontFamily: 'Inter-Regular', // Secondary font for body text
   },
   distance: {
     fontSize: 14,
+    fontFamily: 'Inter-Regular', // Secondary font for body text
   },
   emptyContainer: {
     flex: 1,
@@ -246,9 +252,11 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 8,
+    fontFamily: 'Poppins-SemiBold', // Primary font for headings
   },
   emptySubtext: {
     fontSize: 14,
+    fontFamily: 'Inter-Regular', // Secondary font for body text
   },
   emptyListContainer: {
     flex: 1,

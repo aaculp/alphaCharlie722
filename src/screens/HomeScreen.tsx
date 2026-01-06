@@ -152,10 +152,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 5,
+    fontFamily: 'Poppins-SemiBold', // Primary font for headings
   },
   location: {
     fontSize: 14,
     marginBottom: 8,
+    fontFamily: 'Inter-Regular', // Secondary font for body text
   },
   ratingContainer: {
     flexDirection: 'row',
@@ -165,14 +167,17 @@ const styles = StyleSheet.create({
   rating: {
     fontSize: 14,
     marginRight: 8,
+    fontFamily: 'Inter-Medium', // Secondary font for UI elements
   },
   reviewCount: {
     fontSize: 12,
+    fontFamily: 'Inter-Regular', // Secondary font for body text
   },
   description: {
     fontSize: 14,
     lineHeight: 20,
     marginBottom: 8,
+    fontFamily: 'Inter-Regular', // Secondary font for body text
   },
   categoryContainer: {
     flexDirection: 'row',
@@ -185,10 +190,12 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 8,
     fontWeight: '500',
+    fontFamily: 'Inter-Medium', // Secondary font for UI elements
   },
   priceRange: {
     fontSize: 14,
     fontWeight: '600',
+    fontFamily: 'Inter-SemiBold', // Secondary font for emphasis
   },
   loadingContainer: {
     flex: 1,
@@ -197,6 +204,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 16,
+    fontFamily: 'Inter-Regular', // Secondary font for body text
   },
   emptyContainer: {
     flex: 1,
@@ -208,9 +216,11 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 8,
+    fontFamily: 'Poppins-SemiBold', // Primary font for headings
   },
   emptySubtext: {
     fontSize: 14,
+    fontFamily: 'Inter-Regular', // Secondary font for body text
   },
 });
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, Animated } from 'react-native';
+import { View, StyleSheet, ActivityIndicator, Animated } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import { OTWLogo } from '../components';
 
@@ -26,14 +26,14 @@ const SplashScreen: React.FC = () => {
   ];
 
   // Start with a random phrase
-  const [currentPhrase, setCurrentPhrase] = useState(() => 
+  const [currentPhrase, setCurrentPhrase] = useState(() =>
     otwPhrases[Math.floor(Math.random() * otwPhrases.length)]
   );
 
   useEffect(() => {
     console.log('🎬 SplashScreen: Rendered');
     console.log('Initial phrase:', currentPhrase);
-    
+
     // Start logo animations
     Animated.parallel([
       Animated.timing(fadeAnim, {
@@ -61,7 +61,7 @@ const SplashScreen: React.FC = () => {
         const newPhrase = otwPhrases[Math.floor(Math.random() * otwPhrases.length)];
         console.log('New phrase:', newPhrase);
         setCurrentPhrase(newPhrase);
-        
+
         // Fade in new text
         Animated.timing(textAnim, {
           toValue: 1,
@@ -78,7 +78,7 @@ const SplashScreen: React.FC = () => {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <Animated.View 
+      <Animated.View
         style={[
           styles.logoContainer,
           {
@@ -89,28 +89,25 @@ const SplashScreen: React.FC = () => {
       >
         <OTWLogo size={500} variant="full" />
       </Animated.View>
-      
+
       <Animated.View style={[styles.textContainer, { opacity: fadeAnim }]}>
-        <Text style={[styles.subtitle, { color: theme.colors.text }]}>
-          Welcome to OTW
-        </Text>
-        
-        <Animated.Text 
+        <Animated.Text
           style={[
-            styles.scrollingText, 
-            { 
+            styles.scrollingText,
+            {
               color: theme.colors.textSecondary,
               opacity: textAnim,
+              fontFamily: theme.fonts.secondary.regular, // Use Inter for body text
             }
           ]}
         >
           {currentPhrase}
         </Animated.Text>
       </Animated.View>
-      
-      <ActivityIndicator 
-        size="large" 
-        color={theme.colors.primary} 
+
+      <ActivityIndicator
+        size="large"
+        color={theme.colors.primary}
         style={styles.loader}
       />
     </View>
@@ -125,12 +122,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   logoContainer: {
-    marginBottom: 40,
     alignItems: 'center',
   },
   textContainer: {
     alignItems: 'center',
-    marginBottom: 40,
     minHeight: 80, // Ensure space for text
   },
   subtitle: {
@@ -143,7 +138,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
     fontStyle: 'italic',
-    paddingHorizontal: 10,
     lineHeight: 22,
     minHeight: 44, // Ensure text has space
   },

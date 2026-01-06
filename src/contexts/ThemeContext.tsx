@@ -23,6 +23,22 @@ export interface Theme {
     logoYellow: string;
     logoGreen: string;
   };
+  fonts: {
+    // Primary font family (Poppins) - for headings, branding, emphasis
+    primary: {
+      regular: string;
+      medium: string;
+      semiBold: string;
+      bold: string;
+    };
+    // Secondary font family (Inter) - for body text, UI elements
+    secondary: {
+      regular: string;
+      medium: string;
+      semiBold: string;
+      bold: string;
+    };
+  };
   spacing: {
     xs: number;
     sm: number;
@@ -58,6 +74,20 @@ const lightTheme: Theme = {
     logoYellow: '#F59E0B',
     logoGreen: '#059669',
   },
+  fonts: {
+    primary: {
+      regular: 'Poppins-Regular',
+      medium: 'Poppins-Medium',
+      semiBold: 'Poppins-SemiBold',
+      bold: 'Poppins-Bold',
+    },
+    secondary: {
+      regular: 'Inter-Regular',
+      medium: 'Inter-Medium',
+      semiBold: 'Inter-SemiBold',
+      bold: 'Inter-Bold',
+    },
+  },
   spacing: {
     xs: 4,
     sm: 8,
@@ -92,6 +122,20 @@ const darkTheme: Theme = {
     logoRed: '#DC2626',
     logoYellow: '#F59E0B',
     logoGreen: '#059669',
+  },
+  fonts: {
+    primary: {
+      regular: 'Poppins-Regular',
+      medium: 'Poppins-Medium',
+      semiBold: 'Poppins-SemiBold',
+      bold: 'Poppins-Bold',
+    },
+    secondary: {
+      regular: 'Inter-Regular',
+      medium: 'Inter-Medium',
+      semiBold: 'Inter-SemiBold',
+      bold: 'Inter-Bold',
+    },
   },
   spacing: {
     xs: 4,

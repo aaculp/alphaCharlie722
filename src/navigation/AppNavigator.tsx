@@ -55,6 +55,7 @@ function HomeStackNavigator() {
         headerTintColor: theme.colors.text,
         headerTitleStyle: {
           fontWeight: 'bold',
+          fontFamily: 'Poppins-SemiBold', // Primary font for headings
         },
         headerShadowVisible: true,
       }}
@@ -86,6 +87,7 @@ function SearchStackNavigator() {
         headerTintColor: theme.colors.text,
         headerTitleStyle: {
           fontWeight: 'bold',
+          fontFamily: 'Poppins-SemiBold', // Primary font for headings
         },
         headerShadowVisible: true,
       }}
@@ -139,6 +141,10 @@ function MainTabNavigator() {
           bottom: 0,
           left: 0,
           right: 0,
+        },
+        tabBarLabelStyle: {
+          fontFamily: 'Inter-Medium', // Secondary font for UI elements
+          fontSize: 12,
         },
         headerShown: false,
       })}
