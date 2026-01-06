@@ -9,7 +9,6 @@ import {
   Linking,
   ActivityIndicator,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, RouteProp } from '@react-navigation/native';
 import { SearchStackParamList, HomeStackParamList } from '../navigation/AppNavigator';
 import { useTheme } from '../contexts/ThemeContext';
@@ -194,22 +193,22 @@ const VenueDetailScreen: React.FC = () => {
 
   if (loading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
           <Text style={[styles.loadingText, { color: theme.colors.textSecondary }]}>Loading venue details...</Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   if (!venue) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <View style={styles.errorContainer}>
           <Text style={[styles.errorText, { color: theme.colors.textSecondary }]}>Venue not found</Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -231,7 +230,7 @@ const VenueDetailScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <ScrollView 
         ref={scrollViewRef}
         style={styles.scrollView} 
@@ -302,7 +301,7 @@ const VenueDetailScreen: React.FC = () => {
           )}
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 

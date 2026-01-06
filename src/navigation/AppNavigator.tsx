@@ -132,6 +132,8 @@ function MainTabNavigator() {
         tabBarStyle: {
           backgroundColor: theme.colors.surface,
           borderTopColor: theme.colors.border,
+          paddingBottom: 0,
+          height: undefined,
         },
         headerShown: false,
       })}
