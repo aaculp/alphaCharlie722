@@ -90,9 +90,6 @@ const HomeScreen: React.FC = () => {
   if (loading) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <View style={[styles.header, { backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.border }]}>
-          <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Feed</Text>
-        </View>
         <View style={styles.loadingContainer}>
           <Text style={[styles.loadingText, { color: theme.colors.textSecondary }]}>Loading venues...</Text>
         </View>
@@ -102,9 +99,6 @@ const HomeScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <View style={[styles.header, { backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.border }]}>
-        <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Feed</Text>
-      </View>
       <ScrollView 
         style={styles.scrollView} 
         showsVerticalScrollIndicator={false}
@@ -128,15 +122,6 @@ const HomeScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  header: {
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    borderBottomWidth: 1,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
   },
   scrollView: {
     flex: 1,
