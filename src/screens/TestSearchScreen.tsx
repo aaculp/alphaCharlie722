@@ -6,7 +6,6 @@ import {
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -21,10 +20,10 @@ const TestSearchScreen: React.FC = () => {
   ];
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <ScrollView style={styles.scrollView}>
         <View style={styles.header}>
-          <Text style={[styles.headerText, { color: theme.colors.text }]}>Test Search Screen</Text>
+          <Text style={[styles.headerText, { color: theme.colors.text }]}>Test Search Screen (No SafeAreaView)</Text>
           <TouchableOpacity 
             style={[styles.button, { backgroundColor: theme.colors.primary }]}
             onPress={() => navigation.goBack()}
@@ -42,14 +41,14 @@ const TestSearchScreen: React.FC = () => {
 
         <View style={styles.debugInfo}>
           <Text style={[styles.debugText, { color: theme.colors.textSecondary }]}>
-            Debug: Simple search screen in stack navigator
+            Debug: Using regular View (no SafeAreaView)
           </Text>
           <Text style={[styles.debugText, { color: theme.colors.textSecondary }]}>
-            Check for white bar at bottom
+            Check if white bar is gone at bottom
           </Text>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 
