@@ -291,7 +291,7 @@ export const ModernVenueCards: React.FC<{ venue: Venue }> = ({ venue }) => {
         {waitTimes.length > 0 && (
           <View style={[styles.modernCard, { backgroundColor: theme.colors.surface }]}>
             <View style={styles.modernCardHeader}>
-              <Text style={[styles.modernCardTitle, { color: theme.colors.text }]}>Wait Times</Text>
+              <Text style={[styles.modernCardTitle, { color: '#FF6B6B' }]}>Wait Times</Text>
               <View style={[styles.modernCardIcon, { backgroundColor: '#FF6B6B' + '20' }]}>
                 <Icon name="time-outline" size={20} color="#FF6B6B" />
               </View>
@@ -308,17 +308,18 @@ export const ModernVenueCards: React.FC<{ venue: Venue }> = ({ venue }) => {
           </View>
         )}
 
-        {/* Atmosphere Square - Structural & Stable */}
-        {atmosphereTags.length > 0 && (
+        {/* Combined Mood & Atmosphere Square */}
+        {(atmosphereTags.length > 0 || moodTags.length > 0) && (
           <View style={[styles.modernCard, { backgroundColor: theme.colors.surface }]}>
             <View style={styles.modernCardHeader}>
-              <Text style={[styles.modernCardTitle, { color: theme.colors.text }]}>Atmosphere</Text>
+              <Text style={[styles.modernCardTitle, { color: '#6B73FF' }]}>Mood</Text>
               <View style={[styles.modernCardIcon, { backgroundColor: '#6B73FF' + '20' }]}>
-                <Icon name="business-outline" size={20} color="#6B73FF" />
+                <Icon name="happy-outline" size={20} color="#6B73FF" />
               </View>
             </View>
             <View style={styles.modernCardContent}>
-              {atmosphereTags.slice(0, 3).map((tag, index) => {
+              {/* Show atmosphere tags first */}
+              {atmosphereTags.slice(0, 2).map((tag, index) => {
                 const getTagColor = (tag: string) => {
                   switch (tag.toLowerCase().trim()) {
                     case 'quiet': return '#6B73FF';
@@ -335,31 +336,15 @@ export const ModernVenueCards: React.FC<{ venue: Venue }> = ({ venue }) => {
                 };
                 const tagColor = getTagColor(tag);
                 return (
-                  <View key={index} style={[styles.modernChip, { backgroundColor: tagColor + '15', borderColor: tagColor + '30' }]}>
+                  <View key={`atm-${index}`} style={[styles.modernChip, { backgroundColor: tagColor + '15', borderColor: tagColor + '30' }]}>
                     <Text style={[styles.modernChipText, { color: tagColor }]}>
                       {tag}
                     </Text>
                   </View>
                 );
               })}
-            </View>
-          </View>
-        )}
-      </View>
-
-      {/* Second Row - 2x2 Grid */}
-      <View style={styles.modernCardsRow}>
-        {/* Mood Square - Current & Temporal */}
-        {moodTags.length > 0 && (
-          <View style={[styles.modernCard, { backgroundColor: theme.colors.surface }]}>
-            <View style={styles.modernCardHeader}>
-              <Text style={[styles.modernCardTitle, { color: theme.colors.text }]}>Mood</Text>
-              <View style={[styles.modernCardIcon, { backgroundColor: '#FF69B4' + '20' }]}>
-                <Icon name="pulse-outline" size={20} color="#FF69B4" />
-              </View>
-            </View>
-            <View style={styles.modernCardContent}>
-              {moodTags.slice(0, 3).map((mood, index) => {
+              {/* Then show mood tags */}
+              {moodTags.slice(0, atmosphereTags.length > 0 ? 1 : 3).map((mood, index) => {
                 const getMoodColor = (mood: string) => {
                   switch (mood.toLowerCase().trim()) {
                     case 'fresh start': return '#52C41A';
@@ -388,7 +373,7 @@ export const ModernVenueCards: React.FC<{ venue: Venue }> = ({ venue }) => {
                 };
                 const moodColor = getMoodColor(mood);
                 return (
-                  <View key={index} style={[styles.modernChip, { backgroundColor: moodColor + '15', borderColor: moodColor + '30' }]}>
+                  <View key={`mood-${index}`} style={[styles.modernChip, { backgroundColor: moodColor + '15', borderColor: moodColor + '30' }]}>
                     <Text style={[styles.modernChipText, { color: moodColor }]}>
                       {mood}
                     </Text>
@@ -398,12 +383,15 @@ export const ModernVenueCards: React.FC<{ venue: Venue }> = ({ venue }) => {
             </View>
           </View>
         )}
+      </View>
 
+      {/* Second Row - 2x2 Grid */}
+      <View style={styles.modernCardsRow}>
         {/* Popular Items Square */}
         {popularItems.length > 0 && (
           <View style={[styles.modernCard, { backgroundColor: theme.colors.surface }]}>
             <View style={styles.modernCardHeader}>
-              <Text style={[styles.modernCardTitle, { color: theme.colors.text }]}>Popular</Text>
+              <Text style={[styles.modernCardTitle, { color: '#FFD700' }]}>Popular</Text>
               <View style={[styles.modernCardIcon, { backgroundColor: '#FFD700' + '20' }]}>
                 <Icon name="star-outline" size={20} color="#FFD700" />
               </View>
@@ -419,28 +407,28 @@ export const ModernVenueCards: React.FC<{ venue: Venue }> = ({ venue }) => {
             </View>
           </View>
         )}
-      </View>
 
-      {/* Third Row - Full Width Amenities Card */}
-      {venue.amenities && venue.amenities.length > 0 && (
-        <View style={[styles.modernCardFullWidth, { backgroundColor: theme.colors.surface }]}>
-          <View style={styles.modernCardHeader}>
-            <Text style={[styles.modernCardTitle, { color: theme.colors.text }]}>Amenities</Text>
-            <View style={[styles.modernCardIcon, { backgroundColor: '#52C41A' + '20' }]}>
-              <Icon name="checkmark-circle-outline" size={20} color="#52C41A" />
+        {/* Amenities Square */}
+        {venue.amenities && venue.amenities.length > 0 && (
+          <View style={[styles.modernCard, { backgroundColor: theme.colors.surface }]}>
+            <View style={styles.modernCardHeader}>
+              <Text style={[styles.modernCardTitle, { color: '#52C41A' }]}>Amenities</Text>
+              <View style={[styles.modernCardIcon, { backgroundColor: '#52C41A' + '20' }]}>
+                <Icon name="checkmark-circle-outline" size={20} color="#52C41A" />
+              </View>
+            </View>
+            <View style={styles.modernCardContent}>
+              {venue.amenities.slice(0, 3).map((amenity: string, index: number) => (
+                <View key={index} style={[styles.modernChip, { backgroundColor: '#52C41A' + '15', borderColor: '#52C41A' + '30' }]}>
+                  <Text style={[styles.modernChipText, { color: '#52C41A' }]}>
+                    {amenity}
+                  </Text>
+                </View>
+              ))}
             </View>
           </View>
-          <View style={styles.modernCardContentFullWidth}>
-            {venue.amenities.slice(0, 6).map((amenity: string, index: number) => (
-              <View key={index} style={[styles.modernChip, { backgroundColor: '#52C41A' + '15', borderColor: '#52C41A' + '30' }]}>
-                <Text style={[styles.modernChipText, { color: '#52C41A' }]}>
-                  {amenity}
-                </Text>
-              </View>
-            ))}
-          </View>
-        </View>
-      )}
+        )}
+      </View>
     </View>
   );
 };

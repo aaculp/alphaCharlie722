@@ -99,6 +99,8 @@ export class UserFeedbackService {
   // Like/unlike a tag
   static async toggleTagLike(tagId: string, userId: string): Promise<{ liked: boolean; newCount: number }> {
     try {
+      console.log('Toggling like for tag:', tagId, 'user:', userId);
+      
       // Check if user has already liked this tag
       const { data: existingLike, error: checkError } = await supabase
         .from('tag_likes')
@@ -108,6 +110,7 @@ export class UserFeedbackService {
         .single();
 
       if (checkError && checkError.code !== 'PGRST116') {
+        console.error('Error checking existing like:', checkError);
         throw new Error(`Failed to check existing like: ${checkError.message}`);
       }
 
@@ -115,6 +118,7 @@ export class UserFeedbackService {
       let likeCountChange = 0;
 
       if (existingLike) {
+        console.log('Removing existing like:', existingLike.id);
         // Unlike - remove the like
         const { error: deleteError } = await supabase
           .from('tag_likes')
@@ -122,12 +126,14 @@ export class UserFeedbackService {
           .eq('id', existingLike.id);
 
         if (deleteError) {
+          console.error('Error deleting like:', deleteError);
           throw new Error(`Failed to remove like: ${deleteError.message}`);
         }
 
         liked = false;
         likeCountChange = -1;
       } else {
+        console.log('Adding new like');
         // Like - add the like
         const { error: insertError } = await supabase
           .from('tag_likes')
@@ -137,6 +143,7 @@ export class UserFeedbackService {
           });
 
         if (insertError) {
+          console.error('Error inserting like:', insertError);
           throw new Error(`Failed to add like: ${insertError.message}`);
         }
 
@@ -144,19 +151,36 @@ export class UserFeedbackService {
         likeCountChange = 1;
       }
 
+      // Get current like count and update it
+      const { data: currentTag, error: getCurrentError } = await supabase
+        .from('user_tags')
+        .select('like_count')
+        .eq('id', tagId)
+        .single();
+
+      if (getCurrentError) {
+        console.error('Error getting current tag:', getCurrentError);
+        throw new Error(`Failed to get current tag: ${getCurrentError.message}`);
+      }
+
+      const newCount = Math.max(0, currentTag.like_count + likeCountChange);
+
       // Update the like count on the tag
       const { data: updatedTag, error: updateError } = await supabase
         .from('user_tags')
         .update({
-          like_count: supabase.raw(`like_count + ${likeCountChange}`)
+          like_count: newCount
         })
         .eq('id', tagId)
         .select('like_count')
         .single();
 
       if (updateError) {
+        console.error('Error updating like count:', updateError);
         throw new Error(`Failed to update like count: ${updateError.message}`);
       }
+
+      console.log('Like toggle successful:', { liked, newCount: updatedTag.like_count });
 
       return {
         liked,

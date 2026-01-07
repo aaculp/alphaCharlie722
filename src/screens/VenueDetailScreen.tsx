@@ -258,11 +258,11 @@ const VenueDetailScreen: React.FC = () => {
           <Text style={[styles.description, { color: theme.colors.textSecondary }]}>{venue.description}</Text>
         </View>
 
-        {/* Modern Square Cards - TOP PRIORITY */}
-        <ModernVenueCards venue={venue} />
+        {/* Pulse Section - TOP PRIORITY */}
+        <UserFeedback venue={venue} />
 
-      {/* User Feedback Section - Only show if tables exist */}
-      <UserFeedback venue={venue} />
+        {/* Modern Square Cards */}
+        <ModernVenueCards venue={venue} />
 
         {/* Contact Information, Hours, and Amenities */}
         <View style={[styles.modernContentContainer, { backgroundColor: theme.colors.surface }]}>

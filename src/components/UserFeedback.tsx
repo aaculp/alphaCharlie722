@@ -7,13 +7,13 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
-  Animated,
   ScrollView,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import { UserFeedbackService, UserTag } from '../services/userFeedbackService';
+import PulseLikeButton from './PulseLikeButton';
 import type { Database } from '../lib/supabase';
 
 type Venue = Database['public']['Tables']['venues']['Row'];
@@ -25,63 +25,15 @@ interface UserFeedbackProps {
 interface TagItemProps {
   tag: UserTag;
   onLike: (tagId: string) => void;
-  onDelete?: (tagId: string) => void;
-  isOwner: boolean;
   isLiking: boolean;
 }
 
-const TagItem: React.FC<TagItemProps> = ({ tag, onLike, onDelete, isOwner, isLiking }) => {
+const TagItem: React.FC<TagItemProps> = ({ tag, onLike, isLiking }) => {
   const { theme } = useTheme();
-  const [likeAnimation] = useState(new Animated.Value(1));
-  const [fireAnimation] = useState(new Animated.Value(0));
 
   const handleLike = () => {
     if (isLiking) return;
-
-    // Animate the like button
-    Animated.sequence([
-      Animated.timing(likeAnimation, {
-        toValue: 1.3,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(likeAnimation, {
-        toValue: 1,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-    ]).start();
-
-    // Show fire animation if getting liked
-    if (!tag.user_has_liked) {
-      Animated.sequence([
-        Animated.timing(fireAnimation, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(fireAnimation, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    }
-
     onLike(tag.id);
-  };
-
-  const handleDelete = () => {
-    if (!onDelete) return;
-    
-    Alert.alert(
-      'Delete Tag',
-      'Are you sure you want to delete this tag?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: () => onDelete(tag.id) },
-      ]
-    );
   };
 
   const getTagColor = () => {
@@ -91,72 +43,45 @@ const TagItem: React.FC<TagItemProps> = ({ tag, onLike, onDelete, isOwner, isLik
     return theme.colors.primary; // Default
   };
 
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) {
+      const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+      return diffInMinutes <= 1 ? 'now' : `${diffInMinutes}m`;
+    } else if (diffInHours < 24) {
+      return `${diffInHours}h`;
+    } else {
+      const diffInDays = Math.floor(diffInHours / 24);
+      return diffInDays === 1 ? '1d' : `${diffInDays}d`;
+    }
+  };
+
   const tagColor = getTagColor();
 
   return (
-    <View style={[styles.tagItem, { backgroundColor: theme.colors.surface }]}>
-      <View style={[styles.tagContent, { borderColor: tagColor + '30' }]}>
-        <Text style={[styles.tagText, { color: theme.colors.text }]}>
+    <View style={[styles.tagItemHorizontal, { backgroundColor: theme.colors.surface }]}>
+      <View style={[styles.tagContentHorizontal, { borderColor: tagColor + '30' }]}>
+        {/* Header - Pulse Text */}
+        <Text style={[styles.tagTextHorizontal, { color: theme.colors.text }]}>
           {tag.tag_text}
         </Text>
         
-        <View style={styles.tagActions}>
-          {/* Fire animation overlay */}
-          <Animated.View 
-            style={[
-              styles.fireAnimation,
-              {
-                opacity: fireAnimation,
-                transform: [
-                  {
-                    scale: fireAnimation.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [0.5, 1.5],
-                    }),
-                  },
-                ],
-              },
-            ]}
-          >
-            <Text style={styles.fireEmoji}>🔥</Text>
-          </Animated.View>
-
-          {/* Like button */}
-          <TouchableOpacity
-            style={[
-              styles.likeButton,
-              { 
-                backgroundColor: tag.user_has_liked ? tagColor + '20' : 'transparent',
-                borderColor: tagColor + '40',
-              }
-            ]}
+        {/* Bottom Row - Date and Like Icon */}
+        <View style={styles.bottomRow}>
+          <Text style={[styles.dateText, { color: theme.colors.textSecondary }]}>
+            {formatDate(tag.created_at)}
+          </Text>
+          
+          <PulseLikeButton
+            likeCount={tag.like_count}
+            userHasLiked={tag.user_has_liked || false}
             onPress={handleLike}
             disabled={isLiking}
-          >
-            <Animated.View style={{ transform: [{ scale: likeAnimation }] }}>
-              <Icon
-                name={tag.user_has_liked ? 'heart' : 'heart-outline'}
-                size={16}
-                color={tag.user_has_liked ? tagColor : theme.colors.textSecondary}
-              />
-            </Animated.View>
-            <Text style={[
-              styles.likeCount,
-              { color: tag.user_has_liked ? tagColor : theme.colors.textSecondary }
-            ]}>
-              {tag.like_count}
-            </Text>
-          </TouchableOpacity>
-
-          {/* Delete button for tag owner */}
-          {isOwner && onDelete && (
-            <TouchableOpacity
-              style={[styles.deleteButton, { borderColor: theme.colors.error + '40' }]}
-              onPress={handleDelete}
-            >
-              <Icon name="trash-outline" size={14} color={theme.colors.error} />
-            </TouchableOpacity>
-          )}
+            size="small"
+          />
         </View>
       </View>
     </View>
@@ -254,10 +179,13 @@ const UserFeedback: React.FC<UserFeedbackProps> = ({ venue }) => {
 
     if (likingTags.has(tagId)) return;
 
+    console.log('Attempting to like tag:', tagId, 'by user:', user.id);
+
     try {
       setLikingTags(prev => new Set(prev).add(tagId));
       
       const result = await UserFeedbackService.toggleTagLike(tagId, user.id);
+      console.log('Like result:', result);
       
       setTags(prev => prev.map(tag => 
         tag.id === tagId 
@@ -266,7 +194,7 @@ const UserFeedback: React.FC<UserFeedbackProps> = ({ venue }) => {
       ));
     } catch (error) {
       console.error('Error liking tag:', error);
-      Alert.alert('Error', 'Failed to update like');
+      Alert.alert('Error', 'Failed to update like. Please check if database is set up.');
     } finally {
       setLikingTags(prev => {
         const newSet = new Set(prev);
@@ -297,12 +225,12 @@ const UserFeedback: React.FC<UserFeedbackProps> = ({ venue }) => {
     return (
       <View style={[styles.container, { backgroundColor: theme.colors.surface }]}>
         <View style={styles.header}>
-          <Text style={[styles.title, { color: theme.colors.text }]}>Community Tags</Text>
+          <Text style={[styles.title, { color: theme.colors.text }]}>Pulse</Text>
         </View>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="small" color={theme.colors.primary} />
           <Text style={[styles.loadingText, { color: theme.colors.textSecondary }]}>
-            Loading community feedback...
+            Loading pulse...
           </Text>
         </View>
       </View>
@@ -313,8 +241,8 @@ const UserFeedback: React.FC<UserFeedbackProps> = ({ venue }) => {
     <View style={[styles.container, { backgroundColor: theme.colors.surface }]}>
       <View style={styles.header}>
         <View style={styles.titleContainer}>
-          <Icon name="people-outline" size={24} color={theme.colors.primary} />
-          <Text style={[styles.title, { color: theme.colors.text }]}>Community Tags</Text>
+          <Icon name="pulse-outline" size={24} color={theme.colors.primary} />
+          <Text style={[styles.title, { color: theme.colors.text }]}>Pulse</Text>
         </View>
         
         {user && (
@@ -340,7 +268,7 @@ const UserFeedback: React.FC<UserFeedbackProps> = ({ venue }) => {
               borderColor: theme.colors.border,
               backgroundColor: theme.colors.background 
             }]}
-            placeholder="Add a community tag..."
+            placeholder="Share the pulse..."
             placeholderTextColor={theme.colors.textSecondary}
             value={newTagText}
             onChangeText={setNewTagText}
@@ -372,29 +300,28 @@ const UserFeedback: React.FC<UserFeedbackProps> = ({ venue }) => {
       {/* Tags list */}
       {tags.length > 0 ? (
         <ScrollView 
-          style={styles.tagsList}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.tagsContent}
+          horizontal
+          style={styles.tagsListHorizontal}
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.tagsContentHorizontal}
         >
           {tags.map((tag) => (
             <TagItem
               key={tag.id}
               tag={tag}
               onLike={handleLikeTag}
-              onDelete={user?.id === tag.user_id ? handleDeleteTag : undefined}
-              isOwner={user?.id === tag.user_id}
               isLiking={likingTags.has(tag.id)}
             />
           ))}
         </ScrollView>
       ) : (
         <View style={styles.emptyState}>
-          <Icon name="chatbubbles-outline" size={48} color={theme.colors.textSecondary} />
+          <Icon name="pulse-outline" size={48} color={theme.colors.textSecondary} />
           <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>
-            No community tags yet
+            No vibes yet
           </Text>
           <Text style={[styles.emptySubtitle, { color: theme.colors.textSecondary }]}>
-            {user ? 'Be the first to add a tag!' : 'Login to add community tags'}
+            {user ? 'Be the first to share the pulse!' : 'Login to share the pulse'}
           </Text>
         </View>
       )}
@@ -484,6 +411,13 @@ const styles = StyleSheet.create({
   tagsContent: {
     gap: 8,
   },
+  tagsListHorizontal: {
+    maxHeight: 120,
+  },
+  tagsContentHorizontal: {
+    paddingRight: 20,
+    gap: 12,
+  },
   tagItem: {
     borderRadius: 12,
     shadowColor: '#000',
@@ -495,6 +429,18 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
+  tagItemHorizontal: {
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
+    minWidth: 140,
+  },
   tagContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -503,11 +449,37 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
   },
+  tagContentHorizontal: {
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+    alignItems: 'stretch',
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    minHeight: 90,
+  },
   tagText: {
     fontSize: 16,
     fontFamily: 'Inter-Medium',
     flex: 1,
     marginRight: 12,
+  },
+  tagTextHorizontal: {
+    fontSize: 18,
+    fontFamily: 'Inter-SemiBold',
+    lineHeight: 24,
+    marginBottom: 12,
+    textAlign: 'left',
+  },
+  bottomRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  dateText: {
+    fontSize: 12,
+    fontFamily: 'Inter-Regular',
+    opacity: 0.7,
   },
   tagActions: {
     flexDirection: 'row',
@@ -515,27 +487,11 @@ const styles = StyleSheet.create({
     gap: 8,
     position: 'relative',
   },
-  fireAnimation: {
-    position: 'absolute',
-    right: 40,
-    top: -10,
-    zIndex: 10,
-  },
-  fireEmoji: {
-    fontSize: 20,
-  },
-  likeButton: {
+  tagActionsHorizontal: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 16,
-    borderWidth: 1,
-    gap: 4,
-  },
-  likeCount: {
-    fontSize: 14,
-    fontFamily: 'Inter-SemiBold',
+    justifyContent: 'center',
+    position: 'relative',
   },
   deleteButton: {
     width: 28,

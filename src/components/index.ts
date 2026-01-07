@@ -11,3 +11,4 @@ export {
   CompactParking
 } from './VenueInfoComponents';
 export { default as UserFeedback } from './UserFeedback';
+export { default as PulseLikeButton } from './PulseLikeButton';
