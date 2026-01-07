@@ -7,7 +7,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 
 // Import screens
-import { HomeScreen, SearchScreen, VenueDetailScreen, SettingsScreen, SplashScreen } from '../screens';
+import { HomeScreen, SearchScreen, VenueDetailScreen, SettingsScreen, SplashScreen, FavoritesScreen } from '../screens';
 import AuthScreen from '../screens/AuthScreen';
 
 // Type definitions
@@ -15,6 +15,11 @@ export type RootTabParamList = {
   Home: undefined;
   Search: undefined;
   Settings: undefined;
+};
+
+export type SettingsStackParamList = {
+  SettingsList: undefined;
+  Favorites: undefined;
 };
 
 export type HomeStackParamList = {
@@ -30,6 +35,7 @@ export type SearchStackParamList = {
 const Tab = createBottomTabNavigator<RootTabParamList>();
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
 const SearchStack = createNativeStackNavigator<SearchStackParamList>();
+const SettingsStack = createNativeStackNavigator<SettingsStackParamList>();
 
 // Loading component
 const LoadingScreen = () => {
@@ -63,7 +69,10 @@ function HomeStackNavigator() {
       <HomeStack.Screen 
         name="HomeList" 
         component={HomeScreen}
-        options={{ title: 'Feed' }}
+        options={{ 
+          title: 'Feed',
+          headerTitleAlign: 'center',
+        }}
       />
       <HomeStack.Screen 
         name="VenueDetail" 
@@ -103,6 +112,38 @@ function SearchStackNavigator() {
         options={({ route }) => ({ title: route.params.venueName })}
       />
     </SearchStack.Navigator>
+  );
+}
+
+// Settings Stack Navigator
+function SettingsStackNavigator() {
+  const { theme } = useTheme();
+  
+  return (
+    <SettingsStack.Navigator
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: theme.colors.surface,
+        },
+        headerTintColor: theme.colors.text,
+        headerTitleStyle: {
+          fontWeight: 'bold',
+          fontFamily: 'Poppins-SemiBold', // Primary font for headings
+        },
+        headerShadowVisible: true,
+      }}
+    >
+      <SettingsStack.Screen 
+        name="SettingsList" 
+        component={SettingsScreen}
+        options={{ headerShown: false }}
+      />
+      <SettingsStack.Screen 
+        name="Favorites" 
+        component={FavoritesScreen}
+        options={{ headerShown: false }}
+      />
+    </SettingsStack.Navigator>
   );
 }
 
@@ -161,7 +202,7 @@ function MainTabNavigator() {
       />
       <Tab.Screen 
         name="Settings" 
-        component={SettingsScreen}
+        component={SettingsStackNavigator}
         options={{ title: 'Settings' }}
       />
     </Tab.Navigator>

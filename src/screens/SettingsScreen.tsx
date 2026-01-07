@@ -9,6 +9,7 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -19,6 +20,7 @@ const SettingsScreen: React.FC = () => {
   const [experimentalFeaturesEnabled, setExperimentalFeaturesEnabled] = useState(false);
   const { signOut, user } = useAuth();
   const { theme, isDark, themeMode, setThemeMode } = useTheme();
+  const navigation = useNavigation<any>();
 
   const handleThemeChange = (mode: 'light' | 'dark' | 'system') => {
     setThemeMode(mode);
@@ -132,6 +134,12 @@ const SettingsScreen: React.FC = () => {
             title="Edit Profile"
             subtitle="Update your personal information"
             onPress={() => console.log('Edit profile pressed')}
+          />
+          <SettingItem
+            icon="heart"
+            title="My Favorites"
+            subtitle="View your saved venues"
+            onPress={() => navigation.navigate('Favorites')}
           />
           <SettingItem
             icon="notifications"
