@@ -259,4 +259,44 @@ export class CheckInService {
       return null;
     }
   }
+
+  // Get user's current check-in with venue name
+  static async getUserCurrentCheckInWithVenue(userId: string): Promise<{ checkIn: CheckIn; venueName: string } | null> {
+    try {
+      const { data, error } = await supabase
+        .from('check_ins')
+        .select(`
+          *,
+          venues!inner(name)
+        `)
+        .eq('user_id', userId)
+        .eq('is_active', true)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // No active check-in found
+          return null;
+        }
+        throw new Error(`Failed to get current check-in with venue: ${error.message}`);
+      }
+
+      return {
+        checkIn: {
+          id: data.id,
+          venue_id: data.venue_id,
+          user_id: data.user_id,
+          checked_in_at: data.checked_in_at,
+          checked_out_at: data.checked_out_at,
+          is_active: data.is_active,
+          created_at: data.created_at,
+          updated_at: data.updated_at
+        },
+        venueName: data.venues.name
+      };
+    } catch (error) {
+      console.error('Error getting current check-in with venue:', error);
+      return null;
+    }
+  }
 }

@@ -118,12 +118,12 @@ const CheckInButton: React.FC<CheckInButtonProps> = ({
     if (!user) return;
     
     try {
-      const currentCheckIn = await CheckInService.getUserCurrentCheckIn(user.id);
-      if (currentCheckIn) {
-        // User has an active check-in somewhere else, we'll need the venue name
-        // For now, we'll just indicate they have an active check-in
-        setCurrentVenue('another venue');
+      const currentCheckInData = await CheckInService.getUserCurrentCheckInWithVenue(user.id);
+      if (currentCheckInData && currentCheckInData.checkIn.venue_id !== venueId) {
+        // User has an active check-in at a DIFFERENT venue
+        setCurrentVenue(currentCheckInData.venueName);
       } else {
+        // User is either not checked in anywhere, or already checked into this venue
         setCurrentVenue(undefined);
       }
     } catch (error) {
