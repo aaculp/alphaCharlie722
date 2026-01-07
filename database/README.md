@@ -13,7 +13,10 @@ Run these scripts in your Supabase SQL Editor in the following order:
 ### 2. Check-in System
 - **`checkin-database-setup.sql`** - Creates check_ins table for venue check-in/out functionality
 
-### 3. Test Data (Optional)
+### 3. Venue Enhancements (Optional)
+- **`add-max-capacity.sql`** - Adds max_capacity column to venues table for activity level calculation
+
+### 4. Test Data (Optional)
 - **`pulse-test-data-fixed.sql`** - Adds sample Pulse tags and likes for testing
 - **`simulate-checkins.sql`** - Generates random check-ins for all venues for testing
 
@@ -23,6 +26,7 @@ Run these scripts in your Supabase SQL Editor in the following order:
 - **user_tags**: Community-generated tags for venues with like counts
 - **tag_likes**: Individual user likes for tags (many-to-many relationship)
 - **check_ins**: User check-ins/check-outs at venues with timestamps
+- **venues**: Enhanced with max_capacity for activity level calculation
 
 ### Security
 All tables use Row Level Security (RLS) with policies that:

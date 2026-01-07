@@ -47,6 +47,7 @@ export interface Database {
             details?: string; // Additional parking details
             cost?: string; // "Free", "$5/hour", "Validated"
           } | null;
+          max_capacity: number | null; // Maximum capacity for activity level calculation
           created_at: string;
           updated_at: string;
         };
@@ -75,6 +76,7 @@ export interface Database {
             details?: string;
             cost?: string;
           } | null;
+          max_capacity?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -103,6 +105,7 @@ export interface Database {
             details?: string;
             cost?: string;
           } | null;
+          max_capacity?: number | null;
           created_at?: string;
           updated_at?: string;
         };

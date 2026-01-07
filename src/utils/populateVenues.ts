@@ -14,6 +14,7 @@ const sampleVenues = [
     price_range: "$",
     phone: "(555) 123-4567",
     website: "https://coffecollective.com",
+    max_capacity: 45,
     hours: {
       monday: "7:00 AM - 8:00 PM",
       tuesday: "7:00 AM - 8:00 PM",
@@ -37,6 +38,7 @@ const sampleVenues = [
     price_range: "$$$",
     phone: "(555) 234-5678",
     website: "https://sunsetgrill.com",
+    max_capacity: 120,
     hours: {
       monday: "Closed",
       tuesday: "5:00 PM - 10:00 PM",
@@ -60,6 +62,7 @@ const sampleVenues = [
     price_range: "$$",
     phone: "(555) 567-8901",
     website: "https://tonyspizza.com",
+    max_capacity: 80,
     hours: {
       monday: "11:00 AM - 10:00 PM",
       tuesday: "11:00 AM - 10:00 PM",
@@ -83,6 +86,7 @@ const sampleVenues = [
     price_range: "$$",
     phone: "(555) 789-0123",
     website: "https://craftbeergarden.com",
+    max_capacity: 150,
     hours: {
       monday: "Closed",
       tuesday: "4:00 PM - 10:00 PM",
@@ -106,6 +110,7 @@ const sampleVenues = [
     price_range: "$$$",
     phone: "(555) 890-1234",
     website: "https://freshmarketbistro.com",
+    max_capacity: 65,
     hours: {
       monday: "Closed",
       tuesday: "5:00 PM - 9:00 PM",
@@ -129,6 +134,7 @@ const sampleVenues = [
     price_range: "$$",
     phone: "(555) 111-2222",
     website: "https://touchdownsportsbar.com",
+    max_capacity: 200,
     hours: {
       monday: "11:00 AM - 12:00 AM",
       tuesday: "11:00 AM - 12:00 AM",

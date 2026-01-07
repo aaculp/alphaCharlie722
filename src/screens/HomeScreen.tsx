@@ -20,7 +20,8 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import { HomeStackParamList } from '../navigation/AppNavigator';
 import { populateVenuesDatabase } from '../utils/populateVenues';
-import { CompactAtmosphere, CompactWaitTimes } from '../components';
+import { getActivityLevel } from '../utils/activityLevel';
+import { CompactAtmosphere } from '../components';
 import CheckInButton from '../components/CheckInButton';
 import type { Database } from '../lib/supabase';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -186,19 +187,20 @@ const HomeScreen: React.FC = () => {
           {/* Enhanced Information Preview */}
           <CompactAtmosphere venue={item} maxTags={1} />
           
-          {/* Amenities Chips */}
-          {item.amenities && item.amenities.length > 0 && (
-            <View style={styles.amenitiesPreview}>
-              {item.amenities.slice(0, 2).map((amenity: string, index: number) => (
-                <View key={index} style={[styles.amenityChip, { backgroundColor: theme.colors.primary + '15', borderColor: theme.colors.primary + '30' }]}>
-                  <Text style={[styles.amenityChipText, { color: theme.colors.primary }]}>{amenity}</Text>
-                </View>
-              ))}
-              {item.amenities.length > 2 && (
-                <Text style={[styles.moreAmenitiesText, { color: theme.colors.textSecondary }]}>
-                  +{item.amenities.length - 2}
-                </Text>
-              )}
+          {/* Activity Level Chip */}
+          {item.max_capacity && venueCheckInStats && (
+            <View style={styles.activityContainer}>
+              {(() => {
+                const activityLevel = getActivityLevel(venueCheckInStats.active_checkins, item.max_capacity);
+                return (
+                  <View style={[styles.activityChip, { backgroundColor: activityLevel.color + '20', borderColor: activityLevel.color + '40' }]}>
+                    <Text style={styles.activityEmoji}>{activityLevel.emoji}</Text>
+                    <Text style={[styles.activityText, { color: activityLevel.color }]}>
+                      {activityLevel.level}
+                    </Text>
+                  </View>
+                );
+              })()}
             </View>
           )}
           
@@ -411,29 +413,27 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Regular',
     fontStyle: 'italic',
   },
-  amenitiesPreview: {
+  activityContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 6,
-    flexWrap: 'wrap',
   },
-  amenityChip: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
+  activityChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
     borderWidth: 1,
+  },
+  activityEmoji: {
+    fontSize: 12,
     marginRight: 4,
-    marginBottom: 2,
   },
-  amenityChipText: {
-    fontSize: 9,
-    fontFamily: 'Inter-Medium',
-  },
-  moreAmenitiesText: {
-    fontSize: 9,
-    fontFamily: 'Inter-Regular',
-    fontStyle: 'italic',
-    marginLeft: 2,
+  activityText: {
+    fontSize: 10,
+    fontWeight: '600',
+    fontFamily: 'Inter-SemiBold',
   },
   checkInContainer: {
     marginTop: 8,
