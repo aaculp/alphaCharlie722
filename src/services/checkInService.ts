@@ -18,6 +18,7 @@ export interface VenueCheckInStats {
   recent_checkins: number; // Last 24 hours
   user_is_checked_in: boolean;
   user_checkin_id?: string;
+  user_checkin_time?: string; // ISO string of when user checked in
 }
 
 export class CheckInService {
@@ -125,12 +126,13 @@ export class CheckInService {
 
       let userIsCheckedIn = false;
       let userCheckInId: string | undefined;
+      let userCheckInTime: string | undefined;
 
       // Check if current user is checked in
       if (userId) {
         const { data: userCheckIn, error: userError } = await supabase
           .from('check_ins')
-          .select('id')
+          .select('id, checked_in_at')
           .eq('venue_id', venueId)
           .eq('user_id', userId)
           .eq('is_active', true)
@@ -139,6 +141,7 @@ export class CheckInService {
         if (!userError && userCheckIn) {
           userIsCheckedIn = true;
           userCheckInId = userCheckIn.id;
+          userCheckInTime = userCheckIn.checked_in_at;
         }
       }
 
@@ -147,7 +150,8 @@ export class CheckInService {
         active_checkins: activeCheckIns?.length || 0,
         recent_checkins: recentCheckIns?.length || 0,
         user_is_checked_in: userIsCheckedIn,
-        user_checkin_id: userCheckInId
+        user_checkin_id: userCheckInId,
+        user_checkin_time: userCheckInTime
       };
     } catch (error) {
       console.error('Error getting venue check-in stats:', error);
@@ -184,29 +188,34 @@ export class CheckInService {
       });
 
       // Get user's active check-ins if logged in
-      let userCheckIns: { [key: string]: string } = {};
+      let userCheckIns: { [key: string]: { id: string; time: string } } = {};
       if (userId) {
         const { data: userActiveCheckIns, error: userError } = await supabase
           .from('check_ins')
-          .select('id, venue_id')
+          .select('id, venue_id, checked_in_at')
           .eq('user_id', userId)
           .eq('is_active', true);
 
         if (!userError && userActiveCheckIns) {
           userActiveCheckIns.forEach(checkIn => {
-            userCheckIns[checkIn.venue_id] = checkIn.id;
+            userCheckIns[checkIn.venue_id] = {
+              id: checkIn.id,
+              time: checkIn.checked_in_at
+            };
           });
         }
       }
 
       // Create stats for each venue
       venueIds.forEach(venueId => {
+        const userCheckIn = userCheckIns[venueId];
         statsMap.set(venueId, {
           venue_id: venueId,
           active_checkins: activeCounts[venueId] || 0,
           recent_checkins: 0, // Skip recent count for performance in feed
-          user_is_checked_in: !!userCheckIns[venueId],
-          user_checkin_id: userCheckIns[venueId]
+          user_is_checked_in: !!userCheckIn,
+          user_checkin_id: userCheckIn?.id,
+          user_checkin_time: userCheckIn?.time
         });
       });
 

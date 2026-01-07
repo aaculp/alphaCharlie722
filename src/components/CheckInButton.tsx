@@ -19,9 +19,11 @@ interface CheckInButtonProps {
   venueImage?: string;
   isCheckedIn: boolean;
   checkInId?: string;
+  checkInTime?: string; // ISO string of when user checked in
   activeCheckIns: number;
   onCheckInChange: (isCheckedIn: boolean, newCount: number) => void;
   size?: 'small' | 'medium' | 'large';
+  showModalForCheckout?: boolean; // Option to show modal for checkout
 }
 
 const CheckInButton: React.FC<CheckInButtonProps> = ({
@@ -30,14 +32,17 @@ const CheckInButton: React.FC<CheckInButtonProps> = ({
   venueImage,
   isCheckedIn,
   checkInId,
+  checkInTime,
   activeCheckIns,
   onCheckInChange,
-  size = 'medium'
+  size = 'medium',
+  showModalForCheckout = false
 }) => {
   const { theme } = useTheme();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [modalMode, setModalMode] = useState<'checkin' | 'checkout'>('checkin');
   const [currentVenue, setCurrentVenue] = useState<string | undefined>();
 
   const sizeConfig = {
@@ -63,6 +68,28 @@ const CheckInButton: React.FC<CheckInButtonProps> = ({
 
   const config = sizeConfig[size];
 
+  const getCheckInDuration = (): string | undefined => {
+    if (!checkInTime) return undefined;
+    
+    const checkInDate = new Date(checkInTime);
+    const now = new Date();
+    const diffMs = now.getTime() - checkInDate.getTime();
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMinutes / 60);
+    
+    if (diffHours >= 1) {
+      const remainingMinutes = diffMinutes % 60;
+      if (remainingMinutes === 0) {
+        return `${diffHours} hour${diffHours > 1 ? 's' : ''}`;
+      }
+      return `${diffHours}h ${remainingMinutes}m`;
+    } else if (diffMinutes >= 1) {
+      return `${diffMinutes} minute${diffMinutes > 1 ? 's' : ''}`;
+    } else {
+      return 'just now';
+    }
+  };
+
   const handleCheckInToggle = async () => {
     if (!user) {
       Alert.alert('Login Required', 'Please log in to check into venues.');
@@ -72,11 +99,17 @@ const CheckInButton: React.FC<CheckInButtonProps> = ({
     if (loading) return;
 
     if (isCheckedIn && checkInId) {
-      // Direct check out without modal
-      await performCheckOut();
+      // Check out - show modal if requested, otherwise direct checkout
+      if (showModalForCheckout) {
+        setModalMode('checkout');
+        setShowModal(true);
+      } else {
+        await performCheckOut();
+      }
     } else {
-      // Show modal for check in
+      // Check in - always show modal
       await checkForCurrentVenue();
+      setModalMode('checkin');
       setShowModal(true);
     }
   };
@@ -212,12 +245,14 @@ const CheckInButton: React.FC<CheckInButtonProps> = ({
       <CheckInModal
         visible={showModal}
         onClose={() => setShowModal(false)}
-        onConfirm={performCheckIn}
+        onConfirm={modalMode === 'checkin' ? performCheckIn : performCheckOut}
         venueName={venueName}
         venueImage={venueImage}
-        currentVenue={currentVenue}
+        currentVenue={modalMode === 'checkin' ? currentVenue : undefined}
         activeCheckIns={activeCheckIns}
         loading={loading}
+        mode={modalMode}
+        checkInDuration={modalMode === 'checkout' ? getCheckInDuration() : undefined}
       />
     </>
   );

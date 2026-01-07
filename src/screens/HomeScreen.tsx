@@ -219,9 +219,11 @@ const HomeScreen: React.FC = () => {
                 venueImage={item.image_url || undefined}
                 isCheckedIn={venueCheckInStats.user_is_checked_in}
                 checkInId={venueCheckInStats.user_checkin_id}
+                checkInTime={venueCheckInStats.user_checkin_time}
                 activeCheckIns={venueCheckInStats.active_checkins}
                 onCheckInChange={(isCheckedIn, newCount) => handleCheckInChange(item.id, isCheckedIn, newCount)}
                 size="small"
+                showModalForCheckout={true}
               />
             </View>
           )}

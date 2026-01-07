@@ -20,6 +20,8 @@ interface CheckInModalProps {
   currentVenue?: string;
   activeCheckIns: number;
   loading?: boolean;
+  mode: 'checkin' | 'checkout';
+  checkInDuration?: string; // For checkout mode
 }
 
 const CheckInModal: React.FC<CheckInModalProps> = ({
@@ -30,7 +32,9 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
   venueImage,
   currentVenue,
   activeCheckIns,
-  loading = false
+  loading = false,
+  mode,
+  checkInDuration
 }) => {
   const { theme } = useTheme();
 
@@ -69,16 +73,30 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
 
           {/* Content */}
           <View style={styles.content}>
-            <View style={styles.iconContainer}>
-              <Icon name="location" size={32} color={theme.colors.primary} />
+            <View style={[styles.iconContainer, { backgroundColor: mode === 'checkin' ? '#4CAF50' + '20' : '#FF6B6B' + '20' }]}>
+              <Icon 
+                name={mode === 'checkin' ? 'location' : 'exit-outline'} 
+                size={32} 
+                color={mode === 'checkin' ? theme.colors.primary : '#FF6B6B'} 
+              />
             </View>
             
             <Text style={[styles.title, { color: theme.colors.text }]}>
-              Check into {venueName}?
+              {mode === 'checkin' ? `Check into ${venueName}?` : `Check out of ${venueName}?`}
             </Text>
 
-            {/* Current venue warning */}
-            {currentVenue && (
+            {/* Check-in duration for checkout */}
+            {mode === 'checkout' && checkInDuration && (
+              <View style={styles.durationContainer}>
+                <Icon name="time-outline" size={16} color={theme.colors.primary} />
+                <Text style={[styles.durationText, { color: theme.colors.text }]}>
+                  You've been here for {checkInDuration}
+                </Text>
+              </View>
+            )}
+
+            {/* Current venue warning for check-in */}
+            {mode === 'checkin' && currentVenue && (
               <View style={[styles.warningContainer, { backgroundColor: '#FFD700' + '20', borderColor: '#FFD700' + '40' }]}>
                 <Icon name="warning-outline" size={16} color="#FFD700" />
                 <Text style={[styles.warningText, { color: '#B8860B' }]}>
@@ -91,9 +109,14 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
             <View style={styles.crowdInfo}>
               <Icon name={crowdLevel.icon} size={20} color={crowdLevel.color} />
               <Text style={[styles.crowdText, { color: theme.colors.text }]}>
-                {activeCheckIns === 0 ? 'Be the first to check in!' : 
-                 activeCheckIns === 1 ? '1 person here now' :
-                 `${activeCheckIns} people here now`}
+                {mode === 'checkin' ? (
+                  activeCheckIns === 0 ? 'Be the first to check in!' : 
+                  activeCheckIns === 1 ? '1 person here now' :
+                  `${activeCheckIns} people here now`
+                ) : (
+                  activeCheckIns <= 1 ? 'You\'re the only one here' :
+                  `${activeCheckIns - 1} others will remain here`
+                )}
               </Text>
               <View style={[styles.crowdBadge, { backgroundColor: crowdLevel.color + '20' }]}>
                 <Text style={[styles.crowdBadgeText, { color: crowdLevel.color }]}>
@@ -103,7 +126,10 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
             </View>
 
             <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
-              Let others know you're here and discover who else is around!
+              {mode === 'checkin' 
+                ? 'Let others know you\'re here and discover who else is around!'
+                : 'Thanks for sharing your presence! Others will know you\'ve left.'
+              }
             </Text>
           </View>
 
@@ -123,16 +149,23 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
               style={[
                 styles.confirmButton, 
                 { 
-                  backgroundColor: theme.colors.primary,
+                  backgroundColor: mode === 'checkin' ? theme.colors.primary : '#FF6B6B',
                   opacity: loading ? 0.6 : 1
                 }
               ]}
               onPress={onConfirm}
               disabled={loading}
             >
-              <Icon name="checkmark-circle-outline" size={20} color="white" />
+              <Icon 
+                name={mode === 'checkin' ? 'checkmark-circle-outline' : 'exit-outline'} 
+                size={20} 
+                color="white" 
+              />
               <Text style={styles.confirmButtonText}>
-                {loading ? 'Checking In...' : 'Check In'}
+                {loading 
+                  ? (mode === 'checkin' ? 'Checking In...' : 'Checking Out...')
+                  : (mode === 'checkin' ? 'Check In' : 'Check Out')
+                }
               </Text>
             </TouchableOpacity>
           </View>
@@ -201,6 +234,20 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-SemiBold',
     textAlign: 'center',
     marginBottom: 16,
+  },
+  durationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: '#4CAF50' + '10',
+    marginBottom: 16,
+    gap: 8,
+  },
+  durationText: {
+    fontSize: 14,
+    fontFamily: 'Inter-Medium',
   },
   warningContainer: {
     flexDirection: 'row',
