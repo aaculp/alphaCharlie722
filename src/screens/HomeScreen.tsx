@@ -202,9 +202,6 @@ const HomeScreen: React.FC = () => {
             </View>
           )}
           
-          <Text style={[styles.description, { color: theme.colors.textSecondary }]} numberOfLines={2}>
-            {item.description}
-          </Text>
           <View style={styles.categoryContainer}>
             <Text style={[styles.category, { color: theme.colors.primary, backgroundColor: theme.colors.primary + '20' }]}>{item.category}</Text>
             <Text style={[styles.priceRange, { color: theme.colors.text }]}>{item.price_range}</Text>

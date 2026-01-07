@@ -124,13 +124,6 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
                 </Text>
               </View>
             </View>
-
-            <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
-              {mode === 'checkin'
-                ? 'Let others know you\'re here and discover who else is around!'
-                : 'Thanks for sharing your presence!'
-              }
-            </Text>
           </View>
 
           {/* Actions */}

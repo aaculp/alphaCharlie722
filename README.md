@@ -46,13 +46,17 @@ A React Native app with bottom tab navigation featuring venue discovery and user
 
 > **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
 
-### Step 1: Install Dependencies
+### Step 1: Database Setup
+
+Set up your Supabase database by running the SQL scripts in the `database/` directory. See `database/README.md` for detailed instructions.
+
+### Step 2: Install Dependencies
 
 ```bash
 npm install
 ```
 
-### Step 2: Install iOS Dependencies (iOS only)
+### Step 3: Install iOS Dependencies (iOS only)
 
 For iOS, install CocoaPods dependencies:
 
@@ -61,13 +65,13 @@ bundle install
 bundle exec pod install
 ```
 
-### Step 3: Start Metro
+### Step 4: Start Metro
 
 ```bash
 npm start
 ```
 
-### Step 4: Run the App
+### Step 5: Run the App
 
 #### Quick Start (Recommended)
 ```bash
@@ -113,14 +117,49 @@ npm run clean
 
 ```
 src/
+├── assets/
+│   └── images/           # Logo assets and images
+├── components/           # Reusable UI components
+│   ├── CheckInButton.tsx
+│   ├── CheckInModal.tsx
+│   ├── OTWLogo.tsx
+│   ├── PulseLikeButton.tsx
+│   ├── UserFeedback.tsx
+│   ├── VenueInfoComponents.tsx
+│   └── index.ts
+├── contexts/             # React contexts
+│   ├── AuthContext.tsx
+│   └── ThemeContext.tsx
+├── lib/                  # External library configurations
+│   └── supabase.ts
 ├── navigation/
-│   └── AppNavigator.tsx    # Main navigation configuration
-├── screens/
-│   ├── HomeScreen.tsx      # Feed/Home screen
-│   ├── SearchScreen.tsx    # Venue search screen
+│   └── AppNavigator.tsx  # Main navigation configuration
+├── screens/              # Screen components
+│   ├── HomeScreen.tsx    # Feed/Home screen
+│   ├── SearchScreen.tsx  # Venue search screen
 │   ├── VenueDetailScreen.tsx # Individual venue details
-│   ├── SettingsScreen.tsx  # User settings
-│   └── index.ts           # Screen exports
+│   ├── SettingsScreen.tsx # User settings
+│   └── index.ts          # Screen exports
+├── services/             # API and business logic
+│   ├── authService.ts
+│   ├── checkInService.ts
+│   ├── favoriteService.ts
+│   ├── userFeedbackService.ts
+│   └── venueService.ts
+└── utils/                # Utility functions
+    └── populateVenues.ts
+
+database/                 # SQL setup scripts
+├── checkin-database-setup.sql
+├── pulse-permissions.sql
+├── pulse-test-data-fixed.sql
+├── safe-pulse-setup.sql
+├── simulate-checkins.sql
+└── README.md
+
+docs/                     # Documentation
+├── supabase-setup.md
+└── user-feedback-system.md
 ```
 
 ## Troubleshooting
