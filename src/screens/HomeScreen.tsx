@@ -113,10 +113,14 @@ const HomeScreen: React.FC = () => {
     });
   };
 
-  const renderFeedItem = (item: Venue) => (
+  const renderFeedItem = (item: Venue, index: number) => (
     <TouchableOpacity 
       key={item.id} 
-      style={[styles.feedItem, { backgroundColor: theme.colors.surface }]}
+      style={[
+        styles.feedItem, 
+        { backgroundColor: theme.colors.surface },
+        index % 2 === 0 ? styles.leftColumn : styles.rightColumn
+      ]}
       onPress={() => handleVenuePress(item)}
       activeOpacity={0.7}
     >
@@ -133,21 +137,37 @@ const HomeScreen: React.FC = () => {
         >
           <Icon 
             name={favorites.has(item.id) ? 'heart' : 'heart-outline'} 
-            size={20} 
+            size={18} 
             color={favorites.has(item.id) ? '#FF3B30' : theme.colors.textSecondary} 
           />
         </TouchableOpacity>
       </View>
       <View style={styles.feedContent}>
-        <Text style={[styles.venueName, { color: theme.colors.text }]}>{item.name}</Text>
-        <Text style={[styles.location, { color: theme.colors.textSecondary }]}>{item.location}</Text>
+        <Text style={[styles.venueName, { color: theme.colors.text }]} numberOfLines={1}>{item.name}</Text>
+        <Text style={[styles.location, { color: theme.colors.textSecondary }]} numberOfLines={1}>{item.location}</Text>
         <View style={styles.ratingContainer}>
           <Text style={[styles.rating, { color: theme.colors.text }]}>⭐ {item.rating}</Text>
-          <Text style={[styles.reviewCount, { color: theme.colors.textSecondary }]}>({item.review_count} reviews)</Text>
+          <Text style={[styles.reviewCount, { color: theme.colors.textSecondary }]}>({item.review_count})</Text>
         </View>
         
         {/* Enhanced Information Preview */}
-        <CompactAtmosphere venue={item} maxTags={2} />
+        <CompactAtmosphere venue={item} maxTags={1} />
+        
+        {/* Amenities Chips */}
+        {item.amenities && item.amenities.length > 0 && (
+          <View style={styles.amenitiesPreview}>
+            {item.amenities.slice(0, 2).map((amenity: string, index: number) => (
+              <View key={index} style={[styles.amenityChip, { backgroundColor: theme.colors.primary + '15', borderColor: theme.colors.primary + '30' }]}>
+                <Text style={[styles.amenityChipText, { color: theme.colors.primary }]}>{amenity}</Text>
+              </View>
+            ))}
+            {item.amenities.length > 2 && (
+              <Text style={[styles.moreAmenitiesText, { color: theme.colors.textSecondary }]}>
+                +{item.amenities.length - 2}
+              </Text>
+            )}
+          </View>
+        )}
         
         <Text style={[styles.description, { color: theme.colors.textSecondary }]} numberOfLines={2}>
           {item.description}
@@ -155,11 +175,26 @@ const HomeScreen: React.FC = () => {
         <View style={styles.categoryContainer}>
           <Text style={[styles.category, { color: theme.colors.primary, backgroundColor: theme.colors.primary + '20' }]}>{item.category}</Text>
           <Text style={[styles.priceRange, { color: theme.colors.text }]}>{item.price_range}</Text>
-          <CompactWaitTimes venue={item} />
         </View>
       </View>
     </TouchableOpacity>
   );
+
+  const renderVenueGrid = () => {
+    const rows = [];
+    for (let i = 0; i < venues.length; i += 2) {
+      const leftVenue = venues[i];
+      const rightVenue = venues[i + 1];
+      
+      rows.push(
+        <View key={i} style={styles.gridRow}>
+          {renderFeedItem(leftVenue, i)}
+          {rightVenue && renderFeedItem(rightVenue, i + 1)}
+        </View>
+      );
+    }
+    return rows;
+  };
 
   if (loading) {
     return (
@@ -182,7 +217,7 @@ const HomeScreen: React.FC = () => {
         }
       >
         {venues.length > 0 ? (
-          venues.map(renderFeedItem)
+          renderVenueGrid()
         ) : (
           <View style={styles.emptyContainer}>
             <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>No venues found</Text>
@@ -201,9 +236,13 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
+  gridRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 15,
+    marginBottom: 16,
+  },
   feedItem: {
-    marginHorizontal: 15,
-    marginVertical: 8,
+    flex: 1,
     borderRadius: 12,
     shadowColor: '#000',
     shadowOffset: {
@@ -214,22 +253,28 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
+  leftColumn: {
+    marginRight: 8,
+  },
+  rightColumn: {
+    marginLeft: 8,
+  },
   imageContainer: {
     position: 'relative',
   },
   feedImage: {
     width: '100%',
-    height: 200,
+    height: 140,
     borderTopLeftRadius: 12,
     borderTopRightRadius: 12,
   },
   favoriteButton: {
     position: 'absolute',
-    top: 12,
-    right: 12,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    top: 8,
+    right: 8,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
@@ -242,38 +287,38 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   feedContent: {
-    padding: 15,
+    padding: 12,
   },
   venueName: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 5,
-    fontFamily: 'Poppins-SemiBold', // Primary font for headings
+    marginBottom: 4,
+    fontFamily: 'Poppins-SemiBold',
   },
   location: {
-    fontSize: 14,
-    marginBottom: 8,
-    fontFamily: 'Inter-Regular', // Secondary font for body text
+    fontSize: 12,
+    marginBottom: 6,
+    fontFamily: 'Inter-Regular',
   },
   ratingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   rating: {
-    fontSize: 14,
-    marginRight: 8,
-    fontFamily: 'Inter-Medium', // Secondary font for UI elements
+    fontSize: 12,
+    marginRight: 4,
+    fontFamily: 'Inter-Medium',
   },
   reviewCount: {
-    fontSize: 12,
-    fontFamily: 'Inter-Regular', // Secondary font for body text
+    fontSize: 10,
+    fontFamily: 'Inter-Regular',
   },
   description: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 12,
+    lineHeight: 16,
     marginBottom: 8,
-    fontFamily: 'Inter-Regular', // Secondary font for body text
+    fontFamily: 'Inter-Regular',
   },
   categoryContainer: {
     flexDirection: 'row',
@@ -281,41 +326,65 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   category: {
-    fontSize: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
+    fontSize: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 6,
     fontWeight: '500',
-    fontFamily: 'Inter-Medium', // Secondary font for UI elements
+    fontFamily: 'Inter-Medium',
   },
   priceRange: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
-    fontFamily: 'Inter-SemiBold', // Secondary font for emphasis
+    fontFamily: 'Inter-SemiBold',
   },
   
   // Enhanced Information Styles
   atmospherePreview: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
     flexWrap: 'wrap',
   },
   atmosphereTagSmall: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 12,
-    marginRight: 6,
-    marginBottom: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    marginRight: 4,
+    marginBottom: 2,
   },
   atmosphereTagTextSmall: {
-    fontSize: 11,
+    fontSize: 10,
     fontFamily: 'Inter-Medium',
   },
   moreTagsText: {
-    fontSize: 11,
+    fontSize: 10,
     fontFamily: 'Inter-Regular',
     fontStyle: 'italic',
+  },
+  amenitiesPreview: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+    flexWrap: 'wrap',
+  },
+  amenityChip: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginRight: 4,
+    marginBottom: 2,
+  },
+  amenityChipText: {
+    fontSize: 9,
+    fontFamily: 'Inter-Medium',
+  },
+  moreAmenitiesText: {
+    fontSize: 9,
+    fontFamily: 'Inter-Regular',
+    fontStyle: 'italic',
+    marginLeft: 2,
   },
   waitTimePreview: {
     flexDirection: 'row',
