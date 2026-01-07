@@ -231,6 +231,38 @@ export interface Database {
           created_at?: string;
         };
       };
+      check_ins: {
+        Row: {
+          id: string;
+          venue_id: string;
+          user_id: string;
+          checked_in_at: string;
+          checked_out_at: string | null;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          venue_id: string;
+          user_id: string;
+          checked_in_at?: string;
+          checked_out_at?: string | null;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          venue_id?: string;
+          user_id?: string;
+          checked_in_at?: string;
+          checked_out_at?: string | null;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
     };
   };
 }

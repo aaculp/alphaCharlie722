@@ -15,11 +15,13 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { VenueService } from '../services/venueService';
 import { FavoriteService } from '../services/favoriteService';
+import { CheckInService, VenueCheckInStats } from '../services/checkInService';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import { HomeStackParamList } from '../navigation/AppNavigator';
 import { populateVenuesDatabase } from '../utils/populateVenues';
 import { CompactAtmosphere, CompactWaitTimes } from '../components';
+import CheckInButton from '../components/CheckInButton';
 import type { Database } from '../lib/supabase';
 import Icon from 'react-native-vector-icons/Ionicons';
 
@@ -31,6 +33,7 @@ const HomeScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [checkInStats, setCheckInStats] = useState<Map<string, VenueCheckInStats>>(new Map());
   const { theme } = useTheme();
   const { user } = useAuth();
   const navigation = useNavigation<HomeScreenNavigationProp>();
@@ -52,6 +55,9 @@ const HomeScreen: React.FC = () => {
       if (user) {
         await loadUserFavorites();
       }
+
+      // Load check-in stats for all venues
+      await loadCheckInStats(featuredVenues.map(v => v.id));
     } catch (error) {
       Alert.alert('Error', 'Failed to load venues. Please try again.');
       console.error('Error loading venues:', error);
@@ -70,6 +76,30 @@ const HomeScreen: React.FC = () => {
     } catch (error) {
       console.error('Error loading favorites:', error);
     }
+  };
+
+  const loadCheckInStats = async (venueIds: string[]) => {
+    try {
+      const stats = await CheckInService.getMultipleVenueStats(venueIds, user?.id);
+      setCheckInStats(stats);
+    } catch (error) {
+      console.error('Error loading check-in stats:', error);
+    }
+  };
+
+  const handleCheckInChange = (venueId: string, isCheckedIn: boolean, newCount: number) => {
+    setCheckInStats(prev => {
+      const newStats = new Map(prev);
+      const currentStats = newStats.get(venueId);
+      if (currentStats) {
+        newStats.set(venueId, {
+          ...currentStats,
+          user_is_checked_in: isCheckedIn,
+          active_checkins: newCount
+        });
+      }
+      return newStats;
+    });
   };
 
   const toggleFavorite = async (venueId: string) => {
@@ -113,72 +143,92 @@ const HomeScreen: React.FC = () => {
     });
   };
 
-  const renderFeedItem = (item: Venue, index: number) => (
-    <TouchableOpacity 
-      key={item.id} 
-      style={[
-        styles.feedItem, 
-        { backgroundColor: theme.colors.surface },
-        index % 2 === 0 ? styles.leftColumn : styles.rightColumn
-      ]}
-      onPress={() => handleVenuePress(item)}
-      activeOpacity={0.7}
-    >
-      <View style={styles.imageContainer}>
-        <Image 
-          source={{ 
-            uri: item.image_url || 'https://via.placeholder.com/300x200' 
-          }} 
-          style={styles.feedImage} 
-        />
-        <TouchableOpacity 
-          style={[styles.favoriteButton, { backgroundColor: theme.colors.surface + 'E6' }]}
-          onPress={() => toggleFavorite(item.id)}
-        >
-          <Icon 
-            name={favorites.has(item.id) ? 'heart' : 'heart-outline'} 
-            size={18} 
-            color={favorites.has(item.id) ? '#FF3B30' : theme.colors.textSecondary} 
+  const renderFeedItem = (item: Venue, index: number) => {
+    const venueCheckInStats = checkInStats.get(item.id);
+    
+    return (
+      <TouchableOpacity 
+        key={item.id} 
+        style={[
+          styles.feedItem, 
+          { backgroundColor: theme.colors.surface },
+          index % 2 === 0 ? styles.leftColumn : styles.rightColumn
+        ]}
+        onPress={() => handleVenuePress(item)}
+        activeOpacity={0.7}
+      >
+        <View style={styles.imageContainer}>
+          <Image 
+            source={{ 
+              uri: item.image_url || 'https://via.placeholder.com/300x200' 
+            }} 
+            style={styles.feedImage} 
           />
-        </TouchableOpacity>
-      </View>
-      <View style={styles.feedContent}>
-        <Text style={[styles.venueName, { color: theme.colors.text }]} numberOfLines={1}>{item.name}</Text>
-        <Text style={[styles.location, { color: theme.colors.textSecondary }]} numberOfLines={1}>{item.location}</Text>
-        <View style={styles.ratingContainer}>
-          <Text style={[styles.rating, { color: theme.colors.text }]}>⭐ {item.rating}</Text>
-          <Text style={[styles.reviewCount, { color: theme.colors.textSecondary }]}>({item.review_count})</Text>
+          <TouchableOpacity 
+            style={[styles.favoriteButton, { backgroundColor: theme.colors.surface + 'E6' }]}
+            onPress={() => toggleFavorite(item.id)}
+          >
+            <Icon 
+              name={favorites.has(item.id) ? 'heart' : 'heart-outline'} 
+              size={18} 
+              color={favorites.has(item.id) ? '#FF3B30' : theme.colors.textSecondary} 
+            />
+          </TouchableOpacity>
         </View>
-        
-        {/* Enhanced Information Preview */}
-        <CompactAtmosphere venue={item} maxTags={1} />
-        
-        {/* Amenities Chips */}
-        {item.amenities && item.amenities.length > 0 && (
-          <View style={styles.amenitiesPreview}>
-            {item.amenities.slice(0, 2).map((amenity: string, index: number) => (
-              <View key={index} style={[styles.amenityChip, { backgroundColor: theme.colors.primary + '15', borderColor: theme.colors.primary + '30' }]}>
-                <Text style={[styles.amenityChipText, { color: theme.colors.primary }]}>{amenity}</Text>
-              </View>
-            ))}
-            {item.amenities.length > 2 && (
-              <Text style={[styles.moreAmenitiesText, { color: theme.colors.textSecondary }]}>
-                +{item.amenities.length - 2}
-              </Text>
-            )}
+        <View style={styles.feedContent}>
+          <Text style={[styles.venueName, { color: theme.colors.text }]} numberOfLines={1}>{item.name}</Text>
+          <Text style={[styles.location, { color: theme.colors.textSecondary }]} numberOfLines={1}>{item.location}</Text>
+          <View style={styles.ratingContainer}>
+            <Text style={[styles.rating, { color: theme.colors.text }]}>⭐ {item.rating}</Text>
+            <Text style={[styles.reviewCount, { color: theme.colors.textSecondary }]}>({item.review_count})</Text>
           </View>
-        )}
-        
-        <Text style={[styles.description, { color: theme.colors.textSecondary }]} numberOfLines={2}>
-          {item.description}
-        </Text>
-        <View style={styles.categoryContainer}>
-          <Text style={[styles.category, { color: theme.colors.primary, backgroundColor: theme.colors.primary + '20' }]}>{item.category}</Text>
-          <Text style={[styles.priceRange, { color: theme.colors.text }]}>{item.price_range}</Text>
+          
+          {/* Enhanced Information Preview */}
+          <CompactAtmosphere venue={item} maxTags={1} />
+          
+          {/* Amenities Chips */}
+          {item.amenities && item.amenities.length > 0 && (
+            <View style={styles.amenitiesPreview}>
+              {item.amenities.slice(0, 2).map((amenity: string, index: number) => (
+                <View key={index} style={[styles.amenityChip, { backgroundColor: theme.colors.primary + '15', borderColor: theme.colors.primary + '30' }]}>
+                  <Text style={[styles.amenityChipText, { color: theme.colors.primary }]}>{amenity}</Text>
+                </View>
+              ))}
+              {item.amenities.length > 2 && (
+                <Text style={[styles.moreAmenitiesText, { color: theme.colors.textSecondary }]}>
+                  +{item.amenities.length - 2}
+                </Text>
+              )}
+            </View>
+          )}
+          
+          <Text style={[styles.description, { color: theme.colors.textSecondary }]} numberOfLines={2}>
+            {item.description}
+          </Text>
+          <View style={styles.categoryContainer}>
+            <Text style={[styles.category, { color: theme.colors.primary, backgroundColor: theme.colors.primary + '20' }]}>{item.category}</Text>
+            <Text style={[styles.priceRange, { color: theme.colors.text }]}>{item.price_range}</Text>
+          </View>
+          
+          {/* Check-in Button */}
+          {venueCheckInStats && (
+            <View style={styles.checkInContainer}>
+              <CheckInButton
+                venueId={item.id}
+                venueName={item.name}
+                venueImage={item.image_url || undefined}
+                isCheckedIn={venueCheckInStats.user_is_checked_in}
+                checkInId={venueCheckInStats.user_checkin_id}
+                activeCheckIns={venueCheckInStats.active_checkins}
+                onCheckInChange={(isCheckedIn, newCount) => handleCheckInChange(item.id, isCheckedIn, newCount)}
+                size="small"
+              />
+            </View>
+          )}
         </View>
-      </View>
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  };
 
   const renderVenueGrid = () => {
     const rows = [];
@@ -385,6 +435,10 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Regular',
     fontStyle: 'italic',
     marginLeft: 2,
+  },
+  checkInContainer: {
+    marginTop: 8,
+    alignItems: 'flex-start',
   },
   waitTimePreview: {
     flexDirection: 'row',
