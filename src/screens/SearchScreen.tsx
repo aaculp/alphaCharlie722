@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -30,13 +30,28 @@ type Venue = Database['public']['Tables']['venues']['Row'];
 // Categories for filtering
 const categories = [
   'All',
-  'Restaurant',
-  'Cafe',
-  'Bar',
-  'Fitness',
-  'Entertainment',
-  'Wellness',
-  'Bookstore',
+  'Fast Food',
+  'Fine Dining',
+  'Coffee Shops',
+  'Sports Bars',
+  'Breweries',
+];
+
+// Filter options
+const filterOptions = [
+  { id: 'all', label: 'All', icon: 'list' },
+  { id: 'open_now', label: 'Open Now', icon: 'time' },
+  { id: 'highly_rated', label: 'Highly Rated (4.5+)', icon: 'star' },
+  { id: 'budget_friendly', label: 'Budget Friendly ($)', icon: 'cash' },
+];
+
+// Price range options
+const priceRanges = [
+  { id: 'all_prices', label: 'All Prices', value: null },
+  { id: 'budget', label: '$', value: '$' },
+  { id: 'moderate', label: '$$', value: '$$' },
+  { id: 'expensive', label: '$$$', value: '$$$' },
+  { id: 'luxury', label: '$$$$', value: '$$$$' },
 ];
 
 const SearchScreen: React.FC = () => {
@@ -45,6 +60,8 @@ const SearchScreen: React.FC = () => {
   const [filteredVenues, setFilteredVenues] = useState<Venue[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedFilters, setSelectedFilters] = useState<string[]>(['all']);
+  const [selectedPriceRange, setSelectedPriceRange] = useState('all_prices');
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const navigation = useNavigation<SearchScreenNavigationProp>();
   const { theme } = useTheme();
@@ -58,10 +75,10 @@ const SearchScreen: React.FC = () => {
     }
   }, [user]);
 
-  // Filter venues when search query or category changes
+  // Filter venues when search query, category, filters, or price range changes
   useEffect(() => {
     filterVenues();
-  }, [searchQuery, selectedCategory, venues]);
+  }, [searchQuery, selectedCategory, selectedFilters, selectedPriceRange, venues]);
 
   const loadVenues = async () => {
     setLoading(true);
@@ -88,15 +105,51 @@ const SearchScreen: React.FC = () => {
     }
   };
 
-  const filterVenues = () => {
-    let filtered = venues;
+  const filterVenues = useCallback(() => {
+    console.log('🔍 Filtering venues:', { 
+      selectedCategory, 
+      selectedFilters, 
+      selectedPriceRange,
+      searchQuery,
+      totalVenues: venues.length 
+    });
+    
+    let filtered = [...venues]; // Create a copy to avoid mutations
 
-    // Filter by category
+    // Filter by category first
     if (selectedCategory !== 'All') {
       filtered = filtered.filter(venue => venue.category === selectedCategory);
+      console.log(`📂 After category filter (${selectedCategory}):`, filtered.length);
     }
 
-    // Filter by search query
+    // Filter by price range
+    if (selectedPriceRange !== 'all_prices') {
+      const priceRange = priceRanges.find(p => p.id === selectedPriceRange);
+      if (priceRange?.value) {
+        filtered = filtered.filter(venue => venue.price_range === priceRange.value);
+        console.log(`💰 After price filter (${priceRange.value}):`, filtered.length);
+      }
+    }
+
+    // Apply additional filters (skip 'all' filter)
+    const activeFilters = selectedFilters.filter(f => f !== 'all');
+    activeFilters.forEach(filter => {
+      const beforeCount = filtered.length;
+      switch (filter) {
+        case 'open_now':
+          filtered = filtered.filter(venue => isVenueOpenNow(venue));
+          break;
+        case 'highly_rated':
+          filtered = filtered.filter(venue => (venue.rating || 0) >= 4.5);
+          break;
+        case 'budget_friendly':
+          filtered = filtered.filter(venue => venue.price_range === '$');
+          break;
+      }
+      console.log(`🎯 After ${filter} filter:`, filtered.length, `(was ${beforeCount})`);
+    });
+
+    // Filter by search query last
     if (searchQuery.trim() !== '') {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(venue =>
@@ -105,13 +158,71 @@ const SearchScreen: React.FC = () => {
         venue.location.toLowerCase().includes(query) ||
         venue.description?.toLowerCase().includes(query)
       );
+      console.log(`🔎 After search filter (${searchQuery}):`, filtered.length);
     }
 
     // Sort by rating (highest first)
     filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0));
 
+    console.log('✅ Final filtered venues:', filtered.length);
     setFilteredVenues(filtered);
+  }, [venues, selectedCategory, selectedFilters, selectedPriceRange, searchQuery]);
+
+  // Helper function to check if venue is open now
+  const isVenueOpenNow = (venue: Venue) => {
+    if (!venue.hours) return false;
+    
+    const now = new Date();
+    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const currentDay = dayNames[now.getDay()];
+    const currentTime = now.getHours() * 100 + now.getMinutes(); // 1430 for 2:30 PM
+    
+    const todayHours = venue.hours[currentDay as keyof typeof venue.hours];
+    if (!todayHours || todayHours === 'Closed') return false;
+    if (todayHours === '24 Hours') return true;
+    
+    // Parse hours like "11:00 AM - 10:00 PM"
+    const timeMatch = todayHours.match(/(\d{1,2}):(\d{2})\s*(AM|PM)\s*-\s*(\d{1,2}):(\d{2})\s*(AM|PM)/);
+    if (!timeMatch) return false;
+    
+    const [, openHour, openMin, openPeriod, closeHour, closeMin, closePeriod] = timeMatch;
+    
+    let openTime = parseInt(openHour) * 100 + parseInt(openMin);
+    let closeTime = parseInt(closeHour) * 100 + parseInt(closeMin);
+    
+    // Convert to 24-hour format
+    if (openPeriod === 'PM' && parseInt(openHour) !== 12) openTime += 1200;
+    if (closePeriod === 'PM' && parseInt(closeHour) !== 12) closeTime += 1200;
+    if (openPeriod === 'AM' && parseInt(openHour) === 12) openTime -= 1200;
+    if (closePeriod === 'AM' && parseInt(closeHour) === 12) closeTime -= 1200;
+    
+    // Handle overnight hours (close time is next day)
+    if (closeTime < openTime) {
+      return currentTime >= openTime || currentTime <= closeTime;
+    }
+    
+    return currentTime >= openTime && currentTime <= closeTime;
   };
+
+  const toggleFilter = useCallback((filterId: string) => {
+    setSelectedFilters(prev => {
+      if (filterId === 'all') {
+        return ['all'];
+      }
+
+      // Remove 'all' from filters when selecting specific filters
+      const currentFilters = prev.filter(f => f !== 'all');
+      
+      if (currentFilters.includes(filterId)) {
+        // Remove the filter
+        const updated = currentFilters.filter(f => f !== filterId);
+        return updated.length === 0 ? ['all'] : updated;
+      } else {
+        // Add the filter
+        return [...currentFilters, filterId];
+      }
+    });
+  }, []);
 
   const toggleFavorite = async (venueId: string) => {
     if (!user) {
@@ -143,6 +254,98 @@ const SearchScreen: React.FC = () => {
       venueName: venue.name,
     });
   };
+
+  const renderPriceRangeFilter = useCallback(() => (
+    <View style={styles.priceContainer}>
+      <Text style={[styles.filterSectionTitle, { color: theme.colors.text }]}>Price Range</Text>
+      <FlatList
+        data={priceRanges}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => {
+          const isSelected = selectedPriceRange === item.id;
+          return (
+            <TouchableOpacity
+              style={[
+                styles.priceButton,
+                {
+                  backgroundColor: isSelected 
+                    ? theme.colors.primary 
+                    : theme.colors.surface,
+                  borderColor: theme.colors.border,
+                }
+              ]}
+              onPress={() => setSelectedPriceRange(item.id)}
+            >
+              <Text
+                style={[
+                  styles.priceText,
+                  {
+                    color: isSelected 
+                      ? '#FFFFFF' 
+                      : theme.colors.text,
+                    fontWeight: isSelected ? 'bold' : 'normal',
+                  }
+                ]}
+              >
+                {item.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        }}
+        contentContainerStyle={styles.priceList}
+      />
+    </View>
+  ), [selectedPriceRange, theme]);
+
+  const renderFilterButtons = useCallback(() => (
+    <View style={styles.filterContainer}>
+      <FlatList
+        data={filterOptions}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => {
+          const isSelected = selectedFilters.includes(item.id);
+          return (
+            <TouchableOpacity
+              style={[
+                styles.filterButton,
+                {
+                  backgroundColor: isSelected 
+                    ? theme.colors.primary 
+                    : theme.colors.surface,
+                  borderColor: theme.colors.border,
+                }
+              ]}
+              onPress={() => toggleFilter(item.id)}
+            >
+              <Icon 
+                name={item.icon} 
+                size={16} 
+                color={isSelected ? '#FFFFFF' : theme.colors.textSecondary}
+                style={styles.filterIcon}
+              />
+              <Text
+                style={[
+                  styles.filterText,
+                  {
+                    color: isSelected 
+                      ? '#FFFFFF' 
+                      : theme.colors.text,
+                  }
+                ]}
+              >
+                {item.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        }}
+        contentContainerStyle={styles.filterList}
+      />
+    </View>
+  ), [selectedFilters, theme, toggleFilter]);
 
   const renderCategoryFilter = () => (
     <View style={styles.categoryContainer}>
@@ -239,6 +442,15 @@ const SearchScreen: React.FC = () => {
       </View>
 
       {renderCategoryFilter()}
+      {renderPriceRangeFilter()}
+      {renderFilterButtons()}
+
+      {/* Results Counter */}
+      <View style={styles.resultsContainer}>
+        <Text style={[styles.resultsText, { color: theme.colors.textSecondary }]}>
+          {loading ? 'Loading...' : `${filteredVenues.length} venues found`}
+        </Text>
+      </View>
 
       {loading ? (
         <View style={styles.loadingContainer}>
@@ -316,6 +528,61 @@ const styles = StyleSheet.create({
   categoryText: {
     fontSize: 14,
     fontFamily: 'Inter-Medium', // Secondary font for UI elements
+  },
+  priceContainer: {
+    marginBottom: 10,
+    paddingHorizontal: 15,
+  },
+  filterSectionTitle: {
+    fontSize: 16,
+    fontFamily: 'Poppins-SemiBold',
+    marginBottom: 8,
+  },
+  priceList: {
+    paddingRight: 15,
+  },
+  priceButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    marginRight: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    minWidth: 50,
+    alignItems: 'center',
+  },
+  priceText: {
+    fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
+  },
+  filterContainer: {
+    marginBottom: 10,
+  },
+  filterList: {
+    paddingHorizontal: 15,
+  },
+  filterButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginRight: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  filterIcon: {
+    marginRight: 6,
+  },
+  filterText: {
+    fontSize: 12,
+    fontFamily: 'Inter-Medium',
+  },
+  resultsContainer: {
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+  },
+  resultsText: {
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
   },
   loadingContainer: {
     flex: 1,

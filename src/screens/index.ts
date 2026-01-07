@@ -7,3 +7,4 @@ export { default as LoginScreen } from './LoginScreen';
 export { default as SignUpScreen } from './SignUpScreen';
 export { default as SplashScreen } from './SplashScreen';
 export { default as FavoritesScreen } from './FavoritesScreen';
+export { default as QuickPicksScreen } from './QuickPicksScreen';

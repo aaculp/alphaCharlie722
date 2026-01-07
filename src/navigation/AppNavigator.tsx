@@ -7,12 +7,13 @@ import { useTheme } from '../contexts/ThemeContext';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 
 // Import screens
-import { HomeScreen, SearchScreen, VenueDetailScreen, SettingsScreen, SplashScreen, FavoritesScreen } from '../screens';
+import { HomeScreen, SearchScreen, VenueDetailScreen, SettingsScreen, SplashScreen, FavoritesScreen, QuickPicksScreen } from '../screens';
 import AuthScreen from '../screens/AuthScreen';
 
 // Type definitions
 export type RootTabParamList = {
   Home: undefined;
+  QuickPicks: undefined;
   Search: undefined;
   Settings: undefined;
 };
@@ -159,6 +160,8 @@ function MainTabNavigator() {
 
           if (route.name === 'Home') {
             iconName = focused ? 'home' : 'home-outline';
+          } else if (route.name === 'QuickPicks') {
+            iconName = focused ? 'flash' : 'flash-outline';
           } else if (route.name === 'Search') {
             iconName = focused ? 'search' : 'search-outline';
           } else if (route.name === 'Settings') {
@@ -194,6 +197,11 @@ function MainTabNavigator() {
         name="Home" 
         component={HomeStackNavigator}
         options={{ title: 'Feed' }}
+      />
+      <Tab.Screen 
+        name="QuickPicks" 
+        component={QuickPicksScreen}
+        options={{ title: 'Quick Picks' }}
       />
       <Tab.Screen 
         name="Search" 
