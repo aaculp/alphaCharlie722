@@ -96,7 +96,7 @@ const CheckInButton: React.FC<CheckInButtonProps> = ({
       return;
     }
 
-    if (loading) return;
+    if (loading || showModal) return; // Prevent multiple operations
 
     if (isCheckedIn && checkInId) {
       // Check out - show modal if requested, otherwise direct checkout
@@ -155,6 +155,7 @@ const CheckInButton: React.FC<CheckInButtonProps> = ({
       setLoading(true);
       await CheckInService.checkOut(checkInId, user.id);
       onCheckInChange(false, Math.max(0, activeCheckIns - 1));
+      setShowModal(false); // Close modal after successful checkout
     } catch (error) {
       console.error('Error checking out:', error);
       Alert.alert('Error', `Failed to check out of ${venueName}. Please try again.`);
@@ -200,11 +201,11 @@ const CheckInButton: React.FC<CheckInButtonProps> = ({
             backgroundColor: buttonStyle.backgroundColor,
             borderColor: buttonStyle.borderColor,
             borderRadius: config.borderRadius,
-            opacity: loading ? 0.6 : 1,
+            opacity: (loading || showModal) ? 0.6 : 1,
           }
         ]}
         onPress={handleCheckInToggle}
-        disabled={loading}
+        disabled={loading || showModal}
         activeOpacity={0.7}
       >
         {loading ? (

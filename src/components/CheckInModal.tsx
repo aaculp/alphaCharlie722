@@ -65,8 +65,8 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
 
           {/* Venue Image */}
           {venueImage && (
-            <Image 
-              source={{ uri: venueImage }} 
+            <Image
+              source={{ uri: venueImage }}
               style={styles.venueImage}
             />
           )}
@@ -74,13 +74,13 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
           {/* Content */}
           <View style={styles.content}>
             <View style={[styles.iconContainer, { backgroundColor: mode === 'checkin' ? '#4CAF50' + '20' : '#FF6B6B' + '20' }]}>
-              <Icon 
-                name={mode === 'checkin' ? 'location' : 'exit-outline'} 
-                size={32} 
-                color={mode === 'checkin' ? theme.colors.primary : '#FF6B6B'} 
+              <Icon
+                name={mode === 'checkin' ? 'location' : 'exit-outline'}
+                size={32}
+                color={mode === 'checkin' ? theme.colors.primary : '#FF6B6B'}
               />
             </View>
-            
+
             <Text style={[styles.title, { color: theme.colors.text }]}>
               {mode === 'checkin' ? `Check into ${venueName}?` : `Check out of ${venueName}?`}
             </Text>
@@ -110,12 +110,12 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
               <Icon name={crowdLevel.icon} size={20} color={crowdLevel.color} />
               <Text style={[styles.crowdText, { color: theme.colors.text }]}>
                 {mode === 'checkin' ? (
-                  activeCheckIns === 0 ? 'Be the first to check in!' : 
-                  activeCheckIns === 1 ? '1 person here now' :
-                  `${activeCheckIns} people here now`
+                  activeCheckIns === 0 ? 'Be the first to check in!' :
+                    activeCheckIns === 1 ? '1 person here now' :
+                      `${activeCheckIns} people here now`
                 ) : (
                   activeCheckIns <= 1 ? 'You\'re the only one here' :
-                  `${activeCheckIns - 1} others will remain here`
+                    `${activeCheckIns - 1} others have checked in!`
                 )}
               </Text>
               <View style={[styles.crowdBadge, { backgroundColor: crowdLevel.color + '20' }]}>
@@ -126,9 +126,9 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
             </View>
 
             <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
-              {mode === 'checkin' 
+              {mode === 'checkin'
                 ? 'Let others know you\'re here and discover who else is around!'
-                : 'Thanks for sharing your presence! Others will know you\'ve left.'
+                : 'Thanks for sharing your presence!'
               }
             </Text>
           </View>
@@ -144,11 +144,11 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
                 Cancel
               </Text>
             </TouchableOpacity>
-            
+
             <TouchableOpacity
               style={[
-                styles.confirmButton, 
-                { 
+                styles.confirmButton,
+                {
                   backgroundColor: mode === 'checkin' ? theme.colors.primary : '#FF6B6B',
                   opacity: loading ? 0.6 : 1
                 }
@@ -156,13 +156,13 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
               onPress={onConfirm}
               disabled={loading}
             >
-              <Icon 
-                name={mode === 'checkin' ? 'checkmark-circle-outline' : 'exit-outline'} 
-                size={20} 
-                color="white" 
+              <Icon
+                name={mode === 'checkin' ? 'checkmark-circle-outline' : 'exit-outline'}
+                size={20}
+                color="white"
               />
               <Text style={styles.confirmButtonText}>
-                {loading 
+                {loading
                   ? (mode === 'checkin' ? 'Checking In...' : 'Checking Out...')
                   : (mode === 'checkin' ? 'Check In' : 'Check Out')
                 }
