@@ -1,17 +1,17 @@
 import { supabase } from '../lib/supabase';
 
-// Sample venue data with realistic information
+// Sample venue data with enhanced information (compatible with existing schema)
 const sampleVenues = [
   {
     name: "The Coffee Collective",
-    description: "Artisanal coffee roastery with locally sourced beans and cozy atmosphere. Perfect for remote work or catching up with friends.",
+    description: "Artisanal coffee roastery with locally sourced beans and cozy atmosphere. Perfect for remote work or catching up with friends. Wait times: Morning 5-10min, Lunch 10-15min. Popular: Signature Latte, Avocado Toast. Atmosphere: Quiet, Study-Friendly, Cozy. Parking: Free lot behind building.",
     category: "Coffee Shops",
     location: "Downtown",
     address: "123 Main Street, Downtown District",
     rating: 4.6,
     review_count: 127,
     image_url: "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop",
-    price_range: "$$",
+    price_range: "$",
     phone: "(555) 123-4567",
     website: "https://coffecollective.com",
     hours: {
@@ -23,11 +23,11 @@ const sampleVenues = [
       saturday: "8:00 AM - 9:00 PM",
       sunday: "8:00 AM - 7:00 PM"
     },
-    amenities: ["WiFi", "Outdoor Seating", "Pet Friendly", "Parking"]
+    amenities: ["WiFi", "Outdoor Seating", "Pet Friendly", "Free Parking", "Study Areas"]
   },
   {
     name: "Sunset Grill & Bar",
-    description: "Waterfront dining with fresh seafood, craft cocktails, and stunning sunset views. Live music on weekends.",
+    description: "Waterfront dining with fresh seafood, craft cocktails, and stunning sunset views. Live music on weekends. Wait times: Dinner 45-60min, Weekend 60-90min. Popular: Grilled Salmon, Lobster Bisque, Sunset Cocktail. Atmosphere: Romantic, Date Night, Scenic Views, Upscale. Parking: Valet $8.",
     category: "Fine Dining",
     location: "Waterfront",
     address: "456 Harbor Drive, Waterfront District",
@@ -46,11 +46,11 @@ const sampleVenues = [
       saturday: "4:00 PM - 11:00 PM",
       sunday: "4:00 PM - 9:00 PM"
     },
-    amenities: ["Outdoor Seating", "Bar", "Live Music", "Valet Parking", "Reservations"]
+    amenities: ["Outdoor Seating", "Bar", "Live Music", "Valet Parking", "Reservations", "Ocean View"]
   },
   {
     name: "Tony's Pizza Palace",
-    description: "Family-owned pizzeria serving authentic New York style pizza since 1985. Fresh ingredients and secret family recipes.",
+    description: "Family-owned pizzeria serving authentic New York style pizza since 1985. Fresh ingredients and secret family recipes. Wait times: Lunch 15-20min, Dinner 20-30min, Weekend 25-35min. Popular: Margherita Pizza, Pepperoni Special, Garlic Knots. Atmosphere: Family-Friendly, Casual, Lively, Traditional. Parking: Street only $2/hour.",
     category: "Fast Food",
     location: "Main Street",
     address: "654 Main Street, Historic District",
@@ -69,11 +69,11 @@ const sampleVenues = [
       saturday: "11:00 AM - 11:00 PM",
       sunday: "12:00 PM - 9:00 PM"
     },
-    amenities: ["Takeout", "Delivery", "Family Friendly", "Parking"]
+    amenities: ["Takeout", "Delivery", "Family Friendly", "Street Parking", "Authentic NY Style"]
   },
   {
     name: "Craft Beer Garden",
-    description: "Local brewery with rotating taps, food trucks, and outdoor games. Dog-friendly patio with live music every Friday.",
+    description: "Local brewery with rotating taps, food trucks, and outdoor games. Dog-friendly patio with live music every Friday. Wait times: Happy Hour 10-15min, Weekend 20-30min, Friday Night 30-45min. Popular: IPA Flight, Pretzel Bites, Fish Tacos, Seasonal Ale. Atmosphere: Lively, Pet-Friendly, Outdoor, Social. Parking: Free lot with overflow street parking.",
     category: "Breweries",
     location: "Brewery District",
     address: "147 Hops Street, Brewery District",
@@ -92,11 +92,11 @@ const sampleVenues = [
       saturday: "2:00 PM - 12:00 AM",
       sunday: "2:00 PM - 9:00 PM"
     },
-    amenities: ["Outdoor Seating", "Pet Friendly", "Live Music", "Games", "Food Trucks"]
+    amenities: ["Outdoor Seating", "Pet Friendly", "Live Music", "Games", "Food Trucks", "Free Parking"]
   },
   {
     name: "Fresh Market Bistro",
-    description: "Farm-to-table restaurant featuring seasonal menus with locally sourced ingredients. Extensive wine list and weekend brunch.",
+    description: "Farm-to-table restaurant featuring seasonal menus with locally sourced ingredients. Extensive wine list and weekend brunch. Wait times: Brunch 30-45min, Dinner 25-40min. Popular: Seasonal Salad, Braised Short Ribs, Wine Pairing, Crème Brûlée. Atmosphere: Upscale, Farm-to-Table, Quiet, Date Night. Parking: Validated with meal in adjacent garage.",
     category: "Fine Dining",
     location: "Uptown",
     address: "258 Garden Avenue, Uptown",
@@ -115,11 +115,11 @@ const sampleVenues = [
       saturday: "10:00 AM - 10:00 PM",
       sunday: "10:00 AM - 8:00 PM"
     },
-    amenities: ["Brunch", "Wine List", "Reservations", "Outdoor Seating", "Parking"]
+    amenities: ["Brunch", "Wine List", "Reservations", "Outdoor Seating", "Validated Parking", "Farm-to-Table"]
   },
   {
     name: "The Touchdown Sports Bar",
-    description: "Ultimate sports viewing experience with 20+ screens, game day specials, and classic bar food. Perfect for watching the big game.",
+    description: "Ultimate sports viewing experience with 20+ screens, game day specials, and classic bar food. Perfect for watching the big game. Wait times: Game Day 45-60min, Regular 15-25min, Happy Hour 10-20min. Popular: Buffalo Wings, Loaded Nachos, Sports Burger, Cold Beer. Atmosphere: Lively, Sports-Focused, Group-Friendly, Energetic. Parking: Free lot, gets busy during games.",
     category: "Sports Bars",
     location: "Stadium District",
     address: "888 Victory Lane, Stadium District",
@@ -138,122 +138,7 @@ const sampleVenues = [
       saturday: "10:00 AM - 2:00 AM",
       sunday: "10:00 AM - 12:00 AM"
     },
-    amenities: ["Multiple TVs", "Sports Packages", "Game Day Specials", "Pool Tables", "Parking"]
-  },
-  {
-    name: "QuickBite Burgers",
-    description: "Fast-casual burger joint with fresh ingredients and quick service. Build your own burger or try our signature combinations.",
-    category: "Fast Food",
-    location: "Food Court Plaza",
-    address: "555 Quick Street, Food Court Plaza",
-    rating: 4.1,
-    review_count: 189,
-    image_url: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&h=300&fit=crop",
-    price_range: "$",
-    phone: "(555) 333-4444",
-    website: "https://quickbiteburgers.com",
-    hours: {
-      monday: "10:00 AM - 10:00 PM",
-      tuesday: "10:00 AM - 10:00 PM",
-      wednesday: "10:00 AM - 10:00 PM",
-      thursday: "10:00 AM - 10:00 PM",
-      friday: "10:00 AM - 11:00 PM",
-      saturday: "10:00 AM - 11:00 PM",
-      sunday: "11:00 AM - 9:00 PM"
-    },
-    amenities: ["Drive-Thru", "Online Ordering", "Quick Service", "Parking"]
-  },
-  {
-    name: "Morning Brew Coffee",
-    description: "Cozy neighborhood coffee shop with artisan pastries and free WiFi. Perfect spot for studying or casual meetings.",
-    category: "Coffee Shops",
-    location: "University District",
-    address: "222 Campus Road, University District",
-    rating: 4.5,
-    review_count: 156,
-    image_url: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400&h=300&fit=crop",
-    price_range: "$",
-    phone: "(555) 555-6666",
-    website: "https://morningbrewcoffee.com",
-    hours: {
-      monday: "6:00 AM - 9:00 PM",
-      tuesday: "6:00 AM - 9:00 PM",
-      wednesday: "6:00 AM - 9:00 PM",
-      thursday: "6:00 AM - 9:00 PM",
-      friday: "6:00 AM - 10:00 PM",
-      saturday: "7:00 AM - 10:00 PM",
-      sunday: "7:00 AM - 8:00 PM"
-    },
-    amenities: ["WiFi", "Study Areas", "Pastries", "Outdoor Seating", "Student Discounts"]
-  },
-  {
-    name: "Morning Brew Coffee",
-    description: "Cozy neighborhood coffee shop with artisan pastries and free WiFi. Perfect spot for studying or casual meetings.",
-    category: "Coffee Shops",
-    location: "University District",
-    address: "222 Campus Road, University District",
-    rating: 4.5,
-    review_count: 156,
-    image_url: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400&h=300&fit=crop",
-    price_range: "$",
-    phone: "(555) 555-6666",
-    website: "https://morningbrewcoffee.com",
-    hours: {
-      monday: "6:00 AM - 9:00 PM",
-      tuesday: "6:00 AM - 9:00 PM",
-      wednesday: "6:00 AM - 9:00 PM",
-      thursday: "6:00 AM - 9:00 PM",
-      friday: "6:00 AM - 10:00 PM",
-      saturday: "7:00 AM - 10:00 PM",
-      sunday: "7:00 AM - 8:00 PM"
-    },
-    amenities: ["WiFi", "Study Areas", "Pastries", "Outdoor Seating", "Student Discounts"]
-  },
-  {
-    name: "The Grand Steakhouse",
-    description: "Luxury steakhouse with premium cuts, extensive wine cellar, and white-glove service. Perfect for special occasions.",
-    category: "Fine Dining",
-    location: "Financial District",
-    address: "100 Executive Plaza, Financial District",
-    rating: 4.9,
-    review_count: 89,
-    image_url: "https://images.unsplash.com/photo-1544025162-d76694265947?w=400&h=300&fit=crop",
-    price_range: "$$$$",
-    phone: "(555) 777-8888",
-    website: "https://grandsteakhouse.com",
-    hours: {
-      monday: "Closed",
-      tuesday: "5:00 PM - 10:00 PM",
-      wednesday: "5:00 PM - 10:00 PM",
-      thursday: "5:00 PM - 10:00 PM",
-      friday: "5:00 PM - 11:00 PM",
-      saturday: "5:00 PM - 11:00 PM",
-      sunday: "5:00 PM - 9:00 PM"
-    },
-    amenities: ["Valet Parking", "Wine Cellar", "Private Dining", "Reservations", "Dress Code"]
-  },
-  {
-    name: "Burger Barn",
-    description: "Classic American burger joint with hand-formed patties, crispy fries, and thick milkshakes. Family-owned since 1962.",
-    category: "Fast Food",
-    location: "Route 66",
-    address: "1962 Highway Drive, Route 66",
-    rating: 4.2,
-    review_count: 278,
-    image_url: "https://images.unsplash.com/photo-1571091718767-18b5b1457add?w=400&h=300&fit=crop",
-    price_range: "$",
-    phone: "(555) 999-0000",
-    website: "https://burgerbarn.com",
-    hours: {
-      monday: "11:00 AM - 9:00 PM",
-      tuesday: "11:00 AM - 9:00 PM",
-      wednesday: "11:00 AM - 9:00 PM",
-      thursday: "11:00 AM - 9:00 PM",
-      friday: "11:00 AM - 10:00 PM",
-      saturday: "11:00 AM - 10:00 PM",
-      sunday: "12:00 PM - 8:00 PM"
-    },
-    amenities: ["Drive-Thru", "Family Friendly", "Milkshakes", "Parking", "Classic Jukebox"]
+    amenities: ["Multiple TVs", "Sports Packages", "Game Day Specials", "Pool Tables", "Free Parking", "Group Seating"]
   }
 ];
 

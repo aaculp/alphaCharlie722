@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { populateVenuesDatabase } from '../utils/populateVenues';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 const SettingsScreen: React.FC = () => {
@@ -33,6 +34,28 @@ const SettingsScreen: React.FC = () => {
       case 'system': return 'System';
       default: return 'System';
     }
+  };
+
+  const handleUpdateVenueData = async () => {
+    Alert.alert(
+      'Update Venue Data',
+      'This will update all venues with enhanced information including wait times, popular items, atmosphere tags, and parking info. Continue?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Update', 
+          onPress: async () => {
+            try {
+              await populateVenuesDatabase();
+              Alert.alert('Success', 'Venue data has been updated with enhanced information!');
+            } catch (error) {
+              console.error('Error updating venue data:', error);
+              Alert.alert('Error', 'Failed to update venue data. Please try again.');
+            }
+          }
+        },
+      ]
+    );
   };
 
   const handleLogout = () => {
@@ -230,6 +253,12 @@ const SettingsScreen: React.FC = () => {
               />
             }
             showArrow={false}
+          />
+          <SettingItem
+            icon="refresh"
+            title="Update Venue Data"
+            subtitle="Refresh venues with enhanced information"
+            onPress={handleUpdateVenueData}
           />
           <SettingItem
             icon="analytics"

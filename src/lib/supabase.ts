@@ -39,6 +39,14 @@ export interface Database {
           price_range: string;
           latitude: number | null;
           longitude: number | null;
+          wait_times: Record<string, string> | null; // e.g., { "lunch": "15-20 min", "dinner": "30-45 min" }
+          popular_items: string[] | null; // e.g., ["Signature Burger", "Truffle Fries", "Craft Beer"]
+          atmosphere_tags: string[] | null; // e.g., ["Quiet", "Family-Friendly", "Date Night"]
+          parking_info: {
+            type: string; // "Available", "Street Only", "Valet", "None"
+            details?: string; // Additional parking details
+            cost?: string; // "Free", "$5/hour", "Validated"
+          } | null;
           created_at: string;
           updated_at: string;
         };
@@ -59,6 +67,14 @@ export interface Database {
           price_range?: string;
           latitude?: number | null;
           longitude?: number | null;
+          wait_times?: Record<string, string> | null;
+          popular_items?: string[] | null;
+          atmosphere_tags?: string[] | null;
+          parking_info?: {
+            type: string;
+            details?: string;
+            cost?: string;
+          } | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -79,6 +95,14 @@ export interface Database {
           price_range?: string;
           latitude?: number | null;
           longitude?: number | null;
+          wait_times?: Record<string, string> | null;
+          popular_items?: string[] | null;
+          atmosphere_tags?: string[] | null;
+          parking_info?: {
+            type: string;
+            details?: string;
+            cost?: string;
+          } | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -158,6 +182,52 @@ export interface Database {
           id?: string;
           user_id?: string;
           venue_id?: string;
+          created_at?: string;
+        };
+      };
+      user_tags: {
+        Row: {
+          id: string;
+          venue_id: string;
+          user_id: string;
+          tag_text: string;
+          like_count: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          venue_id: string;
+          user_id: string;
+          tag_text: string;
+          like_count?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          venue_id?: string;
+          user_id?: string;
+          tag_text?: string;
+          like_count?: number;
+          created_at?: string;
+        };
+      };
+      tag_likes: {
+        Row: {
+          id: string;
+          tag_id: string;
+          user_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          tag_id: string;
+          user_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          tag_id?: string;
+          user_id?: string;
           created_at?: string;
         };
       };

@@ -19,6 +19,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import { HomeStackParamList } from '../navigation/AppNavigator';
 import { populateVenuesDatabase } from '../utils/populateVenues';
+import { CompactAtmosphere, CompactWaitTimes } from '../components';
 import type { Database } from '../lib/supabase';
 import Icon from 'react-native-vector-icons/Ionicons';
 
@@ -144,12 +145,17 @@ const HomeScreen: React.FC = () => {
           <Text style={[styles.rating, { color: theme.colors.text }]}>⭐ {item.rating}</Text>
           <Text style={[styles.reviewCount, { color: theme.colors.textSecondary }]}>({item.review_count} reviews)</Text>
         </View>
+        
+        {/* Enhanced Information Preview */}
+        <CompactAtmosphere venue={item} maxTags={2} />
+        
         <Text style={[styles.description, { color: theme.colors.textSecondary }]} numberOfLines={2}>
           {item.description}
         </Text>
         <View style={styles.categoryContainer}>
           <Text style={[styles.category, { color: theme.colors.primary, backgroundColor: theme.colors.primary + '20' }]}>{item.category}</Text>
           <Text style={[styles.priceRange, { color: theme.colors.text }]}>{item.price_range}</Text>
+          <CompactWaitTimes venue={item} />
         </View>
       </View>
     </TouchableOpacity>
@@ -287,6 +293,41 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontFamily: 'Inter-SemiBold', // Secondary font for emphasis
   },
+  
+  // Enhanced Information Styles
+  atmospherePreview: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    flexWrap: 'wrap',
+  },
+  atmosphereTagSmall: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+    marginRight: 6,
+    marginBottom: 4,
+  },
+  atmosphereTagTextSmall: {
+    fontSize: 11,
+    fontFamily: 'Inter-Medium',
+  },
+  moreTagsText: {
+    fontSize: 11,
+    fontFamily: 'Inter-Regular',
+    fontStyle: 'italic',
+  },
+  waitTimePreview: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 8,
+  },
+  waitTimeText: {
+    fontSize: 12,
+    fontFamily: 'Inter-Regular',
+    marginLeft: 4,
+  },
+  
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',

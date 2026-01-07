@@ -14,6 +14,7 @@ import { useRoute, RouteProp } from '@react-navigation/native';
 import { SearchStackParamList, HomeStackParamList } from '../navigation/AppNavigator';
 import { useTheme } from '../contexts/ThemeContext';
 import { VenueService } from '../services/venueService';
+import { ModernVenueCards, CompactParking, UserFeedback } from '../components';
 import Icon from 'react-native-vector-icons/Ionicons';
 import type { Database } from '../lib/supabase';
 
@@ -255,7 +256,16 @@ const VenueDetailScreen: React.FC = () => {
           </View>
 
           <Text style={[styles.description, { color: theme.colors.textSecondary }]}>{venue.description}</Text>
+        </View>
 
+        {/* Modern Square Cards - TOP PRIORITY */}
+        <ModernVenueCards venue={venue} />
+
+      {/* User Feedback Section - Only show if tables exist */}
+      <UserFeedback venue={venue} />
+
+        {/* Contact Information, Hours, and Amenities */}
+        <View style={[styles.modernContentContainer, { backgroundColor: theme.colors.surface }]}>
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Contact Information</Text>
             {venue.phone && (
@@ -288,19 +298,11 @@ const VenueDetailScreen: React.FC = () => {
             </View>
           )}
 
-          {venue.amenities && venue.amenities.length > 0 && (
-            <View style={styles.section}>
-              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Amenities</Text>
-              <View style={styles.amenitiesContainer}>
-                {venue.amenities.map((amenity: string, index: number) => (
-                  <View key={index} style={[styles.amenityTag, { backgroundColor: theme.colors.card, borderColor: theme.colors.primary, borderWidth: 1 }]}>
-                    <Text style={[styles.amenityText, { color: theme.colors.primary }]}>{amenity}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-          )}
+
         </View>
+        
+        {/* Bottom spacing */}
+        <View style={{ height: 20 }} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -325,16 +327,32 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 40,
   },
+  modernContentContainer: {
+    marginHorizontal: 15,
+    marginVertical: 10,
+    borderRadius: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
   header: {
     marginBottom: 20,
   },
   venueName: {
     fontSize: 28,
-    fontWeight: 'bold',
+    fontFamily: 'Poppins-Bold',
     marginBottom: 5,
   },
   category: {
     fontSize: 16,
+    fontFamily: 'Inter-Medium',
     marginBottom: 10,
   },
   ratingContainer: {
@@ -343,14 +361,16 @@ const styles = StyleSheet.create({
   },
   rating: {
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: 'Inter-SemiBold',
     marginRight: 8,
   },
   reviewCount: {
     fontSize: 14,
+    fontFamily: 'Inter-Regular',
   },
   description: {
     fontSize: 16,
+    fontFamily: 'Inter-Regular',
     lineHeight: 24,
     marginBottom: 30,
   },
@@ -359,7 +379,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontFamily: 'Poppins-SemiBold',
     marginBottom: 15,
   },
   contactItem: {
@@ -370,6 +390,7 @@ const styles = StyleSheet.create({
   },
   contactText: {
     fontSize: 16,
+    fontFamily: 'Inter-Regular',
     marginLeft: 15,
     flex: 1,
   },
@@ -381,10 +402,11 @@ const styles = StyleSheet.create({
   },
   dayText: {
     fontSize: 16,
-    fontWeight: '500',
+    fontFamily: 'Inter-Medium',
   },
   hoursText: {
     fontSize: 16,
+    fontFamily: 'Inter-Regular',
   },
   amenitiesContainer: {
     flexDirection: 'row',
@@ -399,7 +421,7 @@ const styles = StyleSheet.create({
   },
   amenityText: {
     fontSize: 14,
-    fontWeight: '500',
+    fontFamily: 'Inter-Medium',
   },
   loadingContainer: {
     flex: 1,
@@ -408,6 +430,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 16,
+    fontFamily: 'Inter-Regular',
     marginTop: 10,
   },
   errorContainer: {
@@ -417,6 +440,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 18,
+    fontFamily: 'Inter-Regular',
   },
 });
 
