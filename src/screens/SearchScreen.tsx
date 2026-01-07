@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,9 @@ import {
   Image,
   ActivityIndicator,
   Alert,
+  Modal,
+  Animated,
+  Dimensions,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -59,13 +62,17 @@ const SearchScreen: React.FC = () => {
   const [venues, setVenues] = useState<Venue[]>([]);
   const [filteredVenues, setFilteredVenues] = useState<Venue[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(['All']);
   const [selectedFilters, setSelectedFilters] = useState<string[]>(['all']);
-  const [selectedPriceRange, setSelectedPriceRange] = useState('all_prices');
+  const [selectedPriceRanges, setSelectedPriceRanges] = useState<string[]>(['all_prices']);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
   const navigation = useNavigation<SearchScreenNavigationProp>();
   const { theme } = useTheme();
   const { user } = useAuth();
+
+  // Animation for drawer
+  const slideAnim = useRef(new Animated.Value(Dimensions.get('window').width * 0.4)).current;
 
   // Load all venues on component mount
   useEffect(() => {
@@ -75,10 +82,10 @@ const SearchScreen: React.FC = () => {
     }
   }, [user]);
 
-  // Filter venues when search query, category, filters, or price range changes
+  // Filter venues when search query, categories, filters, or price ranges change
   useEffect(() => {
     filterVenues();
-  }, [searchQuery, selectedCategory, selectedFilters, selectedPriceRange, venues]);
+  }, [searchQuery, selectedCategories, selectedFilters, selectedPriceRanges, venues]);
 
   const loadVenues = async () => {
     setLoading(true);
@@ -95,7 +102,7 @@ const SearchScreen: React.FC = () => {
 
   const loadUserFavorites = async () => {
     if (!user) return;
-    
+
     try {
       const userFavorites = await FavoriteService.getUserFavorites(user.id);
       const favoriteIds = new Set(userFavorites.map(fav => fav.venue_id));
@@ -106,28 +113,31 @@ const SearchScreen: React.FC = () => {
   };
 
   const filterVenues = useCallback(() => {
-    console.log('🔍 Filtering venues:', { 
-      selectedCategory, 
-      selectedFilters, 
-      selectedPriceRange,
+    console.log('🔍 Filtering venues:', {
+      selectedCategories,
+      selectedFilters,
+      selectedPriceRanges,
       searchQuery,
-      totalVenues: venues.length 
+      totalVenues: venues.length
     });
-    
+
     let filtered = [...venues]; // Create a copy to avoid mutations
 
-    // Filter by category first
-    if (selectedCategory !== 'All') {
-      filtered = filtered.filter(venue => venue.category === selectedCategory);
-      console.log(`📂 After category filter (${selectedCategory}):`, filtered.length);
+    // Filter by categories (if not 'All')
+    if (!selectedCategories.includes('All') && selectedCategories.length > 0) {
+      filtered = filtered.filter(venue => selectedCategories.includes(venue.category));
+      console.log(`📂 After category filter (${selectedCategories.join(', ')}):`, filtered.length);
     }
 
-    // Filter by price range
-    if (selectedPriceRange !== 'all_prices') {
-      const priceRange = priceRanges.find(p => p.id === selectedPriceRange);
-      if (priceRange?.value) {
-        filtered = filtered.filter(venue => venue.price_range === priceRange.value);
-        console.log(`💰 After price filter (${priceRange.value}):`, filtered.length);
+    // Filter by price ranges (if not 'all_prices')
+    if (!selectedPriceRanges.includes('all_prices') && selectedPriceRanges.length > 0) {
+      const priceValues = selectedPriceRanges
+        .map(id => priceRanges.find(p => p.id === id)?.value)
+        .filter(Boolean);
+      
+      if (priceValues.length > 0) {
+        filtered = filtered.filter(venue => priceValues.includes(venue.price_range));
+        console.log(`💰 After price filter (${priceValues.join(', ')}):`, filtered.length);
       }
     }
 
@@ -166,41 +176,41 @@ const SearchScreen: React.FC = () => {
 
     console.log('✅ Final filtered venues:', filtered.length);
     setFilteredVenues(filtered);
-  }, [venues, selectedCategory, selectedFilters, selectedPriceRange, searchQuery]);
+  }, [venues, selectedCategories, selectedFilters, selectedPriceRanges, searchQuery]);
 
   // Helper function to check if venue is open now
   const isVenueOpenNow = (venue: Venue) => {
     if (!venue.hours) return false;
-    
+
     const now = new Date();
     const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const currentDay = dayNames[now.getDay()];
     const currentTime = now.getHours() * 100 + now.getMinutes(); // 1430 for 2:30 PM
-    
+
     const todayHours = venue.hours[currentDay as keyof typeof venue.hours];
     if (!todayHours || todayHours === 'Closed') return false;
     if (todayHours === '24 Hours') return true;
-    
+
     // Parse hours like "11:00 AM - 10:00 PM"
     const timeMatch = todayHours.match(/(\d{1,2}):(\d{2})\s*(AM|PM)\s*-\s*(\d{1,2}):(\d{2})\s*(AM|PM)/);
     if (!timeMatch) return false;
-    
+
     const [, openHour, openMin, openPeriod, closeHour, closeMin, closePeriod] = timeMatch;
-    
+
     let openTime = parseInt(openHour) * 100 + parseInt(openMin);
     let closeTime = parseInt(closeHour) * 100 + parseInt(closeMin);
-    
+
     // Convert to 24-hour format
     if (openPeriod === 'PM' && parseInt(openHour) !== 12) openTime += 1200;
     if (closePeriod === 'PM' && parseInt(closeHour) !== 12) closeTime += 1200;
     if (openPeriod === 'AM' && parseInt(openHour) === 12) openTime -= 1200;
     if (closePeriod === 'AM' && parseInt(closeHour) === 12) closeTime -= 1200;
-    
+
     // Handle overnight hours (close time is next day)
     if (closeTime < openTime) {
       return currentTime >= openTime || currentTime <= closeTime;
     }
-    
+
     return currentTime >= openTime && currentTime <= closeTime;
   };
 
@@ -212,7 +222,7 @@ const SearchScreen: React.FC = () => {
 
       // Remove 'all' from filters when selecting specific filters
       const currentFilters = prev.filter(f => f !== 'all');
-      
+
       if (currentFilters.includes(filterId)) {
         // Remove the filter
         const updated = currentFilters.filter(f => f !== filterId);
@@ -224,6 +234,80 @@ const SearchScreen: React.FC = () => {
     });
   }, []);
 
+  // Clear functions for each filter section
+  const clearCategoryFilter = () => {
+    setSelectedCategories(['All']);
+  };
+
+  const clearPriceFilter = () => {
+    setSelectedPriceRanges(['all_prices']);
+  };
+
+  const clearTrendingFilters = () => {
+    setSelectedFilters(['all']);
+  };
+
+  // Toggle functions for multiselect
+  const toggleCategory = (category: string) => {
+    setSelectedCategories(prev => {
+      if (category === 'All') {
+        return ['All'];
+      }
+
+      // Remove 'All' when selecting specific categories
+      const currentCategories = prev.filter(c => c !== 'All');
+      
+      if (currentCategories.includes(category)) {
+        // Remove the category
+        const updated = currentCategories.filter(c => c !== category);
+        return updated.length === 0 ? ['All'] : updated;
+      } else {
+        // Add the category
+        return [...currentCategories, category];
+      }
+    });
+  };
+
+  const togglePriceRange = (priceId: string) => {
+    setSelectedPriceRanges(prev => {
+      if (priceId === 'all_prices') {
+        return ['all_prices'];
+      }
+
+      // Remove 'all_prices' when selecting specific ranges
+      const currentRanges = prev.filter(p => p !== 'all_prices');
+      
+      if (currentRanges.includes(priceId)) {
+        // Remove the price range
+        const updated = currentRanges.filter(p => p !== priceId);
+        return updated.length === 0 ? ['all_prices'] : updated;
+      } else {
+        // Add the price range
+        return [...currentRanges, priceId];
+      }
+    });
+  };
+
+  // Drawer animation functions
+  const openFilterDrawer = () => {
+    setIsFilterDrawerOpen(true);
+    Animated.timing(slideAnim, {
+      toValue: 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const closeFilterDrawer = () => {
+    Animated.timing(slideAnim, {
+      toValue: Dimensions.get('window').width * 0.4,
+      duration: 300,
+      useNativeDriver: true,
+    }).start(() => {
+      setIsFilterDrawerOpen(false);
+    });
+  };
+
   const toggleFavorite = async (venueId: string) => {
     if (!user) {
       Alert.alert('Login Required', 'Please log in to save favorites.');
@@ -232,7 +316,7 @@ const SearchScreen: React.FC = () => {
 
     try {
       const newFavoriteStatus = await FavoriteService.toggleFavorite(user.id, venueId);
-      
+
       setFavorites(prev => {
         const newFavorites = new Set(prev);
         if (newFavoriteStatus) {
@@ -257,33 +341,40 @@ const SearchScreen: React.FC = () => {
 
   const renderPriceRangeFilter = useCallback(() => (
     <View style={styles.priceContainer}>
-      <Text style={[styles.filterSectionTitle, { color: theme.colors.text }]}>Price Range</Text>
+      <View style={styles.filterSectionHeader}>
+        <Text style={[styles.filterSectionTitle, { color: theme.colors.text }]}>Price Range</Text>
+        {selectedPriceRanges.length > 1 || !selectedPriceRanges.includes('all_prices') ? (
+          <TouchableOpacity onPress={clearPriceFilter} style={styles.clearSectionButton}>
+            <Icon name="close-circle" size={20} color={theme.colors.textSecondary} />
+          </TouchableOpacity>
+        ) : null}
+      </View>
       <FlatList
         data={priceRanges}
         horizontal
         showsHorizontalScrollIndicator={false}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => {
-          const isSelected = selectedPriceRange === item.id;
+          const isSelected = selectedPriceRanges.includes(item.id);
           return (
             <TouchableOpacity
               style={[
                 styles.priceButton,
                 {
-                  backgroundColor: isSelected 
-                    ? theme.colors.primary 
+                  backgroundColor: isSelected
+                    ? theme.colors.primary
                     : theme.colors.surface,
                   borderColor: theme.colors.border,
                 }
               ]}
-              onPress={() => setSelectedPriceRange(item.id)}
+              onPress={() => togglePriceRange(item.id)}
             >
               <Text
                 style={[
                   styles.priceText,
                   {
-                    color: isSelected 
-                      ? '#FFFFFF' 
+                    color: isSelected
+                      ? '#FFFFFF'
                       : theme.colors.text,
                     fontWeight: isSelected ? 'bold' : 'normal',
                   }
@@ -297,10 +388,77 @@ const SearchScreen: React.FC = () => {
         contentContainerStyle={styles.priceList}
       />
     </View>
-  ), [selectedPriceRange, theme]);
+  ), [selectedPriceRanges, theme]);
+
+  const renderFilterDrawer = () => (
+    <Modal
+      visible={isFilterDrawerOpen}
+      transparent={true}
+      animationType="none"
+      onRequestClose={closeFilterDrawer}
+    >
+      <View style={styles.drawerOverlay}>
+        <TouchableOpacity
+          style={styles.drawerBackdrop}
+          activeOpacity={1}
+          onPress={closeFilterDrawer}
+        />
+        <Animated.View
+          style={[
+            styles.drawerContainer,
+            {
+              backgroundColor: theme.colors.background,
+              transform: [{ translateX: slideAnim }]
+            }
+          ]}
+        >
+          {/* Drawer Header */}
+          <View style={[styles.drawerHeader, { borderBottomColor: theme.colors.border }]}>
+            <Text style={[styles.drawerTitle, { color: theme.colors.text }]}>Filters</Text>
+            <TouchableOpacity onPress={closeFilterDrawer} style={styles.closeButton}>
+              <Icon name="close" size={24} color={theme.colors.text} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Drawer Content */}
+          <View style={styles.drawerContent}>
+            {/* Categories */}
+            <View style={styles.drawerSection}>
+              {renderCategoryFilter()}
+            </View>
+
+            {/* Price Range */}
+            <View style={styles.drawerSection}>
+              {renderPriceRangeFilter()}
+            </View>
+
+            {/* Hot Filters */}
+            <View style={styles.drawerSection}>
+              {renderFilterButtons()}
+            </View>
+
+            {/* Results Counter */}
+            <View style={styles.drawerResultsContainer}>
+              <Text style={[styles.drawerResultsText, { color: theme.colors.textSecondary }]}>
+                {loading ? 'Loading...' : `${filteredVenues.length} venues found`}
+              </Text>
+            </View>
+          </View>
+        </Animated.View>
+      </View>
+    </Modal>
+  );
 
   const renderFilterButtons = useCallback(() => (
     <View style={styles.filterContainer}>
+      <View style={styles.filterSectionHeader}>
+        <Text style={[styles.filterSectionTitle, { color: theme.colors.text }]}>Trending</Text>
+        {selectedFilters.length > 1 ? (
+          <TouchableOpacity onPress={clearTrendingFilters} style={styles.clearSectionButton}>
+            <Icon name="close-circle" size={20} color={theme.colors.textSecondary} />
+          </TouchableOpacity>
+        ) : null}
+      </View>
       <FlatList
         data={filterOptions}
         horizontal
@@ -313,17 +471,17 @@ const SearchScreen: React.FC = () => {
               style={[
                 styles.filterButton,
                 {
-                  backgroundColor: isSelected 
-                    ? theme.colors.primary 
+                  backgroundColor: isSelected
+                    ? theme.colors.primary
                     : theme.colors.surface,
                   borderColor: theme.colors.border,
                 }
               ]}
               onPress={() => toggleFilter(item.id)}
             >
-              <Icon 
-                name={item.icon} 
-                size={16} 
+              <Icon
+                name={item.icon}
+                size={16}
                 color={isSelected ? '#FFFFFF' : theme.colors.textSecondary}
                 style={styles.filterIcon}
               />
@@ -331,8 +489,8 @@ const SearchScreen: React.FC = () => {
                 style={[
                   styles.filterText,
                   {
-                    color: isSelected 
-                      ? '#FFFFFF' 
+                    color: isSelected
+                      ? '#FFFFFF'
                       : theme.colors.text,
                   }
                 ]}
@@ -349,6 +507,14 @@ const SearchScreen: React.FC = () => {
 
   const renderCategoryFilter = () => (
     <View style={styles.categoryContainer}>
+      <View style={styles.filterSectionHeader}>
+        <Text style={[styles.filterSectionTitle, { color: theme.colors.text }]}>Categories</Text>
+        {selectedCategories.length > 1 || !selectedCategories.includes('All') ? (
+          <TouchableOpacity onPress={clearCategoryFilter} style={styles.clearSectionButton}>
+            <Icon name="close-circle" size={20} color={theme.colors.textSecondary} />
+          </TouchableOpacity>
+        ) : null}
+      </View>
       <FlatList
         data={categories}
         horizontal
@@ -359,20 +525,20 @@ const SearchScreen: React.FC = () => {
             style={[
               styles.categoryButton,
               {
-                backgroundColor: selectedCategory === item 
-                  ? theme.colors.primary 
+                backgroundColor: selectedCategories.includes(item)
+                  ? theme.colors.primary
                   : theme.colors.surface,
                 borderColor: theme.colors.border,
               }
             ]}
-            onPress={() => setSelectedCategory(item)}
+            onPress={() => toggleCategory(item)}
           >
             <Text
               style={[
                 styles.categoryText,
                 {
-                  color: selectedCategory === item 
-                    ? '#FFFFFF' 
+                  color: selectedCategories.includes(item)
+                    ? '#FFFFFF'
                     : theme.colors.text,
                 }
               ]}
@@ -392,18 +558,18 @@ const SearchScreen: React.FC = () => {
       onPress={() => handleVenuePress(item)}
     >
       <View style={styles.venueImageContainer}>
-        <Image 
-          source={{ uri: item.image_url || 'https://via.placeholder.com/100x100' }} 
-          style={styles.venueImage} 
+        <Image
+          source={{ uri: item.image_url || 'https://via.placeholder.com/100x100' }}
+          style={styles.venueImage}
         />
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[styles.favoriteButtonSmall, { backgroundColor: theme.colors.surface + 'E6' }]}
           onPress={() => toggleFavorite(item.id)}
         >
-          <Icon 
-            name={favorites.has(item.id) ? 'heart' : 'heart-outline'} 
-            size={16} 
-            color={favorites.has(item.id) ? '#FF3B30' : theme.colors.textSecondary} 
+          <Icon
+            name={favorites.has(item.id) ? 'heart' : 'heart-outline'}
+            size={16}
+            color={favorites.has(item.id) ? '#FF3B30' : theme.colors.textSecondary}
           />
         </TouchableOpacity>
       </View>
@@ -422,6 +588,7 @@ const SearchScreen: React.FC = () => {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      {/* Search Bar with Filter Button */}
       <View style={[styles.searchContainer, { backgroundColor: theme.colors.surface }]}>
         <Icon name="search" size={20} color={theme.colors.textSecondary} style={styles.searchIcon} />
         <TextInput
@@ -439,11 +606,22 @@ const SearchScreen: React.FC = () => {
             <Icon name="close-circle" size={20} color={theme.colors.textSecondary} />
           </TouchableOpacity>
         )}
-      </View>
 
-      {renderCategoryFilter()}
-      {renderPriceRangeFilter()}
-      {renderFilterButtons()}
+        {/* Filter Button */}
+        <TouchableOpacity
+          style={[styles.filterActionButton, { backgroundColor: theme.colors.primary }]}
+          onPress={openFilterDrawer}
+        >
+          <Icon name="options" size={20} color="#FFFFFF" />
+          {(selectedCategories.length > 1 || !selectedCategories.includes('All') || 
+            selectedFilters.length > 1 || 
+            selectedPriceRanges.length > 1 || !selectedPriceRanges.includes('all_prices')) && (
+            <View style={styles.filterBadge}>
+              <Text style={styles.filterBadgeText}>•</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+      </View>
 
       {/* Results Counter */}
       <View style={styles.resultsContainer}>
@@ -476,6 +654,9 @@ const SearchScreen: React.FC = () => {
           }
         />
       )}
+
+      {/* Filter Drawer */}
+      {renderFilterDrawer()}
     </View>
   );
 };
@@ -490,6 +671,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 15,
     marginVertical: 10,
     paddingHorizontal: 15,
+    paddingRight: 10,
     borderRadius: 25,
     shadowColor: '#000',
     shadowOffset: {
@@ -511,9 +693,48 @@ const styles = StyleSheet.create({
   },
   clearButton: {
     padding: 5,
+    marginRight: 10,
+  },
+  filterActionButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  filterBadge: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#FF3B30',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  filterBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 8,
+    fontWeight: 'bold',
   },
   categoryContainer: {
     marginBottom: 10,
+    paddingHorizontal: 15,
+  },
+  filterSectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  filterSectionTitle: {
+    fontSize: 16,
+    fontFamily: 'Poppins-SemiBold',
+  },
+  clearSectionButton: {
+    padding: 4,
   },
   categoryList: {
     paddingHorizontal: 15,
@@ -533,11 +754,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     paddingHorizontal: 15,
   },
-  filterSectionTitle: {
-    fontSize: 16,
-    fontFamily: 'Poppins-SemiBold',
-    marginBottom: 8,
-  },
   priceList: {
     paddingRight: 15,
   },
@@ -556,6 +772,7 @@ const styles = StyleSheet.create({
   },
   filterContainer: {
     marginBottom: 10,
+    paddingHorizontal: 15,
   },
   filterList: {
     paddingHorizontal: 15,
@@ -696,6 +913,66 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingBottom: 20,
+  },
+  // Drawer Styles
+  drawerOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+    flexDirection: 'row',
+  },
+  drawerBackdrop: {
+    flex: 1,
+  },
+  drawerContainer: {
+    width: '50%',
+    height: '100%',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: -2,
+      height: 0,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  drawerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+  },
+  drawerTitle: {
+    fontSize: 20,
+    fontFamily: 'Poppins-SemiBold',
+  },
+  closeButton: {
+    padding: 4,
+  },
+  drawerContent: {
+    flex: 1,
+    paddingVertical: 10,
+  },
+  drawerSection: {
+    marginBottom: 20,
+  },
+  drawerSectionTitle: {
+    fontSize: 16,
+    fontFamily: 'Poppins-SemiBold',
+    marginBottom: 10,
+    paddingHorizontal: 20,
+  },
+  drawerResultsContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    marginTop: 'auto',
+  },
+  drawerResultsText: {
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+    textAlign: 'center',
   },
 });
 
