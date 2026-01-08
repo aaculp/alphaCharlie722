@@ -12,6 +12,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { useGridLayout, GridLayoutType } from '../contexts/GridLayoutContext';
+import { useNavigationStyle, NavigationStyleType } from '../contexts/NavigationStyleContext';
 import { populateVenuesDatabase } from '../utils/populateVenues';
 import Icon from 'react-native-vector-icons/Ionicons';
 
@@ -19,8 +21,12 @@ const SettingsScreen: React.FC = () => {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [locationEnabled, setLocationEnabled] = useState(true);
   const [experimentalFeaturesEnabled, setExperimentalFeaturesEnabled] = useState(false);
+  const [gridLayoutExpanded, setGridLayoutExpanded] = useState(false);
+  const [navigationStyleExpanded, setNavigationStyleExpanded] = useState(false);
   const { signOut, user } = useAuth();
   const { theme, isDark, themeMode, setThemeMode } = useTheme();
+  const { gridLayout, setGridLayout } = useGridLayout();
+  const { navigationStyle, setNavigationStyle } = useNavigationStyle();
   const navigation = useNavigation<any>();
 
   const handleThemeChange = (mode: 'light' | 'dark' | 'system') => {
@@ -126,6 +132,94 @@ const SettingsScreen: React.FC = () => {
 
   const SectionHeader = ({ title }: { title: string }) => (
     <Text style={[styles.sectionHeader, { color: theme.colors.textSecondary }]}>{title}</Text>
+  );
+
+  const GridLayoutOption = ({ 
+    layout, 
+    title, 
+    description, 
+    isSelected 
+  }: { 
+    layout: GridLayoutType; 
+    title: string; 
+    description: string; 
+    isSelected: boolean; 
+  }) => (
+    <TouchableOpacity 
+      style={[
+        styles.gridLayoutOption, 
+        { 
+          borderBottomColor: theme.colors.border,
+          backgroundColor: isSelected ? theme.colors.primary + '10' : 'transparent'
+        }
+      ]} 
+      onPress={() => setGridLayout(layout)}
+    >
+      <View style={styles.gridLayoutLeft}>
+        <View style={[
+          styles.radioButton, 
+          { 
+            borderColor: isSelected ? theme.colors.primary : theme.colors.border,
+            backgroundColor: isSelected ? theme.colors.primary : 'transparent'
+          }
+        ]}>
+          {isSelected && <View style={styles.radioButtonInner} />}
+        </View>
+        <View style={styles.gridLayoutText}>
+          <Text style={[styles.gridLayoutTitle, { color: theme.colors.text }]}>{title}</Text>
+          <Text style={[styles.gridLayoutDescription, { color: theme.colors.textSecondary }]}>{description}</Text>
+        </View>
+      </View>
+      <Icon 
+        name={layout === '1-column' ? 'list' : 'grid'} 
+        size={20} 
+        color={theme.colors.textSecondary} 
+      />
+    </TouchableOpacity>
+  );
+
+  const NavigationStyleOption = ({ 
+    style, 
+    title, 
+    description, 
+    isSelected 
+  }: { 
+    style: NavigationStyleType; 
+    title: string; 
+    description: string; 
+    isSelected: boolean; 
+  }) => (
+    <TouchableOpacity 
+      style={[
+        styles.gridLayoutOption, 
+        { 
+          borderBottomColor: theme.colors.border,
+          backgroundColor: isSelected ? theme.colors.primary + '10' : 'transparent'
+        }
+      ]} 
+      onPress={() => setNavigationStyle(style)}
+    >
+      <View style={styles.gridLayoutLeft}>
+        <View style={[
+          styles.radioButton, 
+          { 
+            borderColor: isSelected ? theme.colors.primary : theme.colors.border,
+            backgroundColor: isSelected ? theme.colors.primary : 'transparent'
+          }
+        ]}>
+          {isSelected && <View style={styles.radioButtonInner} />}
+        </View>
+        <View style={styles.gridLayoutText}>
+          <Text style={[styles.gridLayoutTitle, { color: theme.colors.text }]}>{title}</Text>
+          <Text style={[styles.gridLayoutDescription, { color: theme.colors.textSecondary }]}>{description}</Text>
+        </View>
+      </View>
+      <Icon 
+        name={style === 'floating' ? 'radio-button-on' : 'menu'} 
+        size={20} 
+        color={theme.colors.textSecondary} 
+      />
+    </TouchableOpacity>
   );
 
   return (
@@ -254,6 +348,89 @@ const SettingsScreen: React.FC = () => {
             }
             showArrow={false}
           />
+          
+          {/* Grid Layout Accordion */}
+          <TouchableOpacity 
+            style={[styles.settingItem, { borderBottomColor: theme.colors.border }]}
+            onPress={() => setGridLayoutExpanded(!gridLayoutExpanded)}
+          >
+            <View style={styles.settingLeft}>
+              <Icon name="grid" size={24} color={theme.colors.primary} style={styles.settingIcon} />
+              <View style={styles.settingText}>
+                <Text style={[styles.settingTitle, { color: theme.colors.text }]}>Grid Layout</Text>
+                <Text style={[styles.settingSubtitle, { color: theme.colors.textSecondary }]}>
+                  {gridLayout === '1-column' ? '1 Column' : '2 Column'} layout
+                </Text>
+              </View>
+            </View>
+            <View style={styles.settingRight}>
+              <Icon 
+                name={gridLayoutExpanded ? 'chevron-up' : 'chevron-down'} 
+                size={20} 
+                color={theme.colors.textSecondary} 
+              />
+            </View>
+          </TouchableOpacity>
+          
+          {/* Grid Layout Options */}
+          {gridLayoutExpanded && (
+            <View style={styles.accordionContent}>
+              <GridLayoutOption
+                layout="1-column"
+                title="1 Column Grid"
+                description="Single column layout for detailed view"
+                isSelected={gridLayout === '1-column'}
+              />
+              <GridLayoutOption
+                layout="2-column"
+                title="2 Column Grid"
+                description="Compact two-column layout"
+                isSelected={gridLayout === '2-column'}
+              />
+            </View>
+          )}
+          
+          {/* Navigation Style Accordion */}
+          <TouchableOpacity 
+            style={[styles.settingItem, { borderBottomColor: theme.colors.border }]}
+            onPress={() => setNavigationStyleExpanded(!navigationStyleExpanded)}
+          >
+            <View style={styles.settingLeft}>
+              <Icon name="navigate" size={24} color={theme.colors.primary} style={styles.settingIcon} />
+              <View style={styles.settingText}>
+                <Text style={[styles.settingTitle, { color: theme.colors.text }]}>Navigation Style</Text>
+                <Text style={[styles.settingSubtitle, { color: theme.colors.textSecondary }]}>
+                  {navigationStyle === 'floating' ? 'Floating' : 'Regular'} tab bar
+                </Text>
+              </View>
+            </View>
+            <View style={styles.settingRight}>
+              <Icon 
+                name={navigationStyleExpanded ? 'chevron-up' : 'chevron-down'} 
+                size={20} 
+                color={theme.colors.textSecondary} 
+              />
+            </View>
+          </TouchableOpacity>
+          
+          {/* Navigation Style Options */}
+          {navigationStyleExpanded && (
+            <View style={styles.accordionContent}>
+              <NavigationStyleOption
+                style="floating"
+                title="Floating Tab Bar"
+                description="Modern floating navigation at bottom"
+                isSelected={navigationStyle === 'floating'}
+              />
+              <NavigationStyleOption
+                style="regular"
+                title="Regular Tab Bar"
+                description="Traditional bottom tab navigation"
+                isSelected={navigationStyle === 'regular'}
+              />
+            </View>
+          )}
+          
           <SettingItem
             icon="refresh"
             title="Update Venue Data"
@@ -452,6 +629,50 @@ const styles = StyleSheet.create({
   },
   bottomSpacing: {
     height: 50,
+  },
+  accordionContent: {
+    backgroundColor: 'rgba(0, 0, 0, 0.02)',
+  },
+  gridLayoutOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  gridLayoutLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  radioButton: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    marginRight: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  radioButtonInner: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'white',
+  },
+  gridLayoutText: {
+    flex: 1,
+  },
+  gridLayoutTitle: {
+    fontSize: 15,
+    fontWeight: '500',
+    marginBottom: 2,
+    fontFamily: 'Inter-Medium',
+  },
+  gridLayoutDescription: {
+    fontSize: 13,
+    fontFamily: 'Inter-Regular',
   },
 });
 

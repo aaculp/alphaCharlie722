@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { useNavigationStyle } from '../contexts/NavigationStyleContext';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import FloatingTabBar from '../components/FloatingTabBar';
 
@@ -127,51 +128,142 @@ function SettingsStackNavigator() {
 
 // Main Tab Navigator
 function MainTabNavigator() {
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
+  const { navigationStyle } = useNavigationStyle();
   
-  return (
-    <Tab.Navigator
-      tabBar={(props) => <FloatingTabBar {...props} />}
-      screenOptions={{
-        headerShown: false,
-        tabBarStyle: { 
-          display: 'none',
-          height: 0,
-          borderTopWidth: 0,
-          elevation: 0,
-          shadowOpacity: 0,
-          backgroundColor: 'transparent',
-          position: 'absolute',
-          bottom: -200,
-          opacity: 0,
-        },
-        tabBarBackground: () => null,
-        tabBarShowLabel: false,
-        tabBarItemStyle: { display: 'none' },
-      }}
-    >
-      <Tab.Screen 
-        name="Home" 
-        component={HomeStackNavigator}
-        options={{ title: 'Feed' }}
-      />
-      <Tab.Screen 
-        name="QuickPicks" 
-        component={QuickPicksScreen}
-        options={{ title: 'Quick Picks' }}
-      />
-      <Tab.Screen 
-        name="Search" 
-        component={SearchStackNavigator}
-        options={{ title: 'Search' }}
-      />
-      <Tab.Screen 
-        name="Settings" 
-        component={SettingsStackNavigator}
-        options={{ title: 'Settings' }}
-      />
-    </Tab.Navigator>
-  );
+  const getTabIcon = (routeName: string, focused: boolean) => {
+    let iconName: string;
+    
+    switch (routeName) {
+      case 'Home':
+        iconName = focused ? 'home' : 'home-outline';
+        break;
+      case 'QuickPicks':
+        iconName = focused ? 'walk' : 'walk-outline';
+        break;
+      case 'Search':
+        iconName = focused ? 'search' : 'search-outline';
+        break;
+      case 'Settings':
+        iconName = focused ? 'settings' : 'settings-outline';
+        break;
+      default:
+        iconName = 'help-outline';
+    }
+    
+    return iconName;
+  };
+
+  const getTabLabel = (routeName: string) => {
+    switch (routeName) {
+      case 'Home':
+        return 'Feed';
+      case 'QuickPicks':
+        return 'Quick Picks';
+      case 'Search':
+        return 'Search';
+      case 'Settings':
+        return 'Settings';
+      default:
+        return routeName;
+    }
+  };
+
+  if (navigationStyle === 'floating') {
+    // Floating Tab Bar (current implementation)
+    return (
+      <Tab.Navigator
+        tabBar={(props) => <FloatingTabBar {...props} />}
+        screenOptions={{
+          headerShown: false,
+          tabBarStyle: { 
+            display: 'none',
+            height: 0,
+            borderTopWidth: 0,
+            elevation: 0,
+            shadowOpacity: 0,
+            backgroundColor: 'transparent',
+            position: 'absolute',
+            bottom: -200,
+            opacity: 0,
+          },
+          tabBarBackground: () => null,
+          tabBarShowLabel: false,
+          tabBarItemStyle: { display: 'none' },
+        }}
+      >
+        <Tab.Screen 
+          name="Home" 
+          component={HomeStackNavigator}
+          options={{ title: 'Feed' }}
+        />
+        <Tab.Screen 
+          name="QuickPicks" 
+          component={QuickPicksScreen}
+          options={{ title: 'Quick Picks' }}
+        />
+        <Tab.Screen 
+          name="Search" 
+          component={SearchStackNavigator}
+          options={{ title: 'Search' }}
+        />
+        <Tab.Screen 
+          name="Settings" 
+          component={SettingsStackNavigator}
+          options={{ title: 'Settings' }}
+        />
+      </Tab.Navigator>
+    );
+  } else {
+    // Regular Tab Bar
+    return (
+      <Tab.Navigator
+        screenOptions={({ route }) => ({
+          headerShown: false,
+          tabBarIcon: ({ focused, color, size }) => {
+            const iconName = getTabIcon(route.name, focused);
+            return <Icon name={iconName} size={size} color={color} />;
+          },
+          tabBarActiveTintColor: theme.colors.primary,
+          tabBarInactiveTintColor: theme.colors.textSecondary,
+          tabBarStyle: {
+            backgroundColor: isDark ? theme.colors.surface : '#ffffff',
+            borderTopColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+            borderTopWidth: 1,
+            paddingBottom: 8,
+            paddingTop: 8,
+            height: 70,
+          },
+          tabBarLabelStyle: {
+            fontSize: 12,
+            fontFamily: 'Inter-Medium',
+            marginTop: 4,
+          },
+        })}
+      >
+        <Tab.Screen 
+          name="Home" 
+          component={HomeStackNavigator}
+          options={{ title: getTabLabel('Home') }}
+        />
+        <Tab.Screen 
+          name="QuickPicks" 
+          component={QuickPicksScreen}
+          options={{ title: getTabLabel('QuickPicks') }}
+        />
+        <Tab.Screen 
+          name="Search" 
+          component={SearchStackNavigator}
+          options={{ title: getTabLabel('Search') }}
+        />
+        <Tab.Screen 
+          name="Settings" 
+          component={SettingsStackNavigator}
+          options={{ title: getTabLabel('Settings') }}
+        />
+      </Tab.Navigator>
+    );
+  }
 }
 
 // Main App Navigator with Authentication

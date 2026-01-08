@@ -17,6 +17,7 @@ import { VenueService } from '../services/venueService';
 import { FavoriteService } from '../services/favoriteService';
 import { CheckInService, VenueCheckInStats } from '../services/checkInService';
 import { useTheme } from '../contexts/ThemeContext';
+import { useGridLayout } from '../contexts/GridLayoutContext';
 import { useAuth } from '../contexts/AuthContext';
 import { HomeStackParamList } from '../navigation/AppNavigator';
 import { populateVenuesDatabase } from '../utils/populateVenues';
@@ -36,22 +37,23 @@ const HomeScreen: React.FC = () => {
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [checkInStats, setCheckInStats] = useState<Map<string, VenueCheckInStats>>(new Map());
   const { theme } = useTheme();
+  const { gridLayout } = useGridLayout();
   const { user } = useAuth();
   const navigation = useNavigation<HomeScreenNavigationProp>();
 
   const loadFeaturedVenues = async () => {
     try {
       let featuredVenues = await VenueService.getFeaturedVenues(10);
-      
+
       // If no venues found, populate the database with sample data
       if (featuredVenues.length === 0) {
         console.log('📝 No venues found, populating database...');
         await populateVenuesDatabase();
         featuredVenues = await VenueService.getFeaturedVenues(10);
       }
-      
+
       setVenues(featuredVenues);
-      
+
       // Load user's favorites if logged in
       if (user) {
         await loadUserFavorites();
@@ -69,7 +71,7 @@ const HomeScreen: React.FC = () => {
 
   const loadUserFavorites = async () => {
     if (!user) return;
-    
+
     try {
       const userFavorites = await FavoriteService.getUserFavorites(user.id);
       const favoriteIds = new Set(userFavorites.map(fav => fav.venue_id));
@@ -111,7 +113,7 @@ const HomeScreen: React.FC = () => {
 
     try {
       const newFavoriteStatus = await FavoriteService.toggleFavorite(user.id, venueId);
-      
+
       setFavorites(prev => {
         const newFavorites = new Set(prev);
         if (newFavoriteStatus) {
@@ -146,44 +148,53 @@ const HomeScreen: React.FC = () => {
 
   const renderFeedItem = (item: Venue, index: number) => {
     const venueCheckInStats = checkInStats.get(item.id);
-    
+
     return (
-      <TouchableOpacity 
-        key={item.id} 
+      <TouchableOpacity
+        key={item.id}
         style={[
-          styles.feedItem, 
+          styles.feedItem,
           { backgroundColor: theme.colors.surface },
-          index % 2 === 0 ? styles.leftColumn : styles.rightColumn
+          gridLayout === '1-column' && styles.singleColumnItem
         ]}
         onPress={() => handleVenuePress(item)}
         activeOpacity={0.7}
       >
-        <View style={styles.imageContainer}>
-          <Image 
-            source={{ 
-              uri: item.image_url || 'https://via.placeholder.com/300x200' 
-            }} 
-            style={styles.feedImage} 
+        <View style={[
+          styles.imageContainer,
+          gridLayout === '1-column' && styles.singleColumnImageContainer
+        ]}>
+          <Image
+            source={{
+              uri: item.image_url || 'https://via.placeholder.com/300x200'
+            }}
+            style={[
+              styles.feedImage,
+              gridLayout === '1-column' && styles.singleColumnImage
+            ]}
           />
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.favoriteButton, { backgroundColor: theme.colors.surface + 'E6' }]}
             onPress={() => toggleFavorite(item.id)}
           >
-            <Icon 
-              name={favorites.has(item.id) ? 'heart' : 'heart-outline'} 
-              size={18} 
-              color={favorites.has(item.id) ? '#FF3B30' : theme.colors.textSecondary} 
+            <Icon
+              name={favorites.has(item.id) ? 'heart' : 'heart-outline'}
+              size={18}
+              color={favorites.has(item.id) ? '#FF3B30' : theme.colors.textSecondary}
             />
           </TouchableOpacity>
         </View>
-        <View style={styles.feedContent}>
+        <View style={[
+          styles.feedContent,
+          gridLayout === '1-column' && styles.singleColumnContent
+        ]}>
           <Text style={[styles.venueName, { color: theme.colors.text }]} numberOfLines={1}>
             {item.name}
           </Text>
           <Text style={[styles.location, { color: theme.colors.textSecondary }]} numberOfLines={1}>
             {item.location}
           </Text>
-          
+
           {/* Activity Level Chip - Between location and rating */}
           {item.max_capacity && venueCheckInStats ? (
             <View style={styles.activityContainer}>
@@ -209,12 +220,12 @@ const HomeScreen: React.FC = () => {
               </View>
             </View>
           )}
-          
+
           <View style={styles.ratingContainer}>
             <Text style={[styles.rating, { color: theme.colors.text }]}>⭐ {item.rating}</Text>
             <Text style={[styles.reviewCount, { color: theme.colors.textSecondary }]}>({item.review_count})</Text>
           </View>
-          
+
           {/* Check-in Button Row */}
           {venueCheckInStats && (
             <View style={styles.checkInContainer}>
@@ -231,7 +242,7 @@ const HomeScreen: React.FC = () => {
                 size="small"
                 showModalForCheckout={true}
               />
-              <VenueCustomerCount 
+              <VenueCustomerCount
                 count={venueCheckInStats.active_checkins}
                 size="small"
               />
@@ -240,22 +251,6 @@ const HomeScreen: React.FC = () => {
         </View>
       </TouchableOpacity>
     );
-  };
-
-  const renderVenueGrid = () => {
-    const rows = [];
-    for (let i = 0; i < venues.length; i += 2) {
-      const leftVenue = venues[i];
-      const rightVenue = venues[i + 1];
-      
-      rows.push(
-        <View key={i} style={styles.gridRow}>
-          {renderFeedItem(leftVenue, i)}
-          {rightVenue && renderFeedItem(rightVenue, i + 1)}
-        </View>
-      );
-    }
-    return rows;
   };
 
   if (loading) {
@@ -271,8 +266,8 @@ const HomeScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-      <ScrollView 
-        style={styles.scrollView} 
+      <ScrollView
+        style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -280,7 +275,12 @@ const HomeScreen: React.FC = () => {
         }
       >
         {venues.length > 0 ? (
-          renderVenueGrid()
+          <View style={[
+            styles.venueGrid,
+            gridLayout === '1-column' && styles.singleColumnGrid
+          ]}>
+            {venues.map((venue, index) => renderFeedItem(venue, index))}
+          </View>
         ) : (
           <View style={styles.emptyContainer}>
             <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>No venues found</Text>
@@ -300,15 +300,20 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 100, // Space for floating tab bar
+    paddingBottom: 90, // Space for floating tab bar
   },
-  gridRow: {
+  venueGrid: {
     flexDirection: 'row',
-    paddingHorizontal: 15,
-    marginBottom: 16,
+    flexWrap: 'wrap',
+    paddingHorizontal: 5,
+    justifyContent: 'space-between',
+  },
+  singleColumnGrid: {
+    flexDirection: 'column',
+    gap: 12,
   },
   feedItem: {
-    flex: 1,
+    width: '48%', // Slightly less than 50% to account for gap
     borderRadius: 12,
     shadowColor: '#000',
     shadowOffset: {
@@ -318,17 +323,26 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    marginBottom: 16,
   },
-  leftColumn: {
-    marginRight: 8,
-  },
-  rightColumn: {
-    marginLeft: 8,
+  singleColumnItem: {
+    width: '100%',
+    flexDirection: 'column',
+    marginBottom: 12,
   },
   imageContainer: {
     position: 'relative',
   },
+  singleColumnImageContainer: {
+    position: 'relative',
+  },
   feedImage: {
+    width: '100%',
+    height: 140,
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+  },
+  singleColumnImage: {
     width: '100%',
     height: 140,
     borderTopLeftRadius: 12,
@@ -353,6 +367,9 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   feedContent: {
+    padding: 12,
+  },
+  singleColumnContent: {
     padding: 12,
   },
   venueName: {
@@ -414,7 +431,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 4,
   },
-  
+
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',

@@ -64,7 +64,7 @@ const FloatingTabBar: React.FC<FloatingTabBarProps> = ({
         iconName = focused ? 'home' : 'home-outline';
         break;
       case 'QuickPicks':
-        iconName = focused ? 'flash' : 'flash-outline';
+        iconName = focused ? 'walk' : 'walk-outline';
         break;
       case 'Search':
         iconName = focused ? 'search' : 'search-outline';
@@ -79,21 +79,6 @@ const FloatingTabBar: React.FC<FloatingTabBarProps> = ({
     return iconName;
   };
 
-  const getTabLabel = (routeName: string) => {
-    switch (routeName) {
-      case 'Home':
-        return 'Feed';
-      case 'QuickPicks':
-        return 'Quick Picks';
-      case 'Search':
-        return 'Search';
-      case 'Settings':
-        return 'Settings';
-      default:
-        return routeName;
-    }
-  };
-
   return (
     <View style={[
       styles.container,
@@ -106,11 +91,11 @@ const FloatingTabBar: React.FC<FloatingTabBarProps> = ({
         styles.tabBar,
         {
           backgroundColor: isDark 
-            ? 'rgba(30, 30, 30, 0.95)' 
-            : 'rgba(255, 255, 255, 0.95)',
+            ? 'rgba(20, 20, 20, 0.7)' 
+            : 'rgba(255, 255, 255, 0.7)',
           borderColor: isDark 
-            ? 'rgba(255, 255, 255, 0.1)' 
-            : 'rgba(0, 0, 0, 0.1)',
+            ? 'rgba(255, 255, 255, 0.15)' 
+            : 'rgba(0, 0, 0, 0.15)',
         }
       ]}>
         {/* Sliding Background Indicator */}
@@ -175,18 +160,6 @@ const FloatingTabBar: React.FC<FloatingTabBarProps> = ({
                       }
                     />
                   </View>
-                  {!isFocused && (
-                    <Text
-                      style={[
-                        styles.tabLabel,
-                        {
-                          color: theme.colors.textSecondary,
-                        },
-                      ]}
-                    >
-                      {getTabLabel(route.name)}
-                    </Text>
-                  )}
                 </View>
               </TouchableOpacity>
             </Animated.View>
@@ -221,12 +194,17 @@ const styles = StyleSheet.create({
       width: 0,
       height: 8,
     },
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
-    elevation: 10,
+    shadowOpacity: 0.25,
+    shadowRadius: 25,
+    elevation: 15,
     ...Platform.select({
       ios: {
-        backdropFilter: 'blur(20px)',
+        backdropFilter: 'blur(30px)',
+      },
+      android: {
+        // Android doesn't support backdrop-filter, but we can enhance the shadow
+        shadowOpacity: 0.3,
+        elevation: 20,
       },
     }),
   },
@@ -239,11 +217,11 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 4,
+      height: 6,
     },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 6,
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -266,17 +244,14 @@ const styles = StyleSheet.create({
   tabContent: {
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 2,
     minHeight: 50,
+    width: '100%',
   },
   iconContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  tabLabel: {
-    fontSize: 10,
-    fontFamily: 'Inter-Medium',
-    textAlign: 'center',
+    width: '100%',
+    height: '100%',
   },
 });
 
