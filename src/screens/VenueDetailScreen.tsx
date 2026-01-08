@@ -14,7 +14,9 @@ import { useRoute, RouteProp } from '@react-navigation/native';
 import { SearchStackParamList, HomeStackParamList } from '../navigation/AppNavigator';
 import { useTheme } from '../contexts/ThemeContext';
 import { VenueService } from '../services/venueService';
-import { ModernVenueCards, CompactParking, UserFeedback } from '../components';
+import { CheckInService, VenueCheckInStats } from '../services/checkInService';
+import { ModernVenueCards, CompactParking, UserFeedback, VenueCustomerCount } from '../components';
+import { getActivityLevel } from '../utils/activityLevel';
 import Icon from 'react-native-vector-icons/Ionicons';
 import type { Database } from '../lib/supabase';
 
@@ -156,6 +158,7 @@ const VenueDetailScreen: React.FC = () => {
   const scrollViewRef = useRef<ScrollView>(null);
   const [venue, setVenue] = useState<Venue | null>(null);
   const [loading, setLoading] = useState(true);
+  const [checkInStats, setCheckInStats] = useState<VenueCheckInStats | null>(null);
 
   // Fetch venue details (try Supabase first, fallback to mock data)
   useEffect(() => {
@@ -168,6 +171,13 @@ const VenueDetailScreen: React.FC = () => {
         
         if (supabaseVenue) {
           setVenue(supabaseVenue);
+          // Load check-in stats for the venue
+          try {
+            const stats = await CheckInService.getVenueCheckInStats(venueId);
+            setCheckInStats(stats);
+          } catch (error) {
+            console.error('Error loading check-in stats:', error);
+          }
         } else {
           // Fallback to mock data for search screen
           const mockVenue = getMockVenueDetails(venueId);
@@ -249,6 +259,40 @@ const VenueDetailScreen: React.FC = () => {
           <View style={styles.header}>
             <Text style={[styles.venueName, { color: theme.colors.text }]}>{venue.name}</Text>
             <Text style={[styles.category, { color: theme.colors.textSecondary }]}>{venue.category} • {venue.price_range}</Text>
+            
+            {/* Engagement Row - Activity Level and Customer Count */}
+            <View style={styles.engagementRow}>
+              {/* Activity Level Chip */}
+              {venue.max_capacity && checkInStats ? (
+                (() => {
+                  const activityLevel = getActivityLevel(checkInStats.active_checkins, venue.max_capacity);
+                  return (
+                    <View style={[styles.activityChip, { backgroundColor: activityLevel.color + '20', borderColor: activityLevel.color + '40' }]}>
+                      <Text style={styles.activityEmoji}>{activityLevel.emoji}</Text>
+                      <Text style={[styles.activityText, { color: activityLevel.color }]}>
+                        {activityLevel.level}
+                      </Text>
+                    </View>
+                  );
+                })()
+              ) : (
+                <View style={[styles.activityChip, { backgroundColor: '#10B981' + '20', borderColor: '#10B981' + '40' }]}>
+                  <Text style={styles.activityEmoji}>😌</Text>
+                  <Text style={[styles.activityText, { color: '#10B981' }]}>
+                    Low-key
+                  </Text>
+                </View>
+              )}
+              
+              {/* Customer Count */}
+              {checkInStats && (
+                <VenueCustomerCount 
+                  count={checkInStats.active_checkins}
+                  size="medium"
+                />
+              )}
+            </View>
+            
             <View style={styles.ratingContainer}>
               <Text style={[styles.rating, { color: theme.colors.text }]}>⭐ {venue.rating}</Text>
               <Text style={[styles.reviewCount, { color: theme.colors.textSecondary }]}>({venue.review_count} reviews)</Text>
@@ -344,6 +388,29 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: 20,
+  },
+  engagementRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginVertical: 12,
+  },
+  activityChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  activityEmoji: {
+    fontSize: 14,
+    marginRight: 6,
+  },
+  activityText: {
+    fontSize: 12,
+    fontWeight: '600',
+    fontFamily: 'Inter-SemiBold',
   },
   venueName: {
     fontSize: 28,

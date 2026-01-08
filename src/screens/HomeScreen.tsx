@@ -173,81 +173,86 @@ const HomeScreen: React.FC = () => {
               gridLayout === '1-column' && styles.singleColumnImage
             ]}
           />
+          
+          {/* Transparent overlay for content */}
+          <View style={styles.contentOverlay}>
+            <View style={[
+              styles.feedContent,
+              gridLayout === '1-column' && styles.singleColumnContent
+            ]}>
+              <Text style={[styles.venueName, { color: 'white' }]} numberOfLines={1}>
+                {item.name}
+              </Text>
+              <Text style={[styles.location, { color: 'rgba(255, 255, 255, 0.8)' }]} numberOfLines={1}>
+                {item.location}
+              </Text>
+              
+              {/* Activity Level Chip - Between location and rating */}
+              {item.max_capacity && venueCheckInStats ? (
+                <View style={styles.activityContainer}>
+                  {(() => {
+                    const activityLevel = getActivityLevel(venueCheckInStats.active_checkins, item.max_capacity);
+                    return (
+                      <View style={[styles.activityChip, { backgroundColor: 'rgba(255, 255, 255, 0.2)', borderColor: 'rgba(255, 255, 255, 0.3)' }]}>
+                        <Text style={styles.activityEmoji}>{activityLevel.emoji}</Text>
+                        <Text style={[styles.activityText, { color: 'white' }]}>
+                          {activityLevel.level}
+                        </Text>
+                      </View>
+                    );
+                  })()}
+                </View>
+              ) : (
+                <View style={styles.activityContainer}>
+                  <View style={[styles.activityChip, { backgroundColor: 'rgba(255, 255, 255, 0.2)', borderColor: 'rgba(255, 255, 255, 0.3)' }]}>
+                    <Text style={styles.activityEmoji}>😌</Text>
+                    <Text style={[styles.activityText, { color: 'white' }]}>
+                      Low-key
+                    </Text>
+                  </View>
+                </View>
+              )}
+              
+              <View style={styles.ratingContainer}>
+                <Text style={[styles.rating, { color: 'white' }]}>⭐ {item.rating}</Text>
+                <Text style={[styles.reviewCount, { color: 'rgba(255, 255, 255, 0.8)' }]}>({item.review_count})</Text>
+              </View>
+              
+              {/* Check-in Button Row */}
+              {venueCheckInStats && (
+                <View style={styles.checkInContainer}>
+                  <CheckInButton
+                    venueId={item.id}
+                    venueName={item.name}
+                    venueImage={item.image_url || undefined}
+                    isCheckedIn={venueCheckInStats.user_is_checked_in}
+                    checkInId={venueCheckInStats.user_checkin_id}
+                    checkInTime={venueCheckInStats.user_checkin_time}
+                    activeCheckIns={venueCheckInStats.active_checkins}
+                    maxCapacity={item.max_capacity || undefined}
+                    onCheckInChange={(isCheckedIn, newCount) => handleCheckInChange(item.id, isCheckedIn, newCount)}
+                    size="small"
+                    showModalForCheckout={true}
+                  />
+                  <VenueCustomerCount
+                    count={venueCheckInStats.active_checkins}
+                    size="small"
+                  />
+                </View>
+              )}
+            </View>
+          </View>
+
           <TouchableOpacity
-            style={[styles.favoriteButton, { backgroundColor: theme.colors.surface + 'E6' }]}
+            style={[styles.favoriteButton, { backgroundColor: 'rgba(0, 0, 0, 0.3)' }]}
             onPress={() => toggleFavorite(item.id)}
           >
             <Icon
               name={favorites.has(item.id) ? 'heart' : 'heart-outline'}
               size={18}
-              color={favorites.has(item.id) ? '#FF3B30' : theme.colors.textSecondary}
+              color={favorites.has(item.id) ? '#FF3B30' : 'white'}
             />
           </TouchableOpacity>
-        </View>
-        <View style={[
-          styles.feedContent,
-          gridLayout === '1-column' && styles.singleColumnContent
-        ]}>
-          <Text style={[styles.venueName, { color: theme.colors.text }]} numberOfLines={1}>
-            {item.name}
-          </Text>
-          <Text style={[styles.location, { color: theme.colors.textSecondary }]} numberOfLines={1}>
-            {item.location}
-          </Text>
-
-          {/* Activity Level Chip - Between location and rating */}
-          {item.max_capacity && venueCheckInStats ? (
-            <View style={styles.activityContainer}>
-              {(() => {
-                const activityLevel = getActivityLevel(venueCheckInStats.active_checkins, item.max_capacity);
-                return (
-                  <View style={[styles.activityChip, { backgroundColor: activityLevel.color + '20', borderColor: activityLevel.color + '40' }]}>
-                    <Text style={styles.activityEmoji}>{activityLevel.emoji}</Text>
-                    <Text style={[styles.activityText, { color: activityLevel.color }]}>
-                      {activityLevel.level}
-                    </Text>
-                  </View>
-                );
-              })()}
-            </View>
-          ) : (
-            <View style={styles.activityContainer}>
-              <View style={[styles.activityChip, { backgroundColor: '#10B981' + '20', borderColor: '#10B981' + '40' }]}>
-                <Text style={styles.activityEmoji}>😌</Text>
-                <Text style={[styles.activityText, { color: '#10B981' }]}>
-                  Low-key
-                </Text>
-              </View>
-            </View>
-          )}
-
-          <View style={styles.ratingContainer}>
-            <Text style={[styles.rating, { color: theme.colors.text }]}>⭐ {item.rating}</Text>
-            <Text style={[styles.reviewCount, { color: theme.colors.textSecondary }]}>({item.review_count})</Text>
-          </View>
-
-          {/* Check-in Button Row */}
-          {venueCheckInStats && (
-            <View style={styles.checkInContainer}>
-              <CheckInButton
-                venueId={item.id}
-                venueName={item.name}
-                venueImage={item.image_url || undefined}
-                isCheckedIn={venueCheckInStats.user_is_checked_in}
-                checkInId={venueCheckInStats.user_checkin_id}
-                checkInTime={venueCheckInStats.user_checkin_time}
-                activeCheckIns={venueCheckInStats.active_checkins}
-                maxCapacity={item.max_capacity || undefined}
-                onCheckInChange={(isCheckedIn, newCount) => handleCheckInChange(item.id, isCheckedIn, newCount)}
-                size="small"
-                showModalForCheckout={true}
-              />
-              <VenueCustomerCount
-                count={venueCheckInStats.active_checkins}
-                size="small"
-              />
-            </View>
-          )}
         </View>
       </TouchableOpacity>
     );
@@ -332,21 +337,38 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     position: 'relative',
+    flex: 1,
+    minHeight: 280,
   },
   singleColumnImageContainer: {
     position: 'relative',
+    flex: 1,
+    minHeight: 280,
   },
   feedImage: {
     width: '100%',
-    height: 140,
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
+    height: '100%',
+    borderRadius: 12,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   singleColumnImage: {
     width: '100%',
-    height: 140,
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
+    height: '100%',
+    borderRadius: 12,
+  },
+  contentOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12,
+    paddingTop: 20,
   },
   favoriteButton: {
     position: 'absolute',
