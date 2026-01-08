@@ -23,7 +23,7 @@ import { HomeStackParamList } from '../navigation/AppNavigator';
 import { populateVenuesDatabase } from '../utils/populateVenues';
 import { getActivityLevel } from '../utils/activityLevel';
 import CheckInButton from '../components/CheckInButton';
-import { VenueCustomerCount } from '../components';
+import { VenueCustomerCount, TestVenueCard } from '../components';
 import type { Database } from '../lib/supabase';
 import Icon from 'react-native-vector-icons/Ionicons';
 
@@ -280,11 +280,32 @@ const HomeScreen: React.FC = () => {
         }
       >
         {venues.length > 0 ? (
-          <View style={[
-            styles.venueGrid,
-            gridLayout === '1-column' && styles.singleColumnGrid
-          ]}>
-            {venues.map((venue, index) => renderFeedItem(venue, index))}
+          <View style={styles.venueList}>
+            {venues.map((venue, index) => {
+              const venueCheckInStats = checkInStats.get(venue.id);
+              return (
+                <TestVenueCard
+                  key={venue.id}
+                  venue={venue}
+                  checkInCount={venueCheckInStats?.active_checkins || 0}
+                  isCheckedIn={venueCheckInStats?.user_is_checked_in || false}
+                  onPress={() => handleVenuePress(venue)}
+                  onCheckIn={() => {
+                    if (venueCheckInStats?.user_is_checked_in) {
+                      // Handle check-out
+                      console.log('Check out from', venue.name);
+                    } else {
+                      // Handle check-in
+                      console.log('Check in to', venue.name);
+                    }
+                  }}
+                  onMoreOptions={() => {
+                    // Handle more options here
+                    console.log('More options for', venue.name);
+                  }}
+                />
+              );
+            })}
           </View>
         ) : (
           <View style={styles.emptyContainer}>
@@ -306,6 +327,9 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 90, // Space for floating tab bar
+  },
+  venueList: {
+    paddingHorizontal: 15,
   },
   venueGrid: {
     flexDirection: 'row',

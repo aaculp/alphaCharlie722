@@ -18,17 +18,20 @@ const VenueCustomerCount: React.FC<VenueCustomerCountProps> = ({
     small: {
       iconSize: 12,
       textSize: 10,
-      padding: { paddingHorizontal: 6, paddingVertical: 2 },
+      padding: { paddingHorizontal: 8, paddingVertical: 4 },
+      borderRadius: 16,
     },
     medium: {
       iconSize: 14,
       textSize: 11,
-      padding: { paddingHorizontal: 8, paddingVertical: 3 },
+      padding: { paddingHorizontal: 10, paddingVertical: 5 },
+      borderRadius: 18,
     },
     large: {
       iconSize: 16,
       textSize: 12,
-      padding: { paddingHorizontal: 10, paddingVertical: 4 },
+      padding: { paddingHorizontal: 12, paddingVertical: 6 },
+      borderRadius: 20,
     },
   };
 
@@ -42,17 +45,21 @@ const VenueCustomerCount: React.FC<VenueCustomerCountProps> = ({
     <View style={[
       styles.container,
       config.padding,
-      { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }
+      { 
+        backgroundColor: 'rgba(255, 255, 255, 0.25)',
+        borderColor: 'rgba(255, 255, 255, 0.4)',
+        borderRadius: config.borderRadius,
+      }
     ]}>
       <Icon 
         name="person" 
         size={config.iconSize} 
-        color={theme.colors.textSecondary} 
+        color="white" 
       />
       <Text style={[
         styles.countText,
         { 
-          color: theme.colors.textSecondary,
+          color: 'white',
           fontSize: config.textSize,
         }
       ]}>
@@ -66,12 +73,12 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 12,
     borderWidth: 1,
-    gap: 3,
+    gap: 4,
   },
   countText: {
-    fontFamily: 'Inter-Medium',
+    fontFamily: 'Inter-SemiBold',
+    fontWeight: '600',
     lineHeight: 14,
   },
 });
