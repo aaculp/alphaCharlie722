@@ -21,6 +21,7 @@ interface CheckInButtonProps {
   checkInId?: string;
   checkInTime?: string; // ISO string of when user checked in
   activeCheckIns: number;
+  maxCapacity?: number; // Keep this for passing to modal
   onCheckInChange: (isCheckedIn: boolean, newCount: number) => void;
   size?: 'small' | 'medium' | 'large';
   showModalForCheckout?: boolean; // Option to show modal for checkout
@@ -34,6 +35,7 @@ const CheckInButton: React.FC<CheckInButtonProps> = ({
   checkInId,
   checkInTime,
   activeCheckIns,
+  maxCapacity,
   onCheckInChange,
   size = 'medium',
   showModalForCheckout = false
@@ -182,15 +184,6 @@ const CheckInButton: React.FC<CheckInButtonProps> = ({
 
   const buttonStyle = getButtonStyle();
 
-  const getCrowdLevel = () => {
-    if (activeCheckIns >= 10) return { text: 'Busy', color: '#FF6B6B' };
-    if (activeCheckIns >= 5) return { text: 'Moderate', color: '#FFD700' };
-    if (activeCheckIns >= 1) return { text: 'Quiet', color: '#4CAF50' };
-    return { text: 'Empty', color: theme.colors.textSecondary };
-  };
-
-  const crowdLevel = getCrowdLevel();
-
   return (
     <>
       <TouchableOpacity
@@ -226,19 +219,6 @@ const CheckInButton: React.FC<CheckInButtonProps> = ({
             ]}>
               {isCheckedIn ? 'Checked In' : 'Check In'}
             </Text>
-            {activeCheckIns > 0 && (
-              <View style={styles.crowdIndicator}>
-                <Text style={[
-                  styles.crowdText,
-                  { 
-                    color: crowdLevel.color,
-                    fontSize: config.textSize - 1,
-                  }
-                ]}>
-                  {activeCheckIns}
-                </Text>
-              </View>
-            )}
           </View>
         )}
       </TouchableOpacity>
@@ -251,6 +231,7 @@ const CheckInButton: React.FC<CheckInButtonProps> = ({
         venueImage={venueImage}
         currentVenue={modalMode === 'checkin' ? currentVenue : undefined}
         activeCheckIns={activeCheckIns}
+        maxCapacity={maxCapacity}
         loading={loading}
         mode={modalMode}
         checkInDuration={modalMode === 'checkout' ? getCheckInDuration() : undefined}
@@ -272,13 +253,6 @@ const styles = StyleSheet.create({
   buttonText: {
     fontFamily: 'Inter-SemiBold',
     lineHeight: 16,
-  },
-  crowdIndicator: {
-    marginLeft: 2,
-  },
-  crowdText: {
-    fontFamily: 'Inter-Bold',
-    lineHeight: 14,
   },
 });
 

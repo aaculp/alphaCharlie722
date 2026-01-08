@@ -21,8 +21,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { HomeStackParamList } from '../navigation/AppNavigator';
 import { populateVenuesDatabase } from '../utils/populateVenues';
 import { getActivityLevel } from '../utils/activityLevel';
-import { CompactAtmosphere } from '../components';
 import CheckInButton from '../components/CheckInButton';
+import { VenueCustomerCount } from '../components';
 import type { Database } from '../lib/supabase';
 import Icon from 'react-native-vector-icons/Ionicons';
 
@@ -177,18 +177,15 @@ const HomeScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
         <View style={styles.feedContent}>
-          <Text style={[styles.venueName, { color: theme.colors.text }]} numberOfLines={1}>{item.name}</Text>
-          <Text style={[styles.location, { color: theme.colors.textSecondary }]} numberOfLines={1}>{item.location}</Text>
-          <View style={styles.ratingContainer}>
-            <Text style={[styles.rating, { color: theme.colors.text }]}>⭐ {item.rating}</Text>
-            <Text style={[styles.reviewCount, { color: theme.colors.textSecondary }]}>({item.review_count})</Text>
-          </View>
+          <Text style={[styles.venueName, { color: theme.colors.text }]} numberOfLines={1}>
+            {item.name}
+          </Text>
+          <Text style={[styles.location, { color: theme.colors.textSecondary }]} numberOfLines={1}>
+            {item.location}
+          </Text>
           
-          {/* Enhanced Information Preview */}
-          <CompactAtmosphere venue={item} maxTags={1} />
-          
-          {/* Activity Level Chip */}
-          {item.max_capacity && venueCheckInStats && (
+          {/* Activity Level Chip - Between location and rating */}
+          {item.max_capacity && venueCheckInStats ? (
             <View style={styles.activityContainer}>
               {(() => {
                 const activityLevel = getActivityLevel(venueCheckInStats.active_checkins, item.max_capacity);
@@ -202,14 +199,23 @@ const HomeScreen: React.FC = () => {
                 );
               })()}
             </View>
+          ) : (
+            <View style={styles.activityContainer}>
+              <View style={[styles.activityChip, { backgroundColor: '#10B981' + '20', borderColor: '#10B981' + '40' }]}>
+                <Text style={styles.activityEmoji}>😌</Text>
+                <Text style={[styles.activityText, { color: '#10B981' }]}>
+                  Low-key
+                </Text>
+              </View>
+            </View>
           )}
           
-          <View style={styles.categoryContainer}>
-            <Text style={[styles.category, { color: theme.colors.primary, backgroundColor: theme.colors.primary + '20' }]}>{item.category}</Text>
-            <Text style={[styles.priceRange, { color: theme.colors.text }]}>{item.price_range}</Text>
+          <View style={styles.ratingContainer}>
+            <Text style={[styles.rating, { color: theme.colors.text }]}>⭐ {item.rating}</Text>
+            <Text style={[styles.reviewCount, { color: theme.colors.textSecondary }]}>({item.review_count})</Text>
           </View>
           
-          {/* Check-in Button */}
+          {/* Check-in Button Row */}
           {venueCheckInStats && (
             <View style={styles.checkInContainer}>
               <CheckInButton
@@ -220,9 +226,14 @@ const HomeScreen: React.FC = () => {
                 checkInId={venueCheckInStats.user_checkin_id}
                 checkInTime={venueCheckInStats.user_checkin_time}
                 activeCheckIns={venueCheckInStats.active_checkins}
+                maxCapacity={item.max_capacity || undefined}
                 onCheckInChange={(isCheckedIn, newCount) => handleCheckInChange(item.id, isCheckedIn, newCount)}
                 size="small"
                 showModalForCheckout={true}
+              />
+              <VenueCustomerCount 
+                count={venueCheckInStats.active_checkins}
+                size="small"
               />
             </View>
           )}
@@ -371,52 +382,10 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     fontFamily: 'Inter-Regular',
   },
-  categoryContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  category: {
-    fontSize: 10,
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 6,
-    fontWeight: '500',
-    fontFamily: 'Inter-Medium',
-  },
-  priceRange: {
-    fontSize: 12,
-    fontWeight: '600',
-    fontFamily: 'Inter-SemiBold',
-  },
-  
-  // Enhanced Information Styles
-  atmospherePreview: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
-    flexWrap: 'wrap',
-  },
-  atmosphereTagSmall: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
-    marginRight: 4,
-    marginBottom: 2,
-  },
-  atmosphereTagTextSmall: {
-    fontSize: 10,
-    fontFamily: 'Inter-Medium',
-  },
-  moreTagsText: {
-    fontSize: 10,
-    fontFamily: 'Inter-Regular',
-    fontStyle: 'italic',
-  },
   activityContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 8,
   },
   activityChip: {
     flexDirection: 'row',
@@ -436,18 +405,10 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-SemiBold',
   },
   checkInContainer: {
-    marginTop: 8,
-    alignItems: 'flex-start',
-  },
-  waitTimePreview: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginLeft: 8,
-  },
-  waitTimeText: {
-    fontSize: 12,
-    fontFamily: 'Inter-Regular',
-    marginLeft: 4,
+    marginTop: 4,
   },
   
   loadingContainer: {

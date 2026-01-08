@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '../contexts/ThemeContext';
+import { getActivityLevel } from '../utils/activityLevel';
 
 interface CheckInModalProps {
   visible: boolean;
@@ -19,6 +20,7 @@ interface CheckInModalProps {
   venueImage?: string;
   currentVenue?: string;
   activeCheckIns: number;
+  maxCapacity?: number; // Add max capacity for activity level calculation
   loading?: boolean;
   mode: 'checkin' | 'checkout';
   checkInDuration?: string; // For checkout mode
@@ -32,20 +34,40 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
   venueImage,
   currentVenue,
   activeCheckIns,
+  maxCapacity,
   loading = false,
   mode,
   checkInDuration
 }) => {
   const { theme } = useTheme();
 
-  const getCrowdLevel = () => {
-    if (activeCheckIns >= 10) return { text: 'Busy', color: '#FF6B6B', icon: 'people' };
-    if (activeCheckIns >= 5) return { text: 'Moderate', color: '#FFD700', icon: 'people-outline' };
-    if (activeCheckIns >= 1) return { text: 'Quiet', color: '#4CAF50', icon: 'person-outline' };
-    return { text: 'Empty', color: theme.colors.textSecondary, icon: 'location-outline' };
+  const getActivityLevelDisplay = () => {
+    if (!maxCapacity) {
+      // Fallback to old crowd logic if no max capacity
+      if (activeCheckIns >= 10) return { text: 'Busy', color: '#FF6B6B', icon: 'people', emoji: '🔥' };
+      if (activeCheckIns >= 5) return { text: 'Moderate', color: '#FFD700', icon: 'people-outline', emoji: '✨' };
+      if (activeCheckIns >= 1) return { text: 'Quiet', color: '#4CAF50', icon: 'person-outline', emoji: '😌' };
+      return { text: 'Empty', color: theme.colors.textSecondary, icon: 'location-outline', emoji: '😌' };
+    }
+
+    const activityLevel = getActivityLevel(activeCheckIns, maxCapacity);
+    const iconMap = {
+      'Low-key': 'person-outline',
+      'Vibey': 'people-outline', 
+      'Poppin': 'people',
+      'Lit': 'people',
+      'Maxed': 'people'
+    };
+    
+    return {
+      text: activityLevel.level,
+      color: activityLevel.color,
+      emoji: activityLevel.emoji,
+      icon: iconMap[activityLevel.level] || 'people-outline'
+    };
   };
 
-  const crowdLevel = getCrowdLevel();
+  const activityDisplay = getActivityLevelDisplay();
 
   return (
     <Modal
@@ -105,9 +127,9 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
               </View>
             )}
 
-            {/* Crowd info */}
+            {/* Activity Level info */}
             <View style={styles.crowdInfo}>
-              <Icon name={crowdLevel.icon} size={20} color={crowdLevel.color} />
+              <Icon name={activityDisplay.icon} size={20} color={activityDisplay.color} />
               <Text style={[styles.crowdText, { color: theme.colors.text }]}>
                 {mode === 'checkin' ? (
                   activeCheckIns === 0 ? 'Be the first to check in!' :
@@ -118,9 +140,10 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
                     `${activeCheckIns - 1} others have checked in!`
                 )}
               </Text>
-              <View style={[styles.crowdBadge, { backgroundColor: crowdLevel.color + '20' }]}>
-                <Text style={[styles.crowdBadgeText, { color: crowdLevel.color }]}>
-                  {crowdLevel.text}
+              <View style={[styles.activityChip, { backgroundColor: activityDisplay.color + '20', borderColor: activityDisplay.color + '40' }]}>
+                <Text style={styles.activityEmoji}>{activityDisplay.emoji}</Text>
+                <Text style={[styles.activityText, { color: activityDisplay.color }]}>
+                  {activityDisplay.text}
                 </Text>
               </View>
             </View>
@@ -273,6 +296,22 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   crowdBadgeText: {
+    fontSize: 12,
+    fontFamily: 'Inter-SemiBold',
+  },
+  activityChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  activityEmoji: {
+    fontSize: 12,
+    marginRight: 4,
+  },
+  activityText: {
     fontSize: 12,
     fontFamily: 'Inter-SemiBold',
   },
