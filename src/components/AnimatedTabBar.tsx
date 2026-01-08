@@ -47,9 +47,9 @@ const AnimatedTabBar: React.FC<AnimatedTabBarProps> = ({
     slidePosition.value = withSpring(
       state.index * tabWidth,
       {
-        damping: 20,
-        stiffness: 300,
-        mass: 0.6,
+        damping: 22,
+        stiffness: 320,
+        mass: 0.5,
       }
     );
   }, [state.index, tabWidth]);
@@ -162,11 +162,15 @@ const AnimatedTabBar: React.FC<AnimatedTabBarProps> = ({
               });
 
               if (!isFocused && !event.defaultPrevented) {
+                // Add subtle haptic feedback on tab press
+                if (Platform.OS === 'ios') {
+                  // iOS haptic feedback would go here if available
+                }
                 navigation.navigate(route.name);
               }
             };
 
-            // Individual tab animation
+            // Individual tab animation with improved responsiveness
             const tabAnimatedStyle = useAnimatedStyle(() => {
               const scale = interpolate(
                 slidePosition.value,
@@ -175,23 +179,15 @@ const AnimatedTabBar: React.FC<AnimatedTabBarProps> = ({
                   index * tabWidth,
                   (index + 1) * tabWidth,
                 ],
-                [1, 1.05, 1],
-                'clamp'
-              );
-
-              const iconScale = interpolate(
-                slidePosition.value,
-                [
-                  (index - 1) * tabWidth,
-                  index * tabWidth,
-                  (index + 1) * tabWidth,
-                ],
-                [1, 1.1, 1],
+                [1, 1.06, 1],
                 'clamp'
               );
 
               return {
-                transform: [{ scale: withSpring(scale, { damping: 15, stiffness: 200 }) }],
+                transform: [{ scale: withSpring(scale, { 
+                  damping: 16, 
+                  stiffness: 280,
+                }) }],
               };
             });
 
@@ -203,7 +199,7 @@ const AnimatedTabBar: React.FC<AnimatedTabBarProps> = ({
                   index * tabWidth,
                   (index + 1) * tabWidth,
                 ],
-                [1, 1.1, 1],
+                [1, 1.12, 1],
                 'clamp'
               );
 
@@ -214,14 +210,20 @@ const AnimatedTabBar: React.FC<AnimatedTabBarProps> = ({
                   index * tabWidth,
                   (index + 1) * tabWidth,
                 ],
-                [0, -2, 0],
+                [0, -2.5, 0],
                 'clamp'
               );
 
               return {
                 transform: [
-                  { scale: withSpring(iconScale, { damping: 12, stiffness: 200 }) },
-                  { translateY: withSpring(translateY, { damping: 15, stiffness: 250 }) }
+                  { scale: withSpring(iconScale, { 
+                    damping: 14, 
+                    stiffness: 300,
+                  }) },
+                  { translateY: withSpring(translateY, { 
+                    damping: 16, 
+                    stiffness: 280,
+                  }) }
                 ],
               };
             });
@@ -234,7 +236,7 @@ const AnimatedTabBar: React.FC<AnimatedTabBarProps> = ({
                   index * tabWidth,
                   (index + 1) * tabWidth,
                 ],
-                [0.7, 1, 0.7],
+                [0.65, 1, 0.65],
                 'clamp'
               );
 
@@ -245,14 +247,32 @@ const AnimatedTabBar: React.FC<AnimatedTabBarProps> = ({
                   index * tabWidth,
                   (index + 1) * tabWidth,
                 ],
-                [2, 0, 2],
+                [3, 0, 3],
+                'clamp'
+              );
+
+              const scale = interpolate(
+                slidePosition.value,
+                [
+                  (index - 1) * tabWidth,
+                  index * tabWidth,
+                  (index + 1) * tabWidth,
+                ],
+                [0.95, 1, 0.95],
                 'clamp'
               );
 
               return {
-                opacity: withTiming(opacity, { duration: 200 }),
+                opacity: withTiming(opacity, { duration: 180 }),
                 transform: [
-                  { translateY: withSpring(translateY, { damping: 15, stiffness: 250 }) }
+                  { translateY: withSpring(translateY, { 
+                    damping: 16, 
+                    stiffness: 280,
+                  }) },
+                  { scale: withSpring(scale, { 
+                    damping: 18, 
+                    stiffness: 300,
+                  }) }
                 ],
               };
             });
@@ -272,7 +292,20 @@ const AnimatedTabBar: React.FC<AnimatedTabBarProps> = ({
                   activeOpacity={0.7}
                 >
                   <View style={styles.tabContent}>
-                    <Animated.View style={[styles.iconContainer, iconAnimatedStyle]}>
+                    <Animated.View style={[
+                      styles.iconContainer, 
+                      iconAnimatedStyle,
+                      // Enhanced centering adjustments for each icon
+                      route.name === 'Settings' && { 
+                        marginLeft: -1,
+                      },
+                      route.name === 'Search' && { 
+                        marginLeft: -0.5,
+                      },
+                      route.name === 'QuickPicks' && { 
+                        marginLeft: 0.5,
+                      },
+                    ]}>
                       <Icon
                         name={getTabIcon(route.name, isFocused)}
                         size={24}
@@ -358,7 +391,10 @@ const styles = StyleSheet.create({
   iconContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 2,
+    width: 24,
+    height: 24,
+    marginBottom: 3,
+    position: 'relative',
   },
   tabLabel: {
     fontSize: 11,

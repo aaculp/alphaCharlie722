@@ -46,9 +46,9 @@ const FloatingTabBar: React.FC<FloatingTabBarProps> = ({
     slidePosition.value = withSpring(
       state.index * tabWidth + tabCenterOffset,
       {
-        damping: 15,
-        stiffness: 200,
-        mass: 0.8,
+        damping: 18,
+        stiffness: 250,
+        mass: 0.7,
       }
     );
   }, [state.index, tabWidth]);
@@ -155,11 +155,15 @@ const FloatingTabBar: React.FC<FloatingTabBarProps> = ({
               });
 
               if (!isFocused && !event.defaultPrevented) {
+                // Add subtle haptic feedback on tab press
+                if (Platform.OS === 'ios') {
+                  // iOS haptic feedback would go here if available
+                }
                 navigation.navigate(route.name);
               }
             };
 
-            // Individual tab animation
+            // Individual tab animation with improved centering
             const tabAnimatedStyle = useAnimatedStyle(() => {
               const scale = interpolate(
                 slidePosition.value,
@@ -168,12 +172,53 @@ const FloatingTabBar: React.FC<FloatingTabBarProps> = ({
                   index * tabWidth + (tabWidth - 50) / 2,
                   (index + 1) * tabWidth + (tabWidth - 50) / 2,
                 ],
-                [1, 1.05, 1],
+                [1, 1.08, 1],
                 'clamp'
               );
 
               return {
-                transform: [{ scale: withSpring(scale, { damping: 12, stiffness: 200 }) }],
+                transform: [{ scale: withSpring(scale, { 
+                  damping: 15, 
+                  stiffness: 250,
+                }) }],
+              };
+            });
+
+            // Icon-specific animation for perfect centering
+            const iconAnimatedStyle = useAnimatedStyle(() => {
+              const iconScale = interpolate(
+                slidePosition.value,
+                [
+                  (index - 1) * tabWidth + (tabWidth - 50) / 2,
+                  index * tabWidth + (tabWidth - 50) / 2,
+                  (index + 1) * tabWidth + (tabWidth - 50) / 2,
+                ],
+                [1, 1.1, 1],
+                'clamp'
+              );
+
+              const translateY = interpolate(
+                slidePosition.value,
+                [
+                  (index - 1) * tabWidth + (tabWidth - 50) / 2,
+                  index * tabWidth + (tabWidth - 50) / 2,
+                  (index + 1) * tabWidth + (tabWidth - 50) / 2,
+                ],
+                [0, -1, 0],
+                'clamp'
+              );
+
+              return {
+                transform: [
+                  { scale: withSpring(iconScale, { 
+                    damping: 12, 
+                    stiffness: 300,
+                  }) },
+                  { translateY: withSpring(translateY, { 
+                    damping: 15, 
+                    stiffness: 250,
+                  }) }
+                ],
               };
             });
 
@@ -192,11 +237,25 @@ const FloatingTabBar: React.FC<FloatingTabBarProps> = ({
                   activeOpacity={0.7}
                 >
                   <View style={styles.tabContent}>
-                    <View style={[
+                    <Animated.View style={[
                       styles.iconContainer,
-                      // Precise centering adjustments
-                      route.name === 'Settings' && { marginLeft: -2 },
-                      route.name === 'Search' && { marginLeft: -0.5 },
+                      iconAnimatedStyle,
+                      // Enhanced centering adjustments for each icon
+                      route.name === 'Settings' && { 
+                        marginLeft: -1.5,
+                        marginTop: -0.5,
+                      },
+                      route.name === 'Search' && { 
+                        marginLeft: -0.5,
+                        marginTop: -0.5,
+                      },
+                      route.name === 'Home' && { 
+                        marginTop: -0.5,
+                      },
+                      route.name === 'QuickPicks' && { 
+                        marginLeft: 0.5,
+                        marginTop: -0.5,
+                      },
                     ]}>
                       <Icon
                         name={getTabIcon(route.name, isFocused)}
@@ -207,7 +266,7 @@ const FloatingTabBar: React.FC<FloatingTabBarProps> = ({
                             : theme.colors.textSecondary
                         }
                       />
-                    </View>
+                    </Animated.View>
                   </View>
                 </TouchableOpacity>
               </Animated.View>
@@ -297,8 +356,9 @@ const styles = StyleSheet.create({
   iconContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    width: '100%',
-    height: '100%',
+    width: 24,
+    height: 24,
+    position: 'relative',
   },
 });
 
