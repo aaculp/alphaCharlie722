@@ -5,6 +5,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import FloatingTabBar from '../components/FloatingTabBar';
 
 // Import screens
 import { HomeScreen, SearchScreen, VenueDetailScreen, SettingsScreen, SplashScreen, FavoritesScreen, QuickPicksScreen } from '../screens';
@@ -56,29 +57,19 @@ function HomeStackNavigator() {
   return (
     <HomeStack.Navigator
       screenOptions={{
-        headerStyle: {
-          backgroundColor: theme.colors.surface,
+        headerShown: false,
+        contentStyle: {
+          backgroundColor: theme.colors.background,
         },
-        headerTintColor: theme.colors.text,
-        headerTitleStyle: {
-          fontWeight: 'bold',
-          fontFamily: 'Poppins-SemiBold', // Primary font for headings
-        },
-        headerShadowVisible: true,
       }}
     >
       <HomeStack.Screen 
         name="HomeList" 
         component={HomeScreen}
-        options={{ 
-          title: 'Feed',
-          headerTitleAlign: 'center',
-        }}
       />
       <HomeStack.Screen 
         name="VenueDetail" 
         component={VenueDetailScreen}
-        options={({ route }) => ({ title: route.params.venueName })}
       />
     </HomeStack.Navigator>
   );
@@ -91,26 +82,19 @@ function SearchStackNavigator() {
   return (
     <SearchStack.Navigator
       screenOptions={{
-        headerStyle: {
-          backgroundColor: theme.colors.surface,
+        headerShown: false,
+        contentStyle: {
+          backgroundColor: theme.colors.background,
         },
-        headerTintColor: theme.colors.text,
-        headerTitleStyle: {
-          fontWeight: 'bold',
-          fontFamily: 'Poppins-SemiBold', // Primary font for headings
-        },
-        headerShadowVisible: true,
       }}
     >
       <SearchStack.Screen 
         name="SearchList" 
         component={SearchScreen}
-        options={{ title: 'Search Venues' }}
       />
       <SearchStack.Screen 
         name="VenueDetail" 
         component={VenueDetailScreen}
-        options={({ route }) => ({ title: route.params.venueName })}
       />
     </SearchStack.Navigator>
   );
@@ -123,26 +107,19 @@ function SettingsStackNavigator() {
   return (
     <SettingsStack.Navigator
       screenOptions={{
-        headerStyle: {
-          backgroundColor: theme.colors.surface,
+        headerShown: false,
+        contentStyle: {
+          backgroundColor: theme.colors.background,
         },
-        headerTintColor: theme.colors.text,
-        headerTitleStyle: {
-          fontWeight: 'bold',
-          fontFamily: 'Poppins-SemiBold', // Primary font for headings
-        },
-        headerShadowVisible: true,
       }}
     >
       <SettingsStack.Screen 
         name="SettingsList" 
         component={SettingsScreen}
-        options={{ headerShown: false }}
       />
       <SettingsStack.Screen 
         name="Favorites" 
         component={FavoritesScreen}
-        options={{ headerShown: false }}
       />
     </SettingsStack.Navigator>
   );
@@ -154,44 +131,24 @@ function MainTabNavigator() {
   
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
-        tabBarIcon: ({ focused, color, size }) => {
-          let iconName: string;
-
-          if (route.name === 'Home') {
-            iconName = focused ? 'home' : 'home-outline';
-          } else if (route.name === 'QuickPicks') {
-            iconName = focused ? 'flash' : 'flash-outline';
-          } else if (route.name === 'Search') {
-            iconName = focused ? 'search' : 'search-outline';
-          } else if (route.name === 'Settings') {
-            iconName = focused ? 'settings' : 'settings-outline';
-          } else {
-            iconName = 'help-outline';
-          }
-
-          return <Icon name={iconName} size={size} color={color} />;
-        },
-        tabBarActiveTintColor: theme.colors.tabBarActive,
-        tabBarInactiveTintColor: theme.colors.tabBarInactive,
-        tabBarStyle: {
-          backgroundColor: theme.colors.surface,
-          borderTopColor: theme.colors.border,
-          // Force tab bar to bottom edge
-          paddingBottom: 0,
-          marginBottom: 0,
-          height: 60, // Fixed height
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-        },
-        tabBarLabelStyle: {
-          fontFamily: 'Inter-Medium', // Secondary font for UI elements
-          fontSize: 12,
-        },
+      tabBar={(props) => <FloatingTabBar {...props} />}
+      screenOptions={{
         headerShown: false,
-      })}
+        tabBarStyle: { 
+          display: 'none',
+          height: 0,
+          borderTopWidth: 0,
+          elevation: 0,
+          shadowOpacity: 0,
+          backgroundColor: 'transparent',
+          position: 'absolute',
+          bottom: -200,
+          opacity: 0,
+        },
+        tabBarBackground: () => null,
+        tabBarShowLabel: false,
+        tabBarItemStyle: { display: 'none' },
+      }}
     >
       <Tab.Screen 
         name="Home" 

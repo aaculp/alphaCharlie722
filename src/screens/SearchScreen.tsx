@@ -912,7 +912,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   listContent: {
-    paddingBottom: 20,
+    paddingBottom: 100, // Space for floating tab bar
   },
   // Drawer Styles
   drawerOverlay: {

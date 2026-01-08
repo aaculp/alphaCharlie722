@@ -697,7 +697,7 @@ const styles = StyleSheet.create({
   // Modern Square Cards Styles
   modernCardsContainer: {
     paddingHorizontal: 15,
-    marginVertical: 10,
+    marginVertical: 5,
   },
   modernCardsRow: {
     flexDirection: 'row',

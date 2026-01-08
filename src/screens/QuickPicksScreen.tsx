@@ -483,7 +483,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Regular',
   },
   listContent: {
-    paddingBottom: 20,
+    paddingBottom: 100, // Space for floating tab bar
   },
 });
 

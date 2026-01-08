@@ -11,10 +11,7 @@ const SplashScreen: React.FC = () => {
 
   // OTW phrases for the scrolling animation
   const otwPhrases = [
-    "OTW to get a new phone, let's see how packed it is",
     "OTW to the gym, crush those goals",
-    "OTW to date night but didn't make any reservations",
-    "OTW to girls night, let's see if the bar is poppin'",
     "OTW to brunch, hoping they have bottomless mimosas",
     "OTW to the coffee shop, need that caffeine fix",
     "OTW to happy hour, time to unwind",

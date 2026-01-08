@@ -301,8 +301,8 @@ const VenueDetailScreen: React.FC = () => {
 
         </View>
         
-        {/* Bottom spacing */}
-        <View style={{ height: 20 }} />
+        {/* Bottom spacing for floating tab bar */}
+        <View style={{ height: 90 }} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -329,7 +329,7 @@ const styles = StyleSheet.create({
   },
   modernContentContainer: {
     marginHorizontal: 15,
-    marginVertical: 10,
+    marginVertical: 5,
     borderRadius: 20,
     paddingHorizontal: 20,
     paddingVertical: 20,

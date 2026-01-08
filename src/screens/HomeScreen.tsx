@@ -273,6 +273,7 @@ const HomeScreen: React.FC = () => {
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
       <ScrollView 
         style={styles.scrollView} 
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -297,6 +298,9 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 100, // Space for floating tab bar
   },
   gridRow: {
     flexDirection: 'row',
