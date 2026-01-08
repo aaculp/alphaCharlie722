@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, StyleSheet, ActivityIndicator, Animated } from 'react-native';
+import { View, StyleSheet, Animated } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
-import { OTWLogo } from '../components';
+import OTWLogo from '../components/OTWLogo';
 
 const SplashScreen: React.FC = () => {
   const { theme } = useTheme();
@@ -101,12 +101,6 @@ const SplashScreen: React.FC = () => {
           {currentPhrase}
         </Animated.Text>
       </Animated.View>
-
-      <ActivityIndicator
-        size="large"
-        color={theme.colors.primary}
-        style={styles.loader}
-      />
     </View>
   );
 };
@@ -137,10 +131,7 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     lineHeight: 22,
     minHeight: 44, // Ensure text has space
-  },
-  loader: {
-    marginTop: 20,
-  },
+  }
 });
 
 export default SplashScreen;

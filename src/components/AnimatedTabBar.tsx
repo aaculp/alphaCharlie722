@@ -5,6 +5,7 @@ import {
   StyleSheet,
   Dimensions,
   Platform,
+  Text,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -14,6 +15,7 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
   interpolate,
+  withTiming,
 } from 'react-native-reanimated';
 import {
   Gesture,
@@ -21,13 +23,13 @@ import {
   GestureHandlerRootView,
 } from 'react-native-gesture-handler';
 
-interface FloatingTabBarProps {
+interface AnimatedTabBarProps {
   state: any;
   descriptors: any;
   navigation: any;
 }
 
-const FloatingTabBar: React.FC<FloatingTabBarProps> = ({
+const AnimatedTabBar: React.FC<AnimatedTabBarProps> = ({
   state,
   descriptors,
   navigation,
@@ -38,17 +40,16 @@ const FloatingTabBar: React.FC<FloatingTabBarProps> = ({
   
   // Reanimated 3 shared values
   const slidePosition = useSharedValue(0);
-  const tabWidth = (width - 80) / state.routes.length; // 80px for container padding
+  const tabWidth = (width - 40) / state.routes.length; // 40px for container padding
 
   // Update slide position when active tab changes
   useEffect(() => {
-    const tabCenterOffset = (tabWidth - 50) / 2; // Center the 50px circle within the tab width
     slidePosition.value = withSpring(
-      state.index * tabWidth + tabCenterOffset,
+      state.index * tabWidth,
       {
-        damping: 15,
-        stiffness: 200,
-        mass: 0.8,
+        damping: 20,
+        stiffness: 300,
+        mass: 0.6,
       }
     );
   }, [state.index, tabWidth]);
@@ -111,33 +112,39 @@ const FloatingTabBar: React.FC<FloatingTabBarProps> = ({
     return iconName;
   };
 
+  const getTabLabel = (routeName: string) => {
+    switch (routeName) {
+      case 'Home':
+        return 'Feed';
+      case 'QuickPicks':
+        return 'Quick Picks';
+      case 'Search':
+        return 'Search';
+      case 'Settings':
+        return 'Settings';
+      default:
+        return routeName;
+    }
+  };
+
   return (
     <GestureHandlerRootView style={[
       styles.container,
       { 
-        paddingBottom: insets.bottom + 10,
-        backgroundColor: 'transparent',
+        paddingBottom: insets.bottom,
+        backgroundColor: isDark ? theme.colors.surface : '#ffffff',
+        borderTopColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
       }
     ]}>
       <GestureDetector gesture={panGesture}>
-        <Animated.View style={[
-          styles.tabBar,
-          {
-            backgroundColor: isDark 
-              ? 'rgba(20, 20, 20, 0.7)' 
-              : 'rgba(255, 255, 255, 0.7)',
-            borderColor: isDark 
-              ? 'rgba(255, 255, 255, 0.15)' 
-              : 'rgba(0, 0, 0, 0.15)',
-          }
-        ]}>
+        <Animated.View style={styles.tabBar}>
           {/* Sliding Background Indicator */}
           <Animated.View
             style={[
               styles.slidingIndicator,
               {
                 backgroundColor: theme.colors.primary,
-                width: 50, // Fixed 50px for perfect circle
+                width: tabWidth,
               },
               slidingIndicatorStyle,
             ]}
@@ -164,16 +171,89 @@ const FloatingTabBar: React.FC<FloatingTabBarProps> = ({
               const scale = interpolate(
                 slidePosition.value,
                 [
-                  (index - 1) * tabWidth + (tabWidth - 50) / 2,
-                  index * tabWidth + (tabWidth - 50) / 2,
-                  (index + 1) * tabWidth + (tabWidth - 50) / 2,
+                  (index - 1) * tabWidth,
+                  index * tabWidth,
+                  (index + 1) * tabWidth,
                 ],
                 [1, 1.05, 1],
                 'clamp'
               );
 
+              const iconScale = interpolate(
+                slidePosition.value,
+                [
+                  (index - 1) * tabWidth,
+                  index * tabWidth,
+                  (index + 1) * tabWidth,
+                ],
+                [1, 1.1, 1],
+                'clamp'
+              );
+
               return {
-                transform: [{ scale: withSpring(scale, { damping: 12, stiffness: 200 }) }],
+                transform: [{ scale: withSpring(scale, { damping: 15, stiffness: 200 }) }],
+              };
+            });
+
+            const iconAnimatedStyle = useAnimatedStyle(() => {
+              const iconScale = interpolate(
+                slidePosition.value,
+                [
+                  (index - 1) * tabWidth,
+                  index * tabWidth,
+                  (index + 1) * tabWidth,
+                ],
+                [1, 1.1, 1],
+                'clamp'
+              );
+
+              const translateY = interpolate(
+                slidePosition.value,
+                [
+                  (index - 1) * tabWidth,
+                  index * tabWidth,
+                  (index + 1) * tabWidth,
+                ],
+                [0, -2, 0],
+                'clamp'
+              );
+
+              return {
+                transform: [
+                  { scale: withSpring(iconScale, { damping: 12, stiffness: 200 }) },
+                  { translateY: withSpring(translateY, { damping: 15, stiffness: 250 }) }
+                ],
+              };
+            });
+
+            const labelAnimatedStyle = useAnimatedStyle(() => {
+              const opacity = interpolate(
+                slidePosition.value,
+                [
+                  (index - 1) * tabWidth,
+                  index * tabWidth,
+                  (index + 1) * tabWidth,
+                ],
+                [0.7, 1, 0.7],
+                'clamp'
+              );
+
+              const translateY = interpolate(
+                slidePosition.value,
+                [
+                  (index - 1) * tabWidth,
+                  index * tabWidth,
+                  (index + 1) * tabWidth,
+                ],
+                [2, 0, 2],
+                'clamp'
+              );
+
+              return {
+                opacity: withTiming(opacity, { duration: 200 }),
+                transform: [
+                  { translateY: withSpring(translateY, { damping: 15, stiffness: 250 }) }
+                ],
               };
             });
 
@@ -192,12 +272,7 @@ const FloatingTabBar: React.FC<FloatingTabBarProps> = ({
                   activeOpacity={0.7}
                 >
                   <View style={styles.tabContent}>
-                    <View style={[
-                      styles.iconContainer,
-                      // Precise centering adjustments
-                      route.name === 'Settings' && { marginLeft: -2 },
-                      route.name === 'Search' && { marginLeft: -0.5 },
-                    ]}>
+                    <Animated.View style={[styles.iconContainer, iconAnimatedStyle]}>
                       <Icon
                         name={getTabIcon(route.name, isFocused)}
                         size={24}
@@ -207,7 +282,19 @@ const FloatingTabBar: React.FC<FloatingTabBarProps> = ({
                             : theme.colors.textSecondary
                         }
                       />
-                    </View>
+                    </Animated.View>
+                    <Animated.Text
+                      style={[
+                        styles.tabLabel,
+                        {
+                          color: isFocused ? 'white' : theme.colors.textSecondary,
+                          fontFamily: 'Inter-Medium',
+                        },
+                        labelAnimatedStyle,
+                      ]}
+                    >
+                      {getTabLabel(route.name)}
+                    </Animated.Text>
                   </View>
                 </TouchableOpacity>
               </Animated.View>
@@ -221,85 +308,63 @@ const FloatingTabBar: React.FC<FloatingTabBarProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
+    borderTopWidth: 1,
+    paddingTop: 8,
     paddingHorizontal: 20,
   },
   tabBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
     paddingVertical: 8,
-    borderRadius: 25,
-    borderWidth: 1,
     position: 'relative',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 8,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 25,
-    elevation: 15,
-    ...Platform.select({
-      ios: {
-        backdropFilter: 'blur(30px)',
-      },
-      android: {
-        // Android doesn't support backdrop-filter, but we can enhance the shadow
-        shadowOpacity: 0.3,
-        elevation: 20,
-      },
-    }),
+    height: 60,
   },
   slidingIndicator: {
     position: 'absolute',
-    height: 50,
-    borderRadius: 25,
+    height: 44,
+    borderRadius: 22,
     top: 8,
-    left: 8,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 6,
+      height: 4,
     },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 6,
   },
   tabContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    height: 50,
+    height: 60,
   },
   tab: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-    borderRadius: 25,
-    minHeight: 50,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 22,
+    minHeight: 44,
     width: '100%',
     zIndex: 1,
   },
   tabContent: {
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 50,
+    minHeight: 44,
     width: '100%',
   },
   iconContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    width: '100%',
-    height: '100%',
+    marginBottom: 2,
+  },
+  tabLabel: {
+    fontSize: 11,
+    textAlign: 'center',
+    lineHeight: 12,
   },
 });
 
-export default FloatingTabBar;
+export default AnimatedTabBar;

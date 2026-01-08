@@ -16,3 +16,5 @@ export { default as CheckInButton } from './CheckInButton';
 export { default as CheckInModal } from './CheckInModal';
 export { default as VenueCustomerCount } from './VenueCustomerCount';
 export { default as TestVenueCard } from './TestVenueCard';
+export { default as FloatingTabBar } from './FloatingTabBar';
+export { default as AnimatedTabBar } from './AnimatedTabBar';

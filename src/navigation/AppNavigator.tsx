@@ -7,6 +7,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useNavigationStyle } from '../contexts/NavigationStyleContext';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import FloatingTabBar from '../components/FloatingTabBar';
+import AnimatedTabBar from '../components/AnimatedTabBar';
 
 // Import screens
 import { HomeScreen, SearchScreen, VenueDetailScreen, SettingsScreen, SplashScreen, FavoritesScreen, QuickPicksScreen } from '../screens';
@@ -215,31 +216,27 @@ function MainTabNavigator() {
       </Tab.Navigator>
     );
   } else {
-    // Regular Tab Bar
+    // Regular Tab Bar with Reanimated 3 animations
     return (
       <Tab.Navigator
-        screenOptions={({ route }) => ({
+        tabBar={(props) => <AnimatedTabBar {...props} />}
+        screenOptions={{
           headerShown: false,
-          tabBarIcon: ({ focused, color, size }) => {
-            const iconName = getTabIcon(route.name, focused);
-            return <Icon name={iconName} size={size} color={color} />;
+          tabBarStyle: { 
+            display: 'none',
+            height: 0,
+            borderTopWidth: 0,
+            elevation: 0,
+            shadowOpacity: 0,
+            backgroundColor: 'transparent',
+            position: 'absolute',
+            bottom: -200,
+            opacity: 0,
           },
-          tabBarActiveTintColor: theme.colors.primary,
-          tabBarInactiveTintColor: theme.colors.textSecondary,
-          tabBarStyle: {
-            backgroundColor: isDark ? theme.colors.surface : '#ffffff',
-            borderTopColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
-            borderTopWidth: 1,
-            paddingBottom: 8,
-            paddingTop: 8,
-            height: 70,
-          },
-          tabBarLabelStyle: {
-            fontSize: 12,
-            fontFamily: 'Inter-Medium',
-            marginTop: 4,
-          },
-        })}
+          tabBarBackground: () => null,
+          tabBarShowLabel: false,
+          tabBarItemStyle: { display: 'none' },
+        }}
       >
         <Tab.Screen 
           name="Home" 
