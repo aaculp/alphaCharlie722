@@ -17,6 +17,7 @@ interface VenueCardDialogProps {
   cardType: 'wait_times' | 'mood' | 'popular' | 'amenities';
   onBatchUpdate: (toAdd: string[], toRemove: string[]) => void;
   userSelections: string[]; // Pre-selected options from user's previous contributions
+  contributionCounts: Array<{ option_text: string; count: number }>; // Contribution counts for live feed
 }
 
 // Option lists for each card type
@@ -179,10 +180,11 @@ const VenueCardDialog: React.FC<VenueCardDialogProps> = ({
   cardType,
   onBatchUpdate,
   userSelections,
+  contributionCounts,
 }) => {
   const { theme, isDark } = useTheme();
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
-  
+
   const cardData = CARD_OPTIONS[cardType];
   const { width, height } = Dimensions.get('window');
 
@@ -207,12 +209,12 @@ const VenueCardDialog: React.FC<VenueCardDialogProps> = ({
     // Calculate what needs to be added and removed
     const toAdd = selectedOptions.filter(option => !userSelections.includes(option));
     const toRemove = userSelections.filter(option => !selectedOptions.includes(option));
-    
+
     // Only call batch update if there are changes
     if (toAdd.length > 0 || toRemove.length > 0) {
       onBatchUpdate(toAdd, toRemove);
     }
-    
+
     onClose();
   };
 
@@ -278,11 +280,12 @@ const VenueCardDialog: React.FC<VenueCardDialogProps> = ({
               ]}>
                 {section.title}
               </Text>
-              
+
               <View style={styles.optionsGrid}>
                 {section.options.map((option, optionIndex) => {
                   const isSelected = selectedOptions.includes(option);
                   const wasUserSelection = userSelections.includes(option);
+                  const contributionCount = contributionCounts.find(c => c.option_text === option)?.count || 0;
                   return (
                     <TouchableOpacity
                       key={optionIndex}
@@ -290,11 +293,11 @@ const VenueCardDialog: React.FC<VenueCardDialogProps> = ({
                       style={[
                         styles.optionChip,
                         {
-                          backgroundColor: isSelected 
+                          backgroundColor: isSelected
                             ? cardData.color + '20'
                             : theme.colors.surface,
-                          borderColor: isSelected 
-                            ? cardData.color 
+                          borderColor: isSelected
+                            ? cardData.color
                             : theme.colors.border,
                           borderWidth: wasUserSelection ? 2 : 1, // Thicker border for user's previous selections
                         }
@@ -303,28 +306,39 @@ const VenueCardDialog: React.FC<VenueCardDialogProps> = ({
                       <Text style={[
                         styles.optionText,
                         {
-                          color: isSelected 
-                            ? cardData.color 
+                          color: isSelected
+                            ? cardData.color
                             : theme.colors.text,
                           fontFamily: wasUserSelection ? 'Inter-SemiBold' : 'Inter-Medium', // Bold for user selections
                         }
                       ]}>
                         {option}
                       </Text>
-                      {isSelected && (
-                        <Icon 
-                          name="checkmark-circle" 
-                          size={16} 
-                          color={cardData.color}
-                          style={styles.checkIcon}
-                        />
-                      )}
                       {wasUserSelection && !isSelected && (
-                        <Icon 
-                          name="person" 
-                          size={14} 
+                        <Icon
+                          name="person"
+                          size={14}
                           color={theme.colors.textSecondary}
                           style={styles.userIcon}
+                        />
+                      )}
+                      {contributionCount > 0 && (
+                        <Text style={[
+                          styles.countBadge,
+                          {
+                            backgroundColor: cardData.color + '15',
+                            color: cardData.color
+                          }
+                        ]}>
+                          {contributionCount}
+                        </Text>
+                      )}
+                      {isSelected && (
+                        <Icon
+                          name="checkmark-circle"
+                          size={16}
+                          color={cardData.color}
+                          style={styles.checkIcon}
                         />
                       )}
                     </TouchableOpacity>
@@ -338,9 +352,9 @@ const VenueCardDialog: React.FC<VenueCardDialogProps> = ({
         {/* Footer */}
         <View style={[
           styles.footer,
-          { 
+          {
             backgroundColor: theme.colors.surface,
-            borderTopColor: theme.colors.border 
+            borderTopColor: theme.colors.border
           }
         ]}>
           <Text style={[
@@ -349,7 +363,7 @@ const VenueCardDialog: React.FC<VenueCardDialogProps> = ({
           ]}>
             Bold items are your previous choices
           </Text>
-          
+
           <View style={styles.footerButtons}>
             <TouchableOpacity
               onPress={handleClose}
@@ -362,12 +376,12 @@ const VenueCardDialog: React.FC<VenueCardDialogProps> = ({
                 Cancel
               </Text>
             </TouchableOpacity>
-            
+
             <TouchableOpacity
               onPress={handleSubmit}
               style={[
                 styles.submitButton,
-                { 
+                {
                   backgroundColor: cardData.color,
                   opacity: 1 // Always enabled since user can deselect all
                 }
@@ -460,6 +474,16 @@ const styles = StyleSheet.create({
   },
   userIcon: {
     marginLeft: 6,
+  },
+  countBadge: {
+    marginLeft: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 10,
+    fontSize: 12,
+    fontFamily: 'Inter-Bold',
+    minWidth: 20,
+    textAlign: 'center',
   },
   footer: {
     paddingHorizontal: 20,

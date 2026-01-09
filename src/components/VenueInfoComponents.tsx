@@ -23,31 +23,31 @@ interface VenueInfoCardsProps {
 // Parse enhanced information from description and amenities
 const parseVenueInfo = (venue: Venue) => {
   const description = venue.description || '';
-  
+
   // Extract wait times
   const waitTimesMatch = description.match(/Wait times?:\s*([^.]+)/i);
   const waitTimes = waitTimesMatch ? waitTimesMatch[1].split(',').map(s => s.trim()) : [];
-  
+
   // Extract popular items
   const popularMatch = description.match(/Popular:\s*([^.]+)/i);
   let popularItems = popularMatch ? popularMatch[1].split(',').map(s => s.trim()) : [];
-  
+
   // Extract parking info and add valet to popular items if it exists
   const parkingMatch = description.match(/Parking:\s*([^.]+)/i);
   const parkingInfo = parkingMatch ? parkingMatch[1].trim() : null;
-  
+
   // Add valet parking to popular items if it exists
   if (parkingInfo && parkingInfo.toLowerCase().includes('valet')) {
     popularItems.push('Valet Parking');
   }
-  
+
   // Extract atmosphere (structural, designed, stable)
   const atmosphereMatch = description.match(/Atmosphere:\s*([^.]+)/i);
   const atmosphereTags = atmosphereMatch ? atmosphereMatch[1].split(',').map(s => s.trim()) : [];
-  
+
   // Extract mood (emergent, temporal, crowd-dependent) - generate based on time and venue type
   const moodTags = generateCurrentMood(venue, atmosphereTags);
-  
+
   return { waitTimes, popularItems, atmosphereTags, moodTags, parkingInfo };
 };
 
@@ -58,9 +58,9 @@ const generateCurrentMood = (venue: Venue, atmosphereTags: string[]) => {
   const dayOfWeek = now.getDay(); // 0 = Sunday, 6 = Saturday
   const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
   const category = venue.category.toLowerCase();
-  
+
   let moodTags: string[] = [];
-  
+
   // Time-based moods
   if (hour >= 6 && hour < 11) {
     moodTags.push('Fresh Start');
@@ -75,7 +75,7 @@ const generateCurrentMood = (venue: Venue, atmosphereTags: string[]) => {
   } else {
     moodTags.push('Late Night');
   }
-  
+
   // Weekend vs weekday moods
   if (isWeekend) {
     if (category.includes('coffee')) {
@@ -96,7 +96,7 @@ const generateCurrentMood = (venue: Venue, atmosphereTags: string[]) => {
       moodTags.push('Weekday Steady');
     }
   }
-  
+
   // Category-specific current moods
   if (category.includes('coffee')) {
     if (hour >= 7 && hour < 10) {
@@ -118,14 +118,14 @@ const generateCurrentMood = (venue: Venue, atmosphereTags: string[]) => {
       moodTags.push('Intimate Setting');
     }
   }
-  
+
   // Atmosphere-influenced mood
   if (atmosphereTags.some(tag => tag.toLowerCase().includes('lively'))) {
     moodTags.push('Energetic');
   } else if (atmosphereTags.some(tag => tag.toLowerCase().includes('quiet'))) {
     moodTags.push('Peaceful');
   }
-  
+
   // Return up to 3 most relevant mood tags
   return moodTags.slice(0, 3);
 };
@@ -169,8 +169,8 @@ export const PopularItemsCard: React.FC<{ venue: Venue }> = ({ venue }) => {
         <Icon name="star-outline" size={20} color={theme.colors.primary} />
         <Text style={[styles.cardTitle, { color: theme.colors.text }]}>Popular Items</Text>
       </View>
-      <ScrollView 
-        horizontal 
+      <ScrollView
+        horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.popularItemsContainer}
       >
@@ -179,7 +179,7 @@ export const PopularItemsCard: React.FC<{ venue: Venue }> = ({ venue }) => {
             key={index}
             style={[
               styles.popularItemChip,
-              { 
+              {
                 backgroundColor: theme.colors.primary + '15',
                 borderColor: theme.colors.primary + '30'
               }
@@ -231,7 +231,7 @@ export const AtmosphereTagsCard: React.FC<{ venue: Venue }> = ({ venue }) => {
               key={index}
               style={[
                 styles.atmosphereTag,
-                { 
+                {
                   backgroundColor: tagColor + '15',
                   borderColor: tagColor + '30'
                 }
@@ -286,11 +286,11 @@ export const ParkingInfoCard: React.FC<{ venue: Venue }> = ({ venue }) => {
 export const ModernVenueCards: React.FC<{ venue: Venue }> = ({ venue }) => {
   const { theme } = useTheme();
   const { waitTimes, popularItems, atmosphereTags, moodTags } = parseVenueInfo(venue);
-  
+
   // Dialog state
   const [dialogVisible, setDialogVisible] = useState(false);
   const [selectedCardType, setSelectedCardType] = useState<'wait_times' | 'mood' | 'popular' | 'amenities'>('wait_times');
-  
+
   // Contribution state
   const [contributions, setContributions] = useState<VenueContributionCount[]>([]);
   const [userContributions, setUserContributions] = useState<VenueContribution[]>([]);
@@ -314,7 +314,7 @@ export const ModernVenueCards: React.FC<{ venue: Venue }> = ({ venue }) => {
     const result = await VenueContributionService.getUserContributionsForVenue(venue.id);
     if (result.success && result.data) {
       setUserContributions(result.data);
-      
+
       // Group user contributions by type for easy lookup
       const contributionsByType: Record<string, string[]> = {};
       result.data.forEach(contribution => {
@@ -340,17 +340,17 @@ export const ModernVenueCards: React.FC<{ venue: Venue }> = ({ venue }) => {
     }
 
     setLoading(true);
-    
+
     const result = await VenueContributionService.batchUpdateContributions(
       venue.id,
       selectedCardType,
       toAdd,
       toRemove
     );
-    
+
     if (result.success) {
       console.log(`Successfully updated contributions: +${result.addedCount || 0}, -${result.removedCount || 0}`);
-      
+
       // Small delay to ensure database consistency, then reload data
       await new Promise<void>(resolve => setTimeout(resolve, 100));
       await loadContributions();
@@ -359,7 +359,7 @@ export const ModernVenueCards: React.FC<{ venue: Venue }> = ({ venue }) => {
       console.error('Failed to update contributions:', result.error);
       // TODO: Show error toast to user
     }
-    
+
     setLoading(false);
   };
 
@@ -388,17 +388,17 @@ export const ModernVenueCards: React.FC<{ venue: Venue }> = ({ venue }) => {
   const getCombinedData = (type: 'wait_times' | 'mood' | 'popular' | 'amenities', originalData: string[]) => {
     const contributionData = getContributionsByType(type);
     const contributionTexts = contributionData.map(c => c.option_text);
-    
+
     // Combine original data with contributions, prioritizing contributions
     const combined = [...contributionTexts];
-    
+
     // Add original data that's not already in contributions
     originalData.forEach(item => {
       if (!contributionTexts.includes(item) && combined.length < 3) {
         combined.push(item);
       }
     });
-    
+
     return combined.slice(0, 3);
   };
 
@@ -426,27 +426,28 @@ export const ModernVenueCards: React.FC<{ venue: Venue }> = ({ venue }) => {
                   const isUserContrib = isUserContribution('wait_times', time);
                   return (
                     <View key={index} style={[
-                      styles.modernChip, 
-                      { 
-                        backgroundColor: '#FF69B4' + '15', 
+                      styles.modernChip,
+                      {
+                        backgroundColor: '#FF69B4' + '15',
                         borderColor: '#FF69B4' + '30',
                         borderWidth: isUserContrib ? 2 : 1, // Thicker border for user contributions
                       }
                     ]}>
-                      <Text style={[styles.modernChipText, { 
+                      <Text style={[styles.modernChipText, {
                         color: '#FF69B4',
                         fontFamily: isUserContrib ? 'Inter-SemiBold' : 'Inter-Medium', // Bold for user contributions
                       }]}>
                         {time}
                       </Text>
-                      {contribution && contribution.count > 1 && (
+                      {isUserContrib && (
+                        <Icon name="person" size={10} color="#FF69B4" style={styles.userChipIcon} />
+                      )}
+                      {contribution && contribution.count > 0 && (
                         <Text style={[styles.chipCount, { color: '#FF69B4' }]}>
                           {contribution.count}
                         </Text>
                       )}
-                      {isUserContrib && (
-                        <Icon name="person" size={10} color="#FF69B4" style={styles.userChipIcon} />
-                      )}
+
                     </View>
                   );
                 })}
@@ -473,26 +474,26 @@ export const ModernVenueCards: React.FC<{ venue: Venue }> = ({ venue }) => {
                   const isUserContrib = isUserContribution('mood', mood);
                   return (
                     <View key={`mood-${index}`} style={[
-                      styles.modernChip, 
-                      { 
-                        backgroundColor: '#6B73FF' + '15', 
+                      styles.modernChip,
+                      {
+                        backgroundColor: '#6B73FF' + '15',
                         borderColor: '#6B73FF' + '30',
                         borderWidth: isUserContrib ? 2 : 1,
                       }
                     ]}>
-                      <Text style={[styles.modernChipText, { 
+                      <Text style={[styles.modernChipText, {
                         color: '#6B73FF',
                         fontFamily: isUserContrib ? 'Inter-SemiBold' : 'Inter-Medium',
                       }]}>
                         {mood}
                       </Text>
-                      {contribution && contribution.count > 1 && (
+                      {isUserContrib && (
+                        <Icon name="person" size={10} color="#6B73FF" style={styles.userChipIcon} />
+                      )}
+                      {contribution && contribution.count > 0 && (
                         <Text style={[styles.chipCount, { color: '#6B73FF' }]}>
                           {contribution.count}
                         </Text>
-                      )}
-                      {isUserContrib && (
-                        <Icon name="person" size={10} color="#6B73FF" style={styles.userChipIcon} />
                       )}
                     </View>
                   );
@@ -523,26 +524,26 @@ export const ModernVenueCards: React.FC<{ venue: Venue }> = ({ venue }) => {
                   const isUserContrib = isUserContribution('popular', item);
                   return (
                     <View key={index} style={[
-                      styles.modernChip, 
-                      { 
-                        backgroundColor: '#FF6B6B' + '15', 
+                      styles.modernChip,
+                      {
+                        backgroundColor: '#FF6B6B' + '15',
                         borderColor: '#FF6B6B' + '30',
                         borderWidth: isUserContrib ? 2 : 1,
                       }
                     ]}>
-                      <Text style={[styles.modernChipText, { 
+                      <Text style={[styles.modernChipText, {
                         color: '#FF6B6B',
                         fontFamily: isUserContrib ? 'Inter-SemiBold' : 'Inter-Medium',
                       }]}>
                         {item}
                       </Text>
-                      {contribution && contribution.count > 1 && (
+                      {isUserContrib && (
+                        <Icon name="person" size={10} color="#FF6B6B" style={styles.userChipIcon} />
+                      )}
+                      {contribution && contribution.count > 0 && (
                         <Text style={[styles.chipCount, { color: '#FF6B6B' }]}>
                           {contribution.count}
                         </Text>
-                      )}
-                      {isUserContrib && (
-                        <Icon name="person" size={10} color="#FF6B6B" style={styles.userChipIcon} />
                       )}
                     </View>
                   );
@@ -570,26 +571,26 @@ export const ModernVenueCards: React.FC<{ venue: Venue }> = ({ venue }) => {
                   const isUserContrib = isUserContribution('amenities', amenity);
                   return (
                     <View key={index} style={[
-                      styles.modernChip, 
-                      { 
-                        backgroundColor: '#52C41A' + '15', 
+                      styles.modernChip,
+                      {
+                        backgroundColor: '#52C41A' + '15',
                         borderColor: '#52C41A' + '30',
                         borderWidth: isUserContrib ? 2 : 1,
                       }
                     ]}>
-                      <Text style={[styles.modernChipText, { 
+                      <Text style={[styles.modernChipText, {
                         color: '#52C41A',
                         fontFamily: isUserContrib ? 'Inter-SemiBold' : 'Inter-Medium',
                       }]}>
                         {amenity}
                       </Text>
-                      {contribution && contribution.count > 1 && (
+                      {isUserContrib && (
+                        <Icon name="person" size={10} color="#52C41A" style={styles.userChipIcon} />
+                      )}
+                      {contribution && contribution.count > 0 && (
                         <Text style={[styles.chipCount, { color: '#52C41A' }]}>
                           {contribution.count}
                         </Text>
-                      )}
-                      {isUserContrib && (
-                        <Icon name="person" size={10} color="#52C41A" style={styles.userChipIcon} />
                       )}
                     </View>
                   );
@@ -607,37 +608,38 @@ export const ModernVenueCards: React.FC<{ venue: Venue }> = ({ venue }) => {
         cardType={selectedCardType}
         onBatchUpdate={handleBatchUpdate}
         userSelections={getUserSelectionsForType(selectedCardType)}
+        contributionCounts={getContributionsByType(selectedCardType)}
       />
     </>
   );
 };
-export const VenueInfoCards: React.FC<VenueInfoCardsProps & { 
+export const VenueInfoCards: React.FC<VenueInfoCardsProps & {
   showWaitTimes?: boolean;
-  showPopularItems?: boolean; 
+  showPopularItems?: boolean;
   showAtmosphere?: boolean;
   showParking?: boolean;
   order?: ('waitTimes' | 'popularItems' | 'atmosphere' | 'parking')[];
-}> = ({ 
-  venue, 
+}> = ({
+  venue,
   showWaitTimes = true,
   showPopularItems = true,
   showAtmosphere = true,
   showParking = true,
   order = ['waitTimes', 'popularItems', 'atmosphere', 'parking']
 }) => {
-  const componentMap = {
-    waitTimes: showWaitTimes ? <WaitTimesCard key="waitTimes" venue={venue} /> : null,
-    popularItems: showPopularItems ? <PopularItemsCard key="popularItems" venue={venue} /> : null,
-    atmosphere: showAtmosphere ? <AtmosphereTagsCard key="atmosphere" venue={venue} /> : null,
-    parking: showParking ? <ParkingInfoCard key="parking" venue={venue} /> : null,
-  };
+    const componentMap = {
+      waitTimes: showWaitTimes ? <WaitTimesCard key="waitTimes" venue={venue} /> : null,
+      popularItems: showPopularItems ? <PopularItemsCard key="popularItems" venue={venue} /> : null,
+      atmosphere: showAtmosphere ? <AtmosphereTagsCard key="atmosphere" venue={venue} /> : null,
+      parking: showParking ? <ParkingInfoCard key="parking" venue={venue} /> : null,
+    };
 
-  return (
-    <>
-      {order.map(component => componentMap[component]).filter(Boolean)}
-    </>
-  );
-};
+    return (
+      <>
+        {order.map(component => componentMap[component]).filter(Boolean)}
+      </>
+    );
+  };
 
 // Compact versions for use in lists/previews
 export const CompactWaitTimes: React.FC<{ venue: Venue }> = ({ venue }) => {
@@ -760,7 +762,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-SemiBold',
     marginLeft: 8,
   },
-  
+
   // Wait Times Styles
   waitTimesContainer: {
     gap: 8,
@@ -775,7 +777,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Inter-Medium',
   },
-  
+
   // Popular Items Styles
   popularItemsContainer: {
     paddingRight: 15,
@@ -791,7 +793,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: 'Inter-Medium',
   },
-  
+
   // Atmosphere Tags Styles
   atmosphereTagsContainer: {
     flexDirection: 'row',
@@ -808,7 +810,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'Inter-Medium',
   },
-  
+
   // Parking Info Styles
   parkingInfoContainer: {
     gap: 8,
@@ -823,7 +825,7 @@ const styles = StyleSheet.create({
     marginLeft: 12,
     flex: 1,
   },
-  
+
   // Compact Component Styles
   compactContainer: {
     flexDirection: 'row',
@@ -872,7 +874,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Medium',
     marginLeft: 4,
   },
-  
+
   // Modern Square Cards Styles
   modernCardsContainer: {
     paddingHorizontal: 15,
