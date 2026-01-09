@@ -6,7 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useNavigationStyle } from '../contexts/NavigationStyleContext';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
-import FloatingTabBar from '../components/FloatingTabBar';
+import NewFloatingTabBar from '../components/NewFloatingTabBar';
 import AnimatedTabBar from '../components/AnimatedTabBar';
 
 // Import screens
@@ -174,7 +174,7 @@ function MainTabNavigator() {
     // Floating Tab Bar (current implementation)
     return (
       <Tab.Navigator
-        tabBar={(props) => <FloatingTabBar {...props} />}
+        tabBar={(props) => <NewFloatingTabBar {...props} />}
         screenOptions={{
           headerShown: false,
           tabBarStyle: { 
