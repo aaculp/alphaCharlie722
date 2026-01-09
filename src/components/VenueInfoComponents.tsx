@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,9 +8,13 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '../contexts/ThemeContext';
+import VenueCardDialog from './VenueCardDialog';
+import VenueContributionService from '../services/venueContributionService';
 import type { Database } from '../lib/supabase';
 
 type Venue = Database['public']['Tables']['venues']['Row'];
+type VenueContribution = Database['public']['Tables']['venue_contributions']['Row'];
+type VenueContributionCount = Database['public']['Views']['venue_contribution_counts']['Row'];
 
 interface VenueInfoCardsProps {
   venue: Venue;
@@ -282,154 +286,329 @@ export const ParkingInfoCard: React.FC<{ venue: Venue }> = ({ venue }) => {
 export const ModernVenueCards: React.FC<{ venue: Venue }> = ({ venue }) => {
   const { theme } = useTheme();
   const { waitTimes, popularItems, atmosphereTags, moodTags } = parseVenueInfo(venue);
+  
+  // Dialog state
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [selectedCardType, setSelectedCardType] = useState<'wait_times' | 'mood' | 'popular' | 'amenities'>('wait_times');
+  
+  // Contribution state
+  const [contributions, setContributions] = useState<VenueContributionCount[]>([]);
+  const [userContributions, setUserContributions] = useState<VenueContribution[]>([]);
+  const [userContributionsByType, setUserContributionsByType] = useState<Record<string, string[]>>({});
+  const [loading, setLoading] = useState(false);
+
+  // Load contributions on mount
+  useEffect(() => {
+    loadContributions();
+    loadUserContributions();
+  }, [venue.id]);
+
+  const loadContributions = async () => {
+    const result = await VenueContributionService.getVenueContributions(venue.id);
+    if (result.success && result.data) {
+      setContributions(result.data);
+    }
+  };
+
+  const loadUserContributions = async () => {
+    const result = await VenueContributionService.getUserContributionsForVenue(venue.id);
+    if (result.success && result.data) {
+      setUserContributions(result.data);
+      
+      // Group user contributions by type for easy lookup
+      const contributionsByType: Record<string, string[]> = {};
+      result.data.forEach(contribution => {
+        if (!contributionsByType[contribution.contribution_type]) {
+          contributionsByType[contribution.contribution_type] = [];
+        }
+        contributionsByType[contribution.contribution_type].push(contribution.option_text);
+      });
+      setUserContributionsByType(contributionsByType);
+    }
+  };
+
+  const handleIconPress = (cardType: 'wait_times' | 'mood' | 'popular' | 'amenities') => {
+    setSelectedCardType(cardType);
+    setDialogVisible(true);
+  };
+
+  const handleBatchUpdate = async (toAdd: string[], toRemove: string[]) => {
+    // Early return if no changes to process
+    if (toAdd.length === 0 && toRemove.length === 0) {
+      console.log('No changes to save, skipping API call');
+      return;
+    }
+
+    setLoading(true);
+    
+    const result = await VenueContributionService.batchUpdateContributions(
+      venue.id,
+      selectedCardType,
+      toAdd,
+      toRemove
+    );
+    
+    if (result.success) {
+      console.log(`Successfully updated contributions: +${result.addedCount || 0}, -${result.removedCount || 0}`);
+      
+      // Small delay to ensure database consistency, then reload data
+      await new Promise<void>(resolve => setTimeout(resolve, 100));
+      await loadContributions();
+      await loadUserContributions();
+    } else {
+      console.error('Failed to update contributions:', result.error);
+      // TODO: Show error toast to user
+    }
+    
+    setLoading(false);
+  };
+
+  const handleDialogClose = async () => {
+    // No need to reload here since we reload immediately after successful updates
+    setDialogVisible(false);
+  };
+
+  // Helper function to get user's selections for a specific card type
+  const getUserSelectionsForType = (type: 'wait_times' | 'mood' | 'popular' | 'amenities') => {
+    return userContributionsByType[type] || [];
+  };
+
+  // Helper function to check if user has contributed to an option
+  const isUserContribution = (type: 'wait_times' | 'mood' | 'popular' | 'amenities', optionText: string) => {
+    return getUserSelectionsForType(type).includes(optionText);
+  };
+  const getContributionsByType = (type: 'wait_times' | 'mood' | 'popular' | 'amenities') => {
+    return contributions
+      .filter(c => c.contribution_type === type)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 3); // Show top 3
+  };
+
+  // Helper function to combine original data with contributions
+  const getCombinedData = (type: 'wait_times' | 'mood' | 'popular' | 'amenities', originalData: string[]) => {
+    const contributionData = getContributionsByType(type);
+    const contributionTexts = contributionData.map(c => c.option_text);
+    
+    // Combine original data with contributions, prioritizing contributions
+    const combined = [...contributionTexts];
+    
+    // Add original data that's not already in contributions
+    originalData.forEach(item => {
+      if (!contributionTexts.includes(item) && combined.length < 3) {
+        combined.push(item);
+      }
+    });
+    
+    return combined.slice(0, 3);
+  };
 
   return (
-    <View style={styles.modernCardsContainer}>
-      {/* First Row - 2x2 Grid */}
-      <View style={styles.modernCardsRow}>
-        {/* Wait Times Square */}
-        {waitTimes.length > 0 && (
-          <View style={[styles.modernCard, { backgroundColor: theme.colors.surface }]}>
-            <View style={styles.modernCardHeader}>
-              <Text style={[styles.modernCardTitle, { color: '#FF6B6B' }]}>Wait Times</Text>
-              <View style={[styles.modernCardIcon, { backgroundColor: '#FF6B6B' + '20' }]}>
-                <Icon name="time-outline" size={20} color="#FF6B6B" />
+    <>
+      <View style={styles.modernCardsContainer}>
+        {/* First Row - 2x2 Grid */}
+        <View style={styles.modernCardsRow}>
+          {/* Wait Times Square */}
+          {(waitTimes.length > 0 || getContributionsByType('wait_times').length > 0) && (
+            <View style={[styles.modernCard, { backgroundColor: theme.colors.surface }]}>
+              <View style={styles.modernCardHeader}>
+                <Text style={[styles.modernCardTitle, { color: '#FF69B4' }]}>Wait Times</Text>
+                <TouchableOpacity
+                  onPress={() => handleIconPress('wait_times')}
+                  style={[styles.modernCardIcon, { backgroundColor: '#FF69B4' + '20' }]}
+                  activeOpacity={0.7}
+                >
+                  <Icon name="time-outline" size={20} color="#FF69B4" />
+                </TouchableOpacity>
+              </View>
+              <View style={styles.modernCardContent}>
+                {getCombinedData('wait_times', waitTimes).map((time, index) => {
+                  const contribution = getContributionsByType('wait_times').find(c => c.option_text === time);
+                  const isUserContrib = isUserContribution('wait_times', time);
+                  return (
+                    <View key={index} style={[
+                      styles.modernChip, 
+                      { 
+                        backgroundColor: '#FF69B4' + '15', 
+                        borderColor: '#FF69B4' + '30',
+                        borderWidth: isUserContrib ? 2 : 1, // Thicker border for user contributions
+                      }
+                    ]}>
+                      <Text style={[styles.modernChipText, { 
+                        color: '#FF69B4',
+                        fontFamily: isUserContrib ? 'Inter-SemiBold' : 'Inter-Medium', // Bold for user contributions
+                      }]}>
+                        {time}
+                      </Text>
+                      {contribution && contribution.count > 1 && (
+                        <Text style={[styles.chipCount, { color: '#FF69B4' }]}>
+                          {contribution.count}
+                        </Text>
+                      )}
+                      {isUserContrib && (
+                        <Icon name="person" size={10} color="#FF69B4" style={styles.userChipIcon} />
+                      )}
+                    </View>
+                  );
+                })}
               </View>
             </View>
-            <View style={styles.modernCardContent}>
-              {waitTimes.slice(0, 3).map((time, index) => (
-                <View key={index} style={[styles.modernChip, { backgroundColor: '#FF6B6B' + '15', borderColor: '#FF6B6B' + '30' }]}>
-                  <Text style={[styles.modernChipText, { color: '#FF6B6B' }]}>
-                    {time}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          </View>
-        )}
+          )}
 
-        {/* Combined Mood & Atmosphere Square */}
-        {(atmosphereTags.length > 0 || moodTags.length > 0) && (
-          <View style={[styles.modernCard, { backgroundColor: theme.colors.surface }]}>
-            <View style={styles.modernCardHeader}>
-              <Text style={[styles.modernCardTitle, { color: '#6B73FF' }]}>Mood</Text>
-              <View style={[styles.modernCardIcon, { backgroundColor: '#6B73FF' + '20' }]}>
-                <Icon name="happy-outline" size={20} color="#6B73FF" />
+          {/* Combined Mood & Atmosphere Square */}
+          {(atmosphereTags.length > 0 || moodTags.length > 0 || getContributionsByType('mood').length > 0) && (
+            <View style={[styles.modernCard, { backgroundColor: theme.colors.surface }]}>
+              <View style={styles.modernCardHeader}>
+                <Text style={[styles.modernCardTitle, { color: '#6B73FF' }]}>Mood</Text>
+                <TouchableOpacity
+                  onPress={() => handleIconPress('mood')}
+                  style={[styles.modernCardIcon, { backgroundColor: '#6B73FF' + '20' }]}
+                  activeOpacity={0.7}
+                >
+                  <Icon name="happy-outline" size={20} color="#6B73FF" />
+                </TouchableOpacity>
+              </View>
+              <View style={styles.modernCardContent}>
+                {getCombinedData('mood', [...atmosphereTags, ...moodTags]).map((mood, index) => {
+                  const contribution = getContributionsByType('mood').find(c => c.option_text === mood);
+                  const isUserContrib = isUserContribution('mood', mood);
+                  return (
+                    <View key={`mood-${index}`} style={[
+                      styles.modernChip, 
+                      { 
+                        backgroundColor: '#6B73FF' + '15', 
+                        borderColor: '#6B73FF' + '30',
+                        borderWidth: isUserContrib ? 2 : 1,
+                      }
+                    ]}>
+                      <Text style={[styles.modernChipText, { 
+                        color: '#6B73FF',
+                        fontFamily: isUserContrib ? 'Inter-SemiBold' : 'Inter-Medium',
+                      }]}>
+                        {mood}
+                      </Text>
+                      {contribution && contribution.count > 1 && (
+                        <Text style={[styles.chipCount, { color: '#6B73FF' }]}>
+                          {contribution.count}
+                        </Text>
+                      )}
+                      {isUserContrib && (
+                        <Icon name="person" size={10} color="#6B73FF" style={styles.userChipIcon} />
+                      )}
+                    </View>
+                  );
+                })}
               </View>
             </View>
-            <View style={styles.modernCardContent}>
-              {/* Show atmosphere tags first */}
-              {atmosphereTags.slice(0, 2).map((tag, index) => {
-                const getTagColor = (tag: string) => {
-                  switch (tag.toLowerCase().trim()) {
-                    case 'quiet': return '#6B73FF';
-                    case 'lively': return '#FF6B6B';
-                    case 'family-friendly': return '#4ECDC4';
-                    case 'date night':
-                    case 'romantic': return '#FF69B4';
-                    case 'upscale': return '#FFD700';
-                    case 'casual': return '#95E1D3';
-                    case 'outdoor': return '#52C41A';
-                    case 'cozy': return '#D4A574';
-                    default: return '#6B73FF';
-                  }
-                };
-                const tagColor = getTagColor(tag);
-                return (
-                  <View key={`atm-${index}`} style={[styles.modernChip, { backgroundColor: tagColor + '15', borderColor: tagColor + '30' }]}>
-                    <Text style={[styles.modernChipText, { color: tagColor }]}>
-                      {tag}
-                    </Text>
-                  </View>
-                );
-              })}
-              {/* Then show mood tags */}
-              {moodTags.slice(0, atmosphereTags.length > 0 ? 1 : 3).map((mood, index) => {
-                const getMoodColor = (mood: string) => {
-                  switch (mood.toLowerCase().trim()) {
-                    case 'fresh start': return '#52C41A';
-                    case 'lunch rush': return '#FF8C00';
-                    case 'afternoon chill': return '#87CEEB';
-                    case 'evening buzz': return '#FF69B4';
-                    case 'night vibe': return '#9370DB';
-                    case 'late night': return '#4B0082';
-                    case 'weekend relaxed': return '#98FB98';
-                    case 'weekend party': return '#FF1493';
-                    case 'date night ready': return '#FF69B4';
-                    case 'weekend crowd': return '#FFA500';
-                    case 'work lunch': return '#4682B4';
-                    case 'after work': return '#DAA520';
-                    case 'weekday steady': return '#708090';
-                    case 'caffeine rush': return '#8B4513';
-                    case 'study session': return '#6495ED';
-                    case 'game ready': return '#FF4500';
-                    case 'cheering crowd': return '#FF6347';
-                    case 'happy hour': return '#FFD700';
-                    case 'intimate setting': return '#DDA0DD';
-                    case 'energetic': return '#FF4500';
-                    case 'peaceful': return '#87CEEB';
-                    default: return '#FF69B4';
-                  }
-                };
-                const moodColor = getMoodColor(mood);
-                return (
-                  <View key={`mood-${index}`} style={[styles.modernChip, { backgroundColor: moodColor + '15', borderColor: moodColor + '30' }]}>
-                    <Text style={[styles.modernChipText, { color: moodColor }]}>
-                      {mood}
-                    </Text>
-                  </View>
-                );
-              })}
+          )}
+        </View>
+
+        {/* Second Row - 2x2 Grid */}
+        <View style={styles.modernCardsRow}>
+          {/* Popular Items Square */}
+          {(popularItems.length > 0 || getContributionsByType('popular').length > 0) && (
+            <View style={[styles.modernCard, { backgroundColor: theme.colors.surface }]}>
+              <View style={styles.modernCardHeader}>
+                <Text style={[styles.modernCardTitle, { color: '#FF6B6B' }]}>Popular</Text>
+                <TouchableOpacity
+                  onPress={() => handleIconPress('popular')}
+                  style={[styles.modernCardIcon, { backgroundColor: '#FF6B6B' + '20' }]}
+                  activeOpacity={0.7}
+                >
+                  <Icon name="star-outline" size={20} color="#FF6B6B" />
+                </TouchableOpacity>
+              </View>
+              <View style={styles.modernCardContent}>
+                {getCombinedData('popular', popularItems).map((item, index) => {
+                  const contribution = getContributionsByType('popular').find(c => c.option_text === item);
+                  const isUserContrib = isUserContribution('popular', item);
+                  return (
+                    <View key={index} style={[
+                      styles.modernChip, 
+                      { 
+                        backgroundColor: '#FF6B6B' + '15', 
+                        borderColor: '#FF6B6B' + '30',
+                        borderWidth: isUserContrib ? 2 : 1,
+                      }
+                    ]}>
+                      <Text style={[styles.modernChipText, { 
+                        color: '#FF6B6B',
+                        fontFamily: isUserContrib ? 'Inter-SemiBold' : 'Inter-Medium',
+                      }]}>
+                        {item}
+                      </Text>
+                      {contribution && contribution.count > 1 && (
+                        <Text style={[styles.chipCount, { color: '#FF6B6B' }]}>
+                          {contribution.count}
+                        </Text>
+                      )}
+                      {isUserContrib && (
+                        <Icon name="person" size={10} color="#FF6B6B" style={styles.userChipIcon} />
+                      )}
+                    </View>
+                  );
+                })}
+              </View>
             </View>
-          </View>
-        )}
+          )}
+
+          {/* Amenities Square */}
+          {((venue.amenities && venue.amenities.length > 0) || getContributionsByType('amenities').length > 0) && (
+            <View style={[styles.modernCard, { backgroundColor: theme.colors.surface }]}>
+              <View style={styles.modernCardHeader}>
+                <Text style={[styles.modernCardTitle, { color: '#52C41A' }]}>Amenities</Text>
+                <TouchableOpacity
+                  onPress={() => handleIconPress('amenities')}
+                  style={[styles.modernCardIcon, { backgroundColor: '#52C41A' + '20' }]}
+                  activeOpacity={0.7}
+                >
+                  <Icon name="checkmark-circle-outline" size={20} color="#52C41A" />
+                </TouchableOpacity>
+              </View>
+              <View style={styles.modernCardContent}>
+                {getCombinedData('amenities', venue.amenities || []).map((amenity, index) => {
+                  const contribution = getContributionsByType('amenities').find(c => c.option_text === amenity);
+                  const isUserContrib = isUserContribution('amenities', amenity);
+                  return (
+                    <View key={index} style={[
+                      styles.modernChip, 
+                      { 
+                        backgroundColor: '#52C41A' + '15', 
+                        borderColor: '#52C41A' + '30',
+                        borderWidth: isUserContrib ? 2 : 1,
+                      }
+                    ]}>
+                      <Text style={[styles.modernChipText, { 
+                        color: '#52C41A',
+                        fontFamily: isUserContrib ? 'Inter-SemiBold' : 'Inter-Medium',
+                      }]}>
+                        {amenity}
+                      </Text>
+                      {contribution && contribution.count > 1 && (
+                        <Text style={[styles.chipCount, { color: '#52C41A' }]}>
+                          {contribution.count}
+                        </Text>
+                      )}
+                      {isUserContrib && (
+                        <Icon name="person" size={10} color="#52C41A" style={styles.userChipIcon} />
+                      )}
+                    </View>
+                  );
+                })}
+              </View>
+            </View>
+          )}
+        </View>
       </View>
 
-      {/* Second Row - 2x2 Grid */}
-      <View style={styles.modernCardsRow}>
-        {/* Popular Items Square */}
-        {popularItems.length > 0 && (
-          <View style={[styles.modernCard, { backgroundColor: theme.colors.surface }]}>
-            <View style={styles.modernCardHeader}>
-              <Text style={[styles.modernCardTitle, { color: '#FFD700' }]}>Popular</Text>
-              <View style={[styles.modernCardIcon, { backgroundColor: '#FFD700' + '20' }]}>
-                <Icon name="star-outline" size={20} color="#FFD700" />
-              </View>
-            </View>
-            <View style={styles.modernCardContent}>
-              {popularItems.slice(0, 3).map((item, index) => (
-                <View key={index} style={[styles.modernChip, { backgroundColor: '#FFD700' + '15', borderColor: '#FFD700' + '30' }]}>
-                  <Text style={[styles.modernChipText, { color: '#FFD700' }]}>
-                    {item}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          </View>
-        )}
-
-        {/* Amenities Square */}
-        {venue.amenities && venue.amenities.length > 0 && (
-          <View style={[styles.modernCard, { backgroundColor: theme.colors.surface }]}>
-            <View style={styles.modernCardHeader}>
-              <Text style={[styles.modernCardTitle, { color: '#52C41A' }]}>Amenities</Text>
-              <View style={[styles.modernCardIcon, { backgroundColor: '#52C41A' + '20' }]}>
-                <Icon name="checkmark-circle-outline" size={20} color="#52C41A" />
-              </View>
-            </View>
-            <View style={styles.modernCardContent}>
-              {venue.amenities.slice(0, 3).map((amenity: string, index: number) => (
-                <View key={index} style={[styles.modernChip, { backgroundColor: '#52C41A' + '15', borderColor: '#52C41A' + '30' }]}>
-                  <Text style={[styles.modernChipText, { color: '#52C41A' }]}>
-                    {amenity}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          </View>
-        )}
-      </View>
-    </View>
+      {/* Dialog */}
+      <VenueCardDialog
+        visible={dialogVisible}
+        onClose={handleDialogClose}
+        cardType={selectedCardType}
+        onBatchUpdate={handleBatchUpdate}
+        userSelections={getUserSelectionsForType(selectedCardType)}
+      />
+    </>
   );
 };
 export const VenueInfoCards: React.FC<VenueInfoCardsProps & { 
@@ -763,6 +942,8 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   modernChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
@@ -772,5 +953,15 @@ const styles = StyleSheet.create({
   modernChipText: {
     fontSize: 11,
     fontFamily: 'Inter-Medium',
+  },
+  chipCount: {
+    fontSize: 10,
+    fontFamily: 'Inter-Bold',
+    marginLeft: 4,
+    opacity: 0.8,
+  },
+  userChipIcon: {
+    marginLeft: 4,
+    opacity: 0.8,
   },
 });

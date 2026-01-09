@@ -18,3 +18,4 @@ export { default as VenueCustomerCount } from './VenueCustomerCount';
 export { default as TestVenueCard } from './TestVenueCard';
 export { default as FloatingTabBar } from './FloatingTabBar';
 export { default as AnimatedTabBar } from './AnimatedTabBar';
+export { default as VenueCardDialog } from './VenueCardDialog';

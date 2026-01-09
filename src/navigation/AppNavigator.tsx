@@ -283,10 +283,10 @@ function AppNavigator() {
   }
 
   // Show loading for auth operations
-  if (loading) {
-    console.log('⏳ AppNavigator: Showing loading screen (auth operation)');
-    return <LoadingScreen />;
-  }
+  // if (loading) {
+  //   console.log('⏳ AppNavigator: Showing loading screen (auth operation)');
+  //   return <LoadingScreen />;
+  // }
 
   const shouldShowMainApp = !!session;
   console.log('🎯 AppNavigator: Navigation decision:', {

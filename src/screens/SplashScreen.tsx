@@ -20,6 +20,12 @@ const SplashScreen: React.FC = () => {
     "OTW to the mall, retail therapy time",
     "OTW to lunch, craving something delicious",
     "OTW to the beach, sun and waves await",
+    "OTW to coffee, barely awake",
+    "OTW to the gym, no excuses today",
+    "OTW to drinks, long day energy",
+    "OTW to dinner, fingers crossed it’s worth the wait",
+    "OTW, vibes TBD",
+
   ];
 
   // Start with a random phrase

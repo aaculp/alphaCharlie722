@@ -266,6 +266,46 @@ export interface Database {
           updated_at?: string;
         };
       };
+      venue_contributions: {
+        Row: {
+          id: string;
+          venue_id: string;
+          user_id: string;
+          contribution_type: 'wait_times' | 'mood' | 'popular' | 'amenities';
+          option_text: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          venue_id: string;
+          user_id: string;
+          contribution_type: 'wait_times' | 'mood' | 'popular' | 'amenities';
+          option_text: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          venue_id?: string;
+          user_id?: string;
+          contribution_type?: 'wait_times' | 'mood' | 'popular' | 'amenities';
+          option_text?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+    };
+    Views: {
+      venue_contribution_counts: {
+        Row: {
+          venue_id: string;
+          contribution_type: 'wait_times' | 'mood' | 'popular' | 'amenities';
+          option_text: string;
+          count: number;
+          last_contributed: string;
+        };
+      };
     };
   };
 }
