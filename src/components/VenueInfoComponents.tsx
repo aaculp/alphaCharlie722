@@ -410,16 +410,16 @@ export const ModernVenueCards: React.FC<{ venue: Venue }> = ({ venue }) => {
           {/* Wait Times Square */}
           {(waitTimes.length > 0 || getContributionsByType('wait_times').length > 0) && (
             <View style={[styles.modernCard, { backgroundColor: theme.colors.surface }]}>
-              <View style={styles.modernCardHeader}>
+              <TouchableOpacity
+                onPress={() => handleIconPress('wait_times')}
+                style={styles.modernCardHeader}
+                activeOpacity={0.7}
+              >
                 <Text style={[styles.modernCardTitle, { color: '#FF69B4' }]}>Wait Times</Text>
-                <TouchableOpacity
-                  onPress={() => handleIconPress('wait_times')}
-                  style={[styles.modernCardIcon, { backgroundColor: '#FF69B4' + '20' }]}
-                  activeOpacity={0.7}
-                >
+                <View style={[styles.modernCardIcon, { backgroundColor: '#FF69B4' + '20' }]}>
                   <Icon name="time-outline" size={20} color="#FF69B4" />
-                </TouchableOpacity>
-              </View>
+                </View>
+              </TouchableOpacity>
               <View style={styles.modernCardContent}>
                 {getCombinedData('wait_times', waitTimes).map((time, index) => {
                   const contribution = getContributionsByType('wait_times').find(c => c.option_text === time);
@@ -458,16 +458,16 @@ export const ModernVenueCards: React.FC<{ venue: Venue }> = ({ venue }) => {
           {/* Combined Mood & Atmosphere Square */}
           {(atmosphereTags.length > 0 || moodTags.length > 0 || getContributionsByType('mood').length > 0) && (
             <View style={[styles.modernCard, { backgroundColor: theme.colors.surface }]}>
-              <View style={styles.modernCardHeader}>
+              <TouchableOpacity
+                onPress={() => handleIconPress('mood')}
+                style={styles.modernCardHeader}
+                activeOpacity={0.7}
+              >
                 <Text style={[styles.modernCardTitle, { color: '#6B73FF' }]}>Mood</Text>
-                <TouchableOpacity
-                  onPress={() => handleIconPress('mood')}
-                  style={[styles.modernCardIcon, { backgroundColor: '#6B73FF' + '20' }]}
-                  activeOpacity={0.7}
-                >
+                <View style={[styles.modernCardIcon, { backgroundColor: '#6B73FF' + '20' }]}>
                   <Icon name="happy-outline" size={20} color="#6B73FF" />
-                </TouchableOpacity>
-              </View>
+                </View>
+              </TouchableOpacity>
               <View style={styles.modernCardContent}>
                 {getCombinedData('mood', [...atmosphereTags, ...moodTags]).map((mood, index) => {
                   const contribution = getContributionsByType('mood').find(c => c.option_text === mood);
@@ -508,16 +508,16 @@ export const ModernVenueCards: React.FC<{ venue: Venue }> = ({ venue }) => {
           {/* Popular Items Square */}
           {(popularItems.length > 0 || getContributionsByType('popular').length > 0) && (
             <View style={[styles.modernCard, { backgroundColor: theme.colors.surface }]}>
-              <View style={styles.modernCardHeader}>
+              <TouchableOpacity
+                onPress={() => handleIconPress('popular')}
+                style={styles.modernCardHeader}
+                activeOpacity={0.7}
+              >
                 <Text style={[styles.modernCardTitle, { color: '#FF6B6B' }]}>Popular</Text>
-                <TouchableOpacity
-                  onPress={() => handleIconPress('popular')}
-                  style={[styles.modernCardIcon, { backgroundColor: '#FF6B6B' + '20' }]}
-                  activeOpacity={0.7}
-                >
+                <View style={[styles.modernCardIcon, { backgroundColor: '#FF6B6B' + '20' }]}>
                   <Icon name="star-outline" size={20} color="#FF6B6B" />
-                </TouchableOpacity>
-              </View>
+                </View>
+              </TouchableOpacity>
               <View style={styles.modernCardContent}>
                 {getCombinedData('popular', popularItems).map((item, index) => {
                   const contribution = getContributionsByType('popular').find(c => c.option_text === item);
@@ -555,16 +555,16 @@ export const ModernVenueCards: React.FC<{ venue: Venue }> = ({ venue }) => {
           {/* Amenities Square */}
           {((venue.amenities && venue.amenities.length > 0) || getContributionsByType('amenities').length > 0) && (
             <View style={[styles.modernCard, { backgroundColor: theme.colors.surface }]}>
-              <View style={styles.modernCardHeader}>
+              <TouchableOpacity
+                onPress={() => handleIconPress('amenities')}
+                style={styles.modernCardHeader}
+                activeOpacity={0.7}
+              >
                 <Text style={[styles.modernCardTitle, { color: '#52C41A' }]}>Amenities</Text>
-                <TouchableOpacity
-                  onPress={() => handleIconPress('amenities')}
-                  style={[styles.modernCardIcon, { backgroundColor: '#52C41A' + '20' }]}
-                  activeOpacity={0.7}
-                >
+                <View style={[styles.modernCardIcon, { backgroundColor: '#52C41A' + '20' }]}>
                   <Icon name="checkmark-circle-outline" size={20} color="#52C41A" />
-                </TouchableOpacity>
-              </View>
+                </View>
+              </TouchableOpacity>
               <View style={styles.modernCardContent}>
                 {getCombinedData('amenities', venue.amenities || []).map((amenity, index) => {
                   const contribution = getContributionsByType('amenities').find(c => c.option_text === amenity);
