@@ -399,7 +399,7 @@ const VenueDashboardScreen: React.FC = () => {
               Recent Activity Feed {analyticsLoading && '(Updating...)'}
             </Text>
             
-            <ScrollView 
+            <View 
               style={[
                 styles.activityFeed,
                 { 
@@ -413,8 +413,6 @@ const VenueDashboardScreen: React.FC = () => {
                   borderColor: theme.colors.border,
                 }
               ]}
-              showsVerticalScrollIndicator={true}
-              contentContainerStyle={styles.activityFeedContent}
             >
               {analytics?.recentActivities?.map((activity, index) => (
                 <View key={index} style={[
@@ -458,7 +456,7 @@ const VenueDashboardScreen: React.FC = () => {
                   </Text>
                 </View>
               )}
-            </ScrollView>
+            </View>
           </View>
         );
 
@@ -1403,54 +1401,60 @@ const VenueDashboardScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
-          <View>
-            <Text style={[styles.welcomeText, { color: theme.colors.textSecondary }]}>
-              Welcome back,
-            </Text>
-            <Text style={[styles.venueName, { color: theme.colors.text }]}>
-              {venueBusinessAccount?.venues?.name || 'Demo Venue'}
-            </Text>
-          </View>
-          <View style={styles.headerButtons}>
-            <TouchableOpacity 
-              onPress={() => setActiveTab('settings')}
-              style={[
-                styles.headerButton, 
-                { 
-                  backgroundColor: activeTab === 'settings' ? theme.colors.primary : theme.colors.surface,
-                  borderColor: theme.colors.border,
-                }
-              ]}
-            >
-              <Icon 
-                name="settings-outline" 
-                size={20} 
-                color={activeTab === 'settings' ? '#fff' : theme.colors.textSecondary} 
-              />
-            </TouchableOpacity>
-            <TouchableOpacity 
-              onPress={handleSignOut}
-              style={[
-                styles.headerButton, 
-                { 
-                  backgroundColor: theme.colors.surface,
-                  borderColor: theme.colors.border,
-                }
-              ]}
-            >
-              <Icon name="log-out-outline" size={20} color={theme.colors.textSecondary} />
-            </TouchableOpacity>
-          </View>
+      {/* Header */}
+      <View style={styles.header}>
+        <View>
+          <Text style={[styles.welcomeText, { color: theme.colors.textSecondary }]}>
+            Welcome back,
+          </Text>
+          <Text style={[styles.venueName, { color: theme.colors.text }]}>
+            {venueBusinessAccount?.venues?.name || 'Demo Venue'}
+          </Text>
         </View>
+        <View style={styles.headerButtons}>
+          <TouchableOpacity 
+            onPress={() => setActiveTab('settings')}
+            style={[
+              styles.headerButton, 
+              { 
+                backgroundColor: activeTab === 'settings' ? theme.colors.primary : theme.colors.surface,
+                borderColor: theme.colors.border,
+              }
+            ]}
+          >
+            <Icon 
+              name="settings-outline" 
+              size={20} 
+              color={activeTab === 'settings' ? '#fff' : theme.colors.textSecondary} 
+            />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            onPress={handleSignOut}
+            style={[
+              styles.headerButton, 
+              { 
+                backgroundColor: theme.colors.surface,
+                borderColor: theme.colors.border,
+              }
+            ]}
+          >
+            <Icon name="log-out-outline" size={20} color={theme.colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
+      </View>
 
-        {/* Tab Navigation */}
+      {/* Sticky Tab Navigation */}
+      <View style={[
+        styles.stickyTabHeader,
+        { 
+          backgroundColor: theme.colors.background,
+          borderBottomWidth: 1,
+          borderBottomColor: theme.colors.border,
+        }
+      ]}>
         <ScrollView 
           horizontal 
           showsHorizontalScrollIndicator={false}
-          style={styles.tabScrollContainer}
           contentContainerStyle={styles.tabScrollContent}
         >
           <TabButton 
@@ -1474,12 +1478,17 @@ const VenueDashboardScreen: React.FC = () => {
             icon="bulb-outline" 
           />
         </ScrollView>
+      </View>
 
-        {/* Tab Content */}
+      {/* Scrollable Tab Content */}
+      <ScrollView 
+        style={styles.scrollView} 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollViewContent}
+      >
         <View style={styles.tabContent}>
           {renderTabContent()}
         </View>
-
         <View style={styles.bottomSpacing} />
       </ScrollView>
     </SafeAreaView>
@@ -1492,14 +1501,17 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+  },
+  scrollViewContent: {
     paddingHorizontal: 20,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 24,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 16,
   },
   welcomeText: {
     fontSize: 16,
@@ -1525,6 +1537,11 @@ const styles = StyleSheet.create({
   },
   tabScrollContainer: {
     marginBottom: 24,
+  },
+  stickyTabHeader: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    marginBottom: 0,
   },
   tabScrollContent: {
     paddingHorizontal: 0,
