@@ -8,7 +8,7 @@ import { useNavigationStyle } from '../contexts/NavigationStyleContext';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import NewFloatingTabBar from '../components/NewFloatingTabBar';
 import AnimatedTabBar from '../components/AnimatedTabBar';
-import VenueNavigator from './VenueNavigator';
+import VenueDashboardScreen from '../screens/VenueDashboardScreen';
 
 // Import screens
 import { HomeScreen, SearchScreen, VenueDetailScreen, SettingsScreen, SplashScreen, FavoritesScreen, QuickPicksScreen } from '../screens';
@@ -287,7 +287,7 @@ function AppNavigator() {
   // TEMPORARY: Always show venue interface for testing
   // TODO: Remove this and uncomment the proper logic below
   console.log('🏢 TEMPORARY: Always showing Venue Dashboard for testing');
-  return <VenueNavigator />;
+  return <VenueDashboardScreen />;
 
   /* COMMENTED OUT FOR TESTING - UNCOMMENT WHEN READY
   const shouldShowMainApp = !!session;
@@ -307,7 +307,7 @@ function AppNavigator() {
   // Route to different UIs based on user type
   if (userType === 'venue_owner') {
     console.log('🏢 Routing to Venue Dashboard');
-    return <VenueNavigator />;
+    return <VenueDashboardScreen />;
   } else {
     console.log('👤 Routing to Customer App');
     return <MainTabNavigator />;
