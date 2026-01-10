@@ -19,3 +19,4 @@ export { default as TestVenueCard } from './TestVenueCard';
 export { default as NewFloatingTabBar } from './NewFloatingTabBar';
 export { default as AnimatedTabBar } from './AnimatedTabBar';
 export { default as VenueCardDialog } from './VenueCardDialog';
+export { default as VenueEngagementChip } from './VenueEngagementChip';

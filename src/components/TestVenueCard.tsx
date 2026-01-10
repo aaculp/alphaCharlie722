@@ -5,11 +5,11 @@ import {
   StyleSheet,
   TouchableOpacity,
   Image,
+  Platform,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '../contexts/ThemeContext';
-import { getActivityLevel } from '../utils/activityLevel';
-import { VenueCustomerCount } from './index';
+import { VenueCustomerCount, VenueEngagementChip } from './index';
 import type { Database } from '../lib/supabase';
 
 type Venue = Database['public']['Tables']['venues']['Row'];
@@ -17,28 +17,23 @@ type Venue = Database['public']['Tables']['venues']['Row'];
 interface TestVenueCardProps {
   venue: Venue;
   checkInCount: number;
-  isCheckedIn?: boolean;
   onPress?: () => void;
-  onCheckIn?: () => void;
-  onMoreOptions?: () => void;
+  // Optional props to customize the engagement chip colors
+  customerCountVariant?: 'themed' | 'traffic' | 'primary' | 'success' | 'warning' | 'error';
+  engagementChipVariant?: 'themed' | 'colored' | 'traffic' | 'primary' | 'success' | 'warning' | 'error';
 }
 
 const TestVenueCard: React.FC<TestVenueCardProps> = ({
   venue,
   checkInCount,
-  isCheckedIn = false,
   onPress,
-  onCheckIn,
-  onMoreOptions,
+  customerCountVariant = 'traffic',
+  engagementChipVariant = 'traffic',
 }) => {
-  const { theme } = useTheme();
-
-  const activityLevel = venue.max_capacity 
-    ? getActivityLevel(checkInCount, venue.max_capacity)
-    : { level: 'Low-key', emoji: '😌', color: '#10B981' };
+  const { isDark } = useTheme();
 
   return (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={styles.cardContainer}
       onPress={onPress}
       activeOpacity={0.9}
@@ -50,72 +45,52 @@ const TestVenueCard: React.FC<TestVenueCardProps> = ({
         }}
         style={styles.backgroundImage}
       />
-      
-      {/* Transparent Overlay */}
-      <View style={styles.overlay}>
-        {/* First Row - Engagement Chip and Customer Count */}
-        <View style={styles.topRow}>
-          {/* Venue Engagement Chip */}
-          <View style={[
-            styles.engagementChip, 
-            { 
-              backgroundColor: 'rgba(255, 255, 255, 0.25)',
-              borderColor: 'rgba(255, 255, 255, 0.4)'
-            }
-          ]}>
-            <Text style={styles.chipEmoji}>{activityLevel.emoji}</Text>
-            <Text style={styles.chipText}>{activityLevel.level}</Text>
+
+      {/* Glassmorphism Content Wrapper at Bottom */}
+      <View style={[
+        styles.contentWrapper,
+        {
+          backgroundColor: isDark
+            ? 'rgba(20, 20, 20, 0.8)'
+            : 'rgba(255, 255, 255, 0.8)',
+          borderColor: isDark
+            ? 'rgba(255, 255, 255, 0.1)'
+            : 'rgba(0, 0, 0, 0.1)',
+        }
+      ]}>
+        <View style={styles.contentRow}>
+          {/* Left Side - Venue Info */}
+          <View style={styles.leftContent}>
+            <Text style={[styles.venueName, { color: isDark ? 'white' : '#000000' }]} numberOfLines={1}>
+              {venue.name}
+            </Text>
+            <View style={styles.locationRow}>
+              <Icon name="location-outline" size={14} color={isDark ? 'rgba(255, 255, 255, 0.7)' : '#666666'} />
+              <Text style={[styles.venueLocation, { color: isDark ? 'rgba(255, 255, 255, 0.7)' : '#666666' }]} numberOfLines={1}>
+                {venue.location}
+              </Text>
+            </View>
+            <View style={styles.ratingRow}>
+              <Text style={[styles.rating, { color: isDark ? 'white' : '#000000' }]}>⭐ {venue.rating}</Text>
+              <Text style={[styles.reviewCount, { color: isDark ? 'rgba(255, 255, 255, 0.7)' : '#666666' }]}>({venue.review_count})</Text>
+            </View>
           </View>
-          
-          {/* Customer Count */}
-          <VenueCustomerCount 
-            count={checkInCount}
-            size="small"
-          />
-        </View>
 
-        {/* Floating Action Panel */}
-        <View style={styles.floatingPanel}>
-          {/* Check-in Button */}
-          <TouchableOpacity 
-            style={[
-              styles.actionButton,
-              isCheckedIn && styles.checkedInButton
-            ]}
-            onPress={onCheckIn}
-          >
-            <Icon 
-              name={isCheckedIn ? "checkmark" : "add"} 
-              size={18} 
-              color="white" 
+          {/* Right Side - Engagement Elements */}
+          <View style={styles.rightContent}>
+            <VenueCustomerCount
+              count={checkInCount}
+              maxCapacity={venue.max_capacity || 100}
+              size="small"
+              variant={customerCountVariant}
             />
-          </TouchableOpacity>
-          
-          {/* Favorite Button */}
-          <TouchableOpacity style={styles.actionButton}>
-            <Icon name="heart-outline" size={18} color="white" />
-          </TouchableOpacity>
-          
-          {/* More Options */}
-          <TouchableOpacity 
-            style={styles.actionButton}
-            onPress={onMoreOptions}
-          >
-            <Icon name="ellipsis-horizontal" size={18} color="white" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Venue Details */}
-        <View style={styles.venueDetails}>
-          <Text style={styles.venueName} numberOfLines={1}>
-            {venue.name}
-          </Text>
-          <Text style={styles.venueLocation} numberOfLines={1}>
-            {venue.location}
-          </Text>
-          <View style={styles.ratingRow}>
-            <Text style={styles.rating}>⭐ {venue.rating}</Text>
-            <Text style={styles.reviewCount}>({venue.review_count})</Text>
+            
+            <VenueEngagementChip
+              currentCheckIns={checkInCount}
+              maxCapacity={venue.max_capacity || 100}
+              size="small"
+              variant={engagementChipVariant}
+            />
           </View>
         </View>
       </View>
@@ -130,81 +105,76 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     overflow: 'hidden',
     marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
   backgroundImage: {
     width: '100%',
     height: '100%',
     position: 'absolute',
   },
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    padding: 16,
-    justifyContent: 'space-between',
-  },
-  topRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  engagementChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
-  chipEmoji: {
-    fontSize: 12,
-    marginRight: 4,
-  },
-  chipText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: 'white',
-    fontFamily: 'Inter-SemiBold',
-  },
-  floatingPanel: {
+  contentWrapper: {
     position: 'absolute',
-    right: 16,
-    top: '50%',
-    transform: [{ translateY: -60 }],
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    borderRadius: 25,
-    paddingVertical: 8,
-    paddingHorizontal: 4,
+    bottom: 12,
+    left: 12,
+    right: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+    ...Platform.select({
+      ios: {
+        backdropFilter: 'blur(20px)',
+      },
+    }),
+  },
+  contentRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  leftContent: {
+    flex: 1,
+    marginRight: 12,
+  },
+  rightContent: {
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'flex-end',
+    alignItems: 'flex-end',
+    height: '100%',
     gap: 8,
   },
-  actionButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  checkedInButton: {
-    backgroundColor: 'rgba(34, 197, 94, 0.8)',
-    borderColor: 'rgba(34, 197, 94, 1)',
-  },
-  venueDetails: {
-    alignSelf: 'stretch',
-  },
   venueName: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
-    color: 'white',
     marginBottom: 4,
     fontFamily: 'Poppins-SemiBold',
   },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
   venueLocation: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.8)',
-    marginBottom: 8,
+    fontSize: 13,
+    marginLeft: 4,
     fontFamily: 'Inter-Regular',
+    flex: 1,
   },
   ratingRow: {
     flexDirection: 'row',
@@ -212,13 +182,11 @@ const styles = StyleSheet.create({
   },
   rating: {
     fontSize: 14,
-    color: 'white',
     marginRight: 6,
     fontFamily: 'Inter-Medium',
   },
   reviewCount: {
     fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.7)',
     fontFamily: 'Inter-Regular',
   },
 });

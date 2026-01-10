@@ -283,26 +283,15 @@ const HomeScreen: React.FC = () => {
           <View style={styles.venueList}>
             {venues.map((venue, index) => {
               const venueCheckInStats = checkInStats.get(venue.id);
+              
               return (
                 <TestVenueCard
                   key={venue.id}
                   venue={venue}
                   checkInCount={venueCheckInStats?.active_checkins || 0}
-                  isCheckedIn={venueCheckInStats?.user_is_checked_in || false}
                   onPress={() => handleVenuePress(venue)}
-                  onCheckIn={() => {
-                    if (venueCheckInStats?.user_is_checked_in) {
-                      // Handle check-out
-                      console.log('Check out from', venue.name);
-                    } else {
-                      // Handle check-in
-                      console.log('Check in to', venue.name);
-                    }
-                  }}
-                  onMoreOptions={() => {
-                    // Handle more options here
-                    console.log('More options for', venue.name);
-                  }}
+                  customerCountVariant="traffic"
+                  engagementChipVariant="traffic"
                 />
               );
             })}
