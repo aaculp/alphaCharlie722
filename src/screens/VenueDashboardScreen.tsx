@@ -65,8 +65,14 @@ const VenueDashboardScreen: React.FC = () => {
     loadAnalytics();
   }, [venueBusinessAccount?.venues?.id]);
 
+  const showAlert = (title: string, message: string, buttons?: any[]) => {
+    setTimeout(() => {
+      Alert.alert(title, message, buttons);
+    }, 100);
+  };
+
   const handleSignOut = async () => {
-    Alert.alert(
+    showAlert(
       'Demo Mode',
       'This is demo mode. In the real app, this would sign you out.',
       [
@@ -638,202 +644,6 @@ const VenueDashboardScreen: React.FC = () => {
           </View>
         );
 
-      case 'profile':
-        return (
-          <View>
-            {/* Venue Info Header */}
-            <View style={[
-              styles.profileHeader,
-              { 
-                backgroundColor: theme.colors.surface,
-                shadowColor: theme.colors.shadow,
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: isDark ? 0 : 0.1,
-                shadowRadius: 8,
-                elevation: isDark ? 0 : 4,
-                borderWidth: isDark ? 0 : 1,
-                borderColor: theme.colors.border,
-              }
-            ]}>
-              <View style={[styles.venueAvatar, { backgroundColor: theme.colors.primary + '20' }]}>
-                <Icon name="storefront" size={40} color={theme.colors.primary} />
-              </View>
-              <View style={styles.venueInfo}>
-                <Text style={[styles.profileVenueName, { color: theme.colors.text }]}>
-                  {venueBusinessAccount?.venues?.name || 'Demo Venue'}
-                </Text>
-                <Text style={[styles.venueCategory, { color: theme.colors.textSecondary }]}>
-                  Fast Food • $$ • 4.8 ⭐
-                </Text>
-                <Text style={[styles.venueAddress, { color: theme.colors.textSecondary }]}>
-                  123 Main St, Downtown
-                </Text>
-              </View>
-            </View>
-
-            {/* Basic Information */}
-            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-              Basic Information
-            </Text>
-            
-            <View style={[
-              styles.profileSection,
-              { 
-                backgroundColor: theme.colors.surface,
-                shadowColor: theme.colors.shadow,
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: isDark ? 0 : 0.05,
-                shadowRadius: 4,
-                elevation: isDark ? 0 : 2,
-                borderWidth: isDark ? 0 : 1,
-                borderColor: theme.colors.border,
-              }
-            ]}>
-              <TouchableOpacity style={[styles.profileItem, { borderBottomColor: theme.colors.border }]}>
-                <Icon name="create-outline" size={20} color={theme.colors.primary} />
-                <View style={styles.profileItemContent}>
-                  <Text style={[styles.profileItemTitle, { color: theme.colors.text }]}>
-                    Edit Venue Details
-                  </Text>
-                  <Text style={[styles.profileItemDesc, { color: theme.colors.textSecondary }]}>
-                    Name, description, category, price range
-                  </Text>
-                </View>
-                <Icon name="chevron-forward" size={16} color={theme.colors.textSecondary} />
-              </TouchableOpacity>
-
-              <TouchableOpacity style={[styles.profileItem, { borderBottomColor: theme.colors.border }]}>
-                <Icon name="location-outline" size={20} color={theme.colors.primary} />
-                <View style={styles.profileItemContent}>
-                  <Text style={[styles.profileItemTitle, { color: theme.colors.text }]}>
-                    Address & Location
-                  </Text>
-                  <Text style={[styles.profileItemDesc, { color: theme.colors.textSecondary }]}>
-                    Update address, coordinates, delivery zones
-                  </Text>
-                </View>
-                <Icon name="chevron-forward" size={16} color={theme.colors.textSecondary} />
-              </TouchableOpacity>
-
-              <TouchableOpacity style={[styles.profileItem, { borderBottomColor: theme.colors.border }]}>
-                <Icon name="time-outline" size={20} color={theme.colors.primary} />
-                <View style={styles.profileItemContent}>
-                  <Text style={[styles.profileItemTitle, { color: theme.colors.text }]}>
-                    Operating Hours
-                  </Text>
-                  <Text style={[styles.profileItemDesc, { color: theme.colors.textSecondary }]}>
-                    Mon-Sun: 8:00 AM - 10:00 PM
-                  </Text>
-                </View>
-                <Icon name="chevron-forward" size={16} color={theme.colors.textSecondary} />
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.profileItem}>
-                <Icon name="call-outline" size={20} color={theme.colors.primary} />
-                <View style={styles.profileItemContent}>
-                  <Text style={[styles.profileItemTitle, { color: theme.colors.text }]}>
-                    Contact Information
-                  </Text>
-                  <Text style={[styles.profileItemDesc, { color: theme.colors.textSecondary }]}>
-                    Phone, email, website, social media
-                  </Text>
-                </View>
-                <Icon name="chevron-forward" size={16} color={theme.colors.textSecondary} />
-              </TouchableOpacity>
-            </View>
-
-            {/* Media & Content */}
-            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-              Media & Content
-            </Text>
-            
-            <View style={[
-              styles.profileSection,
-              { 
-                backgroundColor: theme.colors.surface,
-                shadowColor: theme.colors.shadow,
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: isDark ? 0 : 0.05,
-                shadowRadius: 4,
-                elevation: isDark ? 0 : 2,
-                borderWidth: isDark ? 0 : 1,
-                borderColor: theme.colors.border,
-              }
-            ]}>
-              <TouchableOpacity style={[styles.profileItem, { borderBottomColor: theme.colors.border }]}>
-                <Icon name="camera-outline" size={20} color={theme.colors.primary} />
-                <View style={styles.profileItemContent}>
-                  <Text style={[styles.profileItemTitle, { color: theme.colors.text }]}>
-                    Photos & Gallery
-                  </Text>
-                  <Text style={[styles.profileItemDesc, { color: theme.colors.textSecondary }]}>
-                    Upload venue photos, food, atmosphere
-                  </Text>
-                </View>
-                <Icon name="chevron-forward" size={16} color={theme.colors.textSecondary} />
-              </TouchableOpacity>
-
-              <TouchableOpacity style={[styles.profileItem, { borderBottomColor: theme.colors.border }]}>
-                <Icon name="restaurant-outline" size={20} color={theme.colors.primary} />
-                <View style={styles.profileItemContent}>
-                  <Text style={[styles.profileItemTitle, { color: theme.colors.text }]}>
-                    Menu & Pricing
-                  </Text>
-                  <Text style={[styles.profileItemDesc, { color: theme.colors.textSecondary }]}>
-                    Update menu items, prices, specials
-                  </Text>
-                </View>
-                <Icon name="chevron-forward" size={16} color={theme.colors.textSecondary} />
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.profileItem}>
-                <Icon name="pricetag-outline" size={20} color={theme.colors.primary} />
-                <View style={styles.profileItemContent}>
-                  <Text style={[styles.profileItemTitle, { color: theme.colors.text }]}>
-                    Amenities & Features
-                  </Text>
-                  <Text style={[styles.profileItemDesc, { color: theme.colors.textSecondary }]}>
-                    WiFi, parking, outdoor seating, etc.
-                  </Text>
-                </View>
-                <Icon name="chevron-forward" size={16} color={theme.colors.textSecondary} />
-              </TouchableOpacity>
-            </View>
-
-            {/* Performance Stats */}
-            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-              Profile Performance
-            </Text>
-            
-            <View style={styles.statsGrid}>
-              <DashboardCard
-                title="Profile Views"
-                value={analytics?.profileViews ? `${(analytics.profileViews / 1000).toFixed(1)}k` : '0'}
-                icon="eye-outline"
-                color="#9C27B0"
-              />
-              <DashboardCard
-                title="Photo Views"
-                value={analytics?.photoViews?.toString() || '0'}
-                icon="image-outline"
-                color="#FF9800"
-              />
-              <DashboardCard
-                title="Menu Views"
-                value={analytics?.menuViews?.toString() || '0'}
-                icon="restaurant-outline"
-                color="#4CAF50"
-              />
-              <DashboardCard
-                title="Completeness"
-                value={`${analytics?.profileCompleteness || 0}%`}
-                icon="checkmark-circle-outline"
-                color="#2196F3"
-              />
-            </View>
-          </View>
-        );
-
       case 'settings':
         return (
           <View>
@@ -918,25 +728,25 @@ const VenueDashboardScreen: React.FC = () => {
                 icon="create-outline"
                 title="Edit Venue Details"
                 subtitle="Name, description, category, price range"
-                onPress={() => Alert.alert('Coming Soon', 'Venue details editing is being developed')}
+                onPress={() => showAlert('Coming Soon', 'Venue details editing is being developed')}
               />
               <SettingItem
                 icon="location-outline"
                 title="Address & Location"
                 subtitle="Update address, coordinates, delivery zones"
-                onPress={() => Alert.alert('Coming Soon', 'Location management is being developed')}
+                onPress={() => showAlert('Coming Soon', 'Location management is being developed')}
               />
               <SettingItem
                 icon="time-outline"
                 title="Operating Hours"
                 subtitle="Mon-Sun: 8:00 AM - 10:00 PM"
-                onPress={() => Alert.alert('Coming Soon', 'Hours management is being developed')}
+                onPress={() => showAlert('Coming Soon', 'Hours management is being developed')}
               />
               <SettingItem
                 icon="call-outline"
                 title="Contact Information"
                 subtitle="Phone, email, website, social media"
-                onPress={() => Alert.alert('Coming Soon', 'Contact management is being developed')}
+                onPress={() => showAlert('Coming Soon', 'Contact management is being developed')}
               />
             </View>
 
@@ -959,19 +769,19 @@ const VenueDashboardScreen: React.FC = () => {
                 icon="camera-outline"
                 title="Photos & Gallery"
                 subtitle="Upload venue photos, food, atmosphere"
-                onPress={() => Alert.alert('Coming Soon', 'Photo management is being developed')}
+                onPress={() => showAlert('Coming Soon', 'Photo management is being developed')}
               />
               <SettingItem
                 icon="restaurant-outline"
                 title="Menu & Pricing"
                 subtitle="Update menu items, prices, specials"
-                onPress={() => Alert.alert('Coming Soon', 'Menu management is being developed')}
+                onPress={() => showAlert('Coming Soon', 'Menu management is being developed')}
               />
               <SettingItem
                 icon="pricetag-outline"
                 title="Amenities & Features"
                 subtitle="WiFi, parking, outdoor seating, etc."
-                onPress={() => Alert.alert('Coming Soon', 'Amenities management is being developed')}
+                onPress={() => showAlert('Coming Soon', 'Amenities management is being developed')}
               />
             </View>
 
@@ -1022,7 +832,7 @@ const VenueDashboardScreen: React.FC = () => {
                 icon="flash-outline"
                 title="Flash Offers"
                 subtitle="Create time-limited promotions"
-                onPress={() => Alert.alert('Coming Soon', 'Flash offers are being developed')}
+                onPress={() => showAlert('Coming Soon', 'Flash offers are being developed')}
               />
             </View>
 
@@ -1044,7 +854,7 @@ const VenueDashboardScreen: React.FC = () => {
               <TouchableOpacity 
                 style={[styles.settingItem, { borderBottomColor: theme.colors.border }]}
                 onPress={() => {
-                  Alert.alert(
+                  showAlert(
                     'Theme',
                     'Choose your preferred theme',
                     [
@@ -1071,7 +881,7 @@ const VenueDashboardScreen: React.FC = () => {
                 icon="language-outline"
                 title="Language"
                 subtitle="English"
-                onPress={() => Alert.alert('Coming Soon', 'Language settings are being developed')}
+                onPress={() => showAlert('Coming Soon', 'Language settings are being developed')}
               />
             </View>
 
@@ -1094,19 +904,19 @@ const VenueDashboardScreen: React.FC = () => {
                 icon="card-outline"
                 title="Subscription Plan"
                 subtitle={`${venueBusinessAccount?.subscription_tier?.toUpperCase() || 'FREE'} - Manage your plan`}
-                onPress={() => Alert.alert('Coming Soon', 'Subscription management is being developed')}
+                onPress={() => showAlert('Coming Soon', 'Subscription management is being developed')}
               />
               <SettingItem
                 icon="receipt-outline"
                 title="Billing History"
                 subtitle="View past invoices and payments"
-                onPress={() => Alert.alert('Coming Soon', 'Billing history is being developed')}
+                onPress={() => showAlert('Coming Soon', 'Billing history is being developed')}
               />
               <SettingItem
                 icon="wallet-outline"
                 title="Payment Methods"
                 subtitle="Manage your payment options"
-                onPress={() => Alert.alert('Coming Soon', 'Payment management is being developed')}
+                onPress={() => showAlert('Coming Soon', 'Payment management is being developed')}
               />
             </View>
 
@@ -1129,266 +939,19 @@ const VenueDashboardScreen: React.FC = () => {
                 icon="help-circle-outline"
                 title="Help & Support"
                 subtitle="Get help with your venue account"
-                onPress={() => Alert.alert('Support', 'Contact support at support@otw.com')}
+                onPress={() => showAlert('Support', 'Contact support at support@otw.com')}
               />
               <SettingItem
                 icon="document-text-outline"
                 title="Terms of Service"
                 subtitle="Read our terms and conditions"
-                onPress={() => Alert.alert('Coming Soon', 'Terms of service viewer is being developed')}
+                onPress={() => showAlert('Coming Soon', 'Terms of service viewer is being developed')}
               />
               <SettingItem
                 icon="shield-checkmark-outline"
                 title="Privacy Policy"
                 subtitle="Learn how we protect your data"
-                onPress={() => Alert.alert('Coming Soon', 'Privacy policy viewer is being developed')}
-              />
-            </View>
-          </View>
-        );
-        return (
-          <View>
-            {/* Venue Info Section */}
-            <View style={[
-              styles.venueInfoSection, 
-              { 
-                backgroundColor: theme.colors.surface,
-                shadowColor: theme.colors.shadow,
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: isDark ? 0 : 0.1,
-                shadowRadius: 8,
-                elevation: isDark ? 0 : 4,
-                borderWidth: isDark ? 0 : 1,
-                borderColor: theme.colors.border,
-              }
-            ]}>
-              <View style={[styles.venueIcon, { backgroundColor: theme.colors.primary + '20' }]}>
-                <Icon name="storefront" size={40} color={theme.colors.primary} />
-              </View>
-              <View style={styles.venueDetails}>
-                <Text style={[styles.settingsVenueName, { color: theme.colors.text }]}>
-                  {venueBusinessAccount?.venues?.name || 'Demo Venue'}
-                </Text>
-                <Text style={[styles.venueEmail, { color: theme.colors.textSecondary }]}>
-                  {user?.email || 'demo@venue.com'}
-                </Text>
-                <Text style={[styles.subscriptionBadge, { 
-                  color: theme.colors.primary, 
-                  backgroundColor: theme.colors.primary + '20' 
-                }]}>
-                  {venueBusinessAccount?.subscription_tier?.toUpperCase() || 'FREE'} PLAN
-                </Text>
-              </View>
-            </View>
-
-            {/* Venue Management */}
-            <SectionHeader title="Venue Management" />
-            <View style={[
-              styles.section, 
-              { 
-                backgroundColor: theme.colors.surface,
-                shadowColor: theme.colors.shadow,
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: isDark ? 0 : 0.05,
-                shadowRadius: 4,
-                elevation: isDark ? 0 : 2,
-                borderWidth: isDark ? 0 : 1,
-                borderColor: theme.colors.border,
-              }
-            ]}>
-              <SettingItem
-                icon="create-outline"
-                title="Edit Venue Profile"
-                subtitle="Update venue information and photos"
-                onPress={() => setActiveTab('profile')}
-              />
-              <SettingItem
-                icon="time-outline"
-                title="Operating Hours"
-                subtitle="Manage your venue's hours"
-                onPress={() => Alert.alert('Coming Soon', 'Hours management is being developed')}
-              />
-              <SettingItem
-                icon="camera-outline"
-                title="Manage Photos"
-                subtitle="Upload and organize venue photos"
-                onPress={() => Alert.alert('Coming Soon', 'Photo management is being developed')}
-              />
-              <SettingItem
-                icon="pricetag-outline"
-                title="Menu & Pricing"
-                subtitle="Update your menu and prices"
-                onPress={() => Alert.alert('Coming Soon', 'Menu management is being developed')}
-              />
-            </View>
-
-            {/* Notifications & Automation */}
-            <SectionHeader title="Notifications & Automation" />
-            <View style={[
-              styles.section, 
-              { 
-                backgroundColor: theme.colors.surface,
-                shadowColor: theme.colors.shadow,
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: isDark ? 0 : 0.05,
-                shadowRadius: 4,
-                elevation: isDark ? 0 : 2,
-                borderWidth: isDark ? 0 : 1,
-                borderColor: theme.colors.border,
-              }
-            ]}>
-              <SettingItem
-                icon="notifications-outline"
-                title="Push Notifications"
-                subtitle="Send promotions to nearby customers"
-                rightComponent={
-                  <Switch
-                    value={notificationsEnabled}
-                    onValueChange={setNotificationsEnabled}
-                    trackColor={{ false: '#767577', true: theme.colors.primary + '80' }}
-                    thumbColor={notificationsEnabled ? theme.colors.primary : '#f4f3f4'}
-                  />
-                }
-                showArrow={false}
-              />
-              <SettingItem
-                icon="checkmark-circle-outline"
-                title="Auto-Accept Reservations"
-                subtitle="Automatically accept reservation requests"
-                rightComponent={
-                  <Switch
-                    value={autoAcceptReservations}
-                    onValueChange={setAutoAcceptReservations}
-                    trackColor={{ false: '#767577', true: theme.colors.primary + '80' }}
-                    thumbColor={autoAcceptReservations ? theme.colors.primary : '#f4f3f4'}
-                  />
-                }
-                showArrow={false}
-              />
-              <SettingItem
-                icon="flash-outline"
-                title="Flash Offers"
-                subtitle="Create time-limited promotions"
-                onPress={() => Alert.alert('Coming Soon', 'Flash offers are being developed')}
-              />
-            </View>
-
-            {/* App Preferences */}
-            <SectionHeader title="App Preferences" />
-            <View style={[
-              styles.section, 
-              { 
-                backgroundColor: theme.colors.surface,
-                shadowColor: theme.colors.shadow,
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: isDark ? 0 : 0.05,
-                shadowRadius: 4,
-                elevation: isDark ? 0 : 2,
-                borderWidth: isDark ? 0 : 1,
-                borderColor: theme.colors.border,
-              }
-            ]}>
-              <TouchableOpacity 
-                style={[styles.settingItem, { borderBottomColor: theme.colors.border }]}
-                onPress={() => {
-                  Alert.alert(
-                    'Theme',
-                    'Choose your preferred theme',
-                    [
-                      { text: 'Light', onPress: () => handleThemeChange('light') },
-                      { text: 'Dark', onPress: () => handleThemeChange('dark') },
-                      { text: 'System', onPress: () => handleThemeChange('system') },
-                      { text: 'Cancel', style: 'cancel' },
-                    ]
-                  );
-                }}
-              >
-                <View style={styles.settingLeft}>
-                  <Icon name="moon" size={24} color={theme.colors.primary} style={styles.settingIcon} />
-                  <View style={styles.settingText}>
-                    <Text style={[styles.settingTitle, { color: theme.colors.text }]}>Theme</Text>
-                    <Text style={[styles.settingSubtitle, { color: theme.colors.textSecondary }]}>{getThemeDisplayText()}</Text>
-                  </View>
-                </View>
-                <View style={styles.settingRight}>
-                  <Icon name="chevron-forward" size={20} color={theme.colors.textSecondary} />
-                </View>
-              </TouchableOpacity>
-              <SettingItem
-                icon="language-outline"
-                title="Language"
-                subtitle="English"
-                onPress={() => Alert.alert('Coming Soon', 'Language settings are being developed')}
-              />
-            </View>
-
-            {/* Subscription & Billing */}
-            <SectionHeader title="Subscription & Billing" />
-            <View style={[
-              styles.section, 
-              { 
-                backgroundColor: theme.colors.surface,
-                shadowColor: theme.colors.shadow,
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: isDark ? 0 : 0.05,
-                shadowRadius: 4,
-                elevation: isDark ? 0 : 2,
-                borderWidth: isDark ? 0 : 1,
-                borderColor: theme.colors.border,
-              }
-            ]}>
-              <SettingItem
-                icon="card-outline"
-                title="Subscription Plan"
-                subtitle={`${venueBusinessAccount?.subscription_tier?.toUpperCase() || 'FREE'} - Manage your plan`}
-                onPress={() => Alert.alert('Coming Soon', 'Subscription management is being developed')}
-              />
-              <SettingItem
-                icon="receipt-outline"
-                title="Billing History"
-                subtitle="View past invoices and payments"
-                onPress={() => Alert.alert('Coming Soon', 'Billing history is being developed')}
-              />
-              <SettingItem
-                icon="wallet-outline"
-                title="Payment Methods"
-                subtitle="Manage your payment options"
-                onPress={() => Alert.alert('Coming Soon', 'Payment management is being developed')}
-              />
-            </View>
-
-            {/* Support & Legal */}
-            <SectionHeader title="Support & Legal" />
-            <View style={[
-              styles.section, 
-              { 
-                backgroundColor: theme.colors.surface,
-                shadowColor: theme.colors.shadow,
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: isDark ? 0 : 0.05,
-                shadowRadius: 4,
-                elevation: isDark ? 0 : 2,
-                borderWidth: isDark ? 0 : 1,
-                borderColor: theme.colors.border,
-              }
-            ]}>
-              <SettingItem
-                icon="help-circle-outline"
-                title="Help & Support"
-                subtitle="Get help with your venue account"
-                onPress={() => Alert.alert('Support', 'Contact support at support@otw.com')}
-              />
-              <SettingItem
-                icon="document-text-outline"
-                title="Terms of Service"
-                subtitle="Read our terms and conditions"
-                onPress={() => Alert.alert('Coming Soon', 'Terms of service viewer is being developed')}
-              />
-              <SettingItem
-                icon="shield-checkmark-outline"
-                title="Privacy Policy"
-                subtitle="Learn how we protect your data"
-                onPress={() => Alert.alert('Coming Soon', 'Privacy policy viewer is being developed')}
+                onPress={() => showAlert('Coming Soon', 'Privacy policy viewer is being developed')}
               />
             </View>
           </View>
