@@ -284,12 +284,12 @@ function AppNavigator() {
     return <SplashScreen />;
   }
 
-  // Show loading for auth operations
-  // if (loading) {
-  //   console.log('⏳ AppNavigator: Showing loading screen (auth operation)');
-  //   return <LoadingScreen />;
-  // }
+  // TEMPORARY: Always show venue interface for testing
+  // TODO: Remove this and uncomment the proper logic below
+  console.log('🏢 TEMPORARY: Always showing Venue Dashboard for testing');
+  return <VenueNavigator />;
 
+  /* COMMENTED OUT FOR TESTING - UNCOMMENT WHEN READY
   const shouldShowMainApp = !!session;
   console.log('🎯 AppNavigator: Navigation decision:', {
     shouldShowMainApp,
@@ -312,6 +312,7 @@ function AppNavigator() {
     console.log('👤 Routing to Customer App');
     return <MainTabNavigator />;
   }
+  */
 }
 
 const styles = StyleSheet.create({

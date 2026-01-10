@@ -13,11 +13,20 @@ import { useAuth } from '../contexts/AuthContext';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 const VenueDashboardScreen: React.FC = () => {
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
   const { user, venueBusinessAccount, signOut } = useAuth();
   const [loading, setLoading] = useState(false);
 
   const handleSignOut = async () => {
+    Alert.alert(
+      'Demo Mode',
+      'This is demo mode. In the real app, this would sign you out.',
+      [
+        { text: 'OK', style: 'default' }
+      ]
+    );
+    
+    /* COMMENTED OUT FOR DEMO MODE
     Alert.alert(
       'Sign Out',
       'Are you sure you want to sign out?',
@@ -40,6 +49,7 @@ const VenueDashboardScreen: React.FC = () => {
         }
       ]
     );
+    */
   };
 
   const DashboardCard = ({ 
@@ -56,7 +66,19 @@ const VenueDashboardScreen: React.FC = () => {
     onPress?: () => void;
   }) => (
     <TouchableOpacity 
-      style={[styles.card, { backgroundColor: theme.colors.surface }]}
+      style={[
+        styles.card, 
+        { 
+          backgroundColor: theme.colors.surface,
+          shadowColor: theme.colors.shadow,
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: isDark ? 0 : 0.05,
+          shadowRadius: 4,
+          elevation: isDark ? 0 : 2,
+          borderWidth: isDark ? 0 : 1,
+          borderColor: theme.colors.border,
+        }
+      ]}
       onPress={onPress}
       disabled={!onPress}
     >
@@ -78,7 +100,7 @@ const VenueDashboardScreen: React.FC = () => {
               Welcome back,
             </Text>
             <Text style={[styles.venueName, { color: theme.colors.text }]}>
-              {venueBusinessAccount?.venues?.name || 'Your Venue'}
+              {venueBusinessAccount?.venues?.name || 'Demo Venue'}
             </Text>
           </View>
           <TouchableOpacity 
@@ -90,7 +112,19 @@ const VenueDashboardScreen: React.FC = () => {
         </View>
 
         {/* Status Card */}
-        <View style={[styles.statusCard, { backgroundColor: theme.colors.surface }]}>
+        <View style={[
+          styles.statusCard, 
+          { 
+            backgroundColor: theme.colors.surface,
+            shadowColor: theme.colors.shadow,
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: isDark ? 0 : 0.1,
+            shadowRadius: 8,
+            elevation: isDark ? 0 : 4,
+            borderWidth: isDark ? 0 : 1,
+            borderColor: theme.colors.border,
+          }
+        ]}>
           <View style={styles.statusHeader}>
             <Icon name="checkmark-circle" size={24} color="#4CAF50" />
             <Text style={[styles.statusTitle, { color: theme.colors.text }]}>
@@ -100,7 +134,7 @@ const VenueDashboardScreen: React.FC = () => {
           <Text style={[styles.statusText, { color: theme.colors.textSecondary }]}>
             {venueBusinessAccount?.account_status === 'active' 
               ? '✅ Active and visible to customers'
-              : '⏳ Pending verification'
+              : '✅ Demo Mode - Active and visible to customers'
             }
           </Text>
           <Text style={[styles.subscriptionText, { color: theme.colors.textSecondary }]}>
@@ -147,7 +181,19 @@ const VenueDashboardScreen: React.FC = () => {
 
         <View style={styles.actionsContainer}>
           <TouchableOpacity 
-            style={[styles.actionButton, { backgroundColor: theme.colors.surface }]}
+            style={[
+              styles.actionButton, 
+              { 
+                backgroundColor: theme.colors.surface,
+                shadowColor: theme.colors.shadow,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: isDark ? 0 : 0.05,
+                shadowRadius: 4,
+                elevation: isDark ? 0 : 2,
+                borderWidth: isDark ? 0 : 1,
+                borderColor: theme.colors.border,
+              }
+            ]}
           >
             <Icon name="create-outline" size={24} color={theme.colors.primary} />
             <Text style={[styles.actionText, { color: theme.colors.text }]}>
@@ -156,7 +202,19 @@ const VenueDashboardScreen: React.FC = () => {
           </TouchableOpacity>
 
           <TouchableOpacity 
-            style={[styles.actionButton, { backgroundColor: theme.colors.surface }]}
+            style={[
+              styles.actionButton, 
+              { 
+                backgroundColor: theme.colors.surface,
+                shadowColor: theme.colors.shadow,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: isDark ? 0 : 0.05,
+                shadowRadius: 4,
+                elevation: isDark ? 0 : 2,
+                borderWidth: isDark ? 0 : 1,
+                borderColor: theme.colors.border,
+              }
+            ]}
           >
             <Icon name="time-outline" size={24} color={theme.colors.primary} />
             <Text style={[styles.actionText, { color: theme.colors.text }]}>
@@ -165,7 +223,19 @@ const VenueDashboardScreen: React.FC = () => {
           </TouchableOpacity>
 
           <TouchableOpacity 
-            style={[styles.actionButton, { backgroundColor: theme.colors.surface }]}
+            style={[
+              styles.actionButton, 
+              { 
+                backgroundColor: theme.colors.surface,
+                shadowColor: theme.colors.shadow,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: isDark ? 0 : 0.05,
+                shadowRadius: 4,
+                elevation: isDark ? 0 : 2,
+                borderWidth: isDark ? 0 : 1,
+                borderColor: theme.colors.border,
+              }
+            ]}
           >
             <Icon name="camera-outline" size={24} color={theme.colors.primary} />
             <Text style={[styles.actionText, { color: theme.colors.text }]}>
@@ -174,7 +244,19 @@ const VenueDashboardScreen: React.FC = () => {
           </TouchableOpacity>
 
           <TouchableOpacity 
-            style={[styles.actionButton, { backgroundColor: theme.colors.surface }]}
+            style={[
+              styles.actionButton, 
+              { 
+                backgroundColor: theme.colors.surface,
+                shadowColor: theme.colors.shadow,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: isDark ? 0 : 0.05,
+                shadowRadius: 4,
+                elevation: isDark ? 0 : 2,
+                borderWidth: isDark ? 0 : 1,
+                borderColor: theme.colors.border,
+              }
+            ]}
           >
             <Icon name="notifications-outline" size={24} color={theme.colors.primary} />
             <Text style={[styles.actionText, { color: theme.colors.text }]}>
@@ -188,7 +270,19 @@ const VenueDashboardScreen: React.FC = () => {
           Recent Activity
         </Text>
 
-        <View style={[styles.activityCard, { backgroundColor: theme.colors.surface }]}>
+        <View style={[
+          styles.activityCard, 
+          { 
+            backgroundColor: theme.colors.surface,
+            shadowColor: theme.colors.shadow,
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: isDark ? 0 : 0.05,
+            shadowRadius: 4,
+            elevation: isDark ? 0 : 2,
+            borderWidth: isDark ? 0 : 1,
+            borderColor: theme.colors.border,
+          }
+        ]}>
           <Text style={[styles.activityText, { color: theme.colors.textSecondary }]}>
             No recent activity to display
           </Text>

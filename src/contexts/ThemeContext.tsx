@@ -60,7 +60,7 @@ const lightTheme: Theme = {
     surface: '#ffffff',
     text: '#333333',
     textSecondary: '#666666',
-    border: '#e0e0e0',
+    border: '#d1d5db', // Made darker for better visibility in light mode
     card: '#ffffff',
     notification: '#ff3b30',
     error: '#ff3b30',
