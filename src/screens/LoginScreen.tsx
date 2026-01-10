@@ -12,6 +12,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
+import { OTWLogo } from '../components';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 interface LoginScreenProps {
@@ -24,6 +26,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSwitchToSignUp }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { signIn, resetPassword } = useAuth();
+  const { theme, isDark } = useTheme();
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -56,43 +59,48 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSwitchToSignUp }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.header}>
-            <Text style={styles.title}>OTW</Text>
-            <Text style={styles.subtitle}>Live Feed</Text>
+            <OTWLogo size={400} variant="full" />
           </View>
 
-          <View style={styles.form}>
-            <View style={styles.inputContainer}>
-              <Icon name="mail-outline" size={20} color="#666" style={styles.inputIcon} />
+          <View style={[styles.form, { backgroundColor: theme.colors.surface }]}>
+            <View style={[styles.inputContainer, { 
+              borderColor: theme.colors.border, 
+              backgroundColor: isDark ? theme.colors.card : '#f9f9f9' 
+            }]}>
+              <Icon name="mail-outline" size={20} color={theme.colors.textSecondary} style={styles.inputIcon} />
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: theme.colors.text }]}
                 placeholder="Email"
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
-                placeholderTextColor="#999"
+                placeholderTextColor={theme.colors.textSecondary}
               />
             </View>
 
-            <View style={styles.inputContainer}>
-              <Icon name="lock-closed-outline" size={20} color="#666" style={styles.inputIcon} />
+            <View style={[styles.inputContainer, { 
+              borderColor: theme.colors.border, 
+              backgroundColor: isDark ? theme.colors.card : '#f9f9f9' 
+            }]}>
+              <Icon name="lock-closed-outline" size={20} color={theme.colors.textSecondary} style={styles.inputIcon} />
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: theme.colors.text }]}
                 placeholder="Password"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
                 autoCorrect={false}
-                placeholderTextColor="#999"
+                placeholderTextColor={theme.colors.textSecondary}
               />
               <TouchableOpacity
                 onPress={() => setShowPassword(!showPassword)}
@@ -101,17 +109,21 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSwitchToSignUp }) => {
                 <Icon
                   name={showPassword ? 'eye-outline' : 'eye-off-outline'}
                   size={20}
-                  color="#666"
+                  color={theme.colors.textSecondary}
                 />
               </TouchableOpacity>
             </View>
 
             <TouchableOpacity onPress={handleForgotPassword} style={styles.forgotPassword}>
-              <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+              <Text style={[styles.forgotPasswordText, { color: theme.colors.primary }]}>Forgot Password?</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.loginButton, loading && styles.loginButtonDisabled]}
+              style={[
+                styles.loginButton, 
+                { backgroundColor: theme.colors.primary },
+                loading && { backgroundColor: theme.colors.textSecondary }
+              ]}
               onPress={handleLogin}
               disabled={loading}
             >
@@ -121,9 +133,9 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSwitchToSignUp }) => {
             </TouchableOpacity>
 
             <View style={styles.signUpContainer}>
-              <Text style={styles.signUpText}>Don't have an account? </Text>
+              <Text style={[styles.signUpText, { color: theme.colors.textSecondary }]}>Don't have an account? </Text>
               <TouchableOpacity onPress={onSwitchToSignUp}>
-                <Text style={styles.signUpLink}>Sign Up</Text>
+                <Text style={[styles.signUpLink, { color: theme.colors.primary }]}>Sign Up</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -136,33 +148,20 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSwitchToSignUp }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   keyboardView: {
     flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     paddingHorizontal: 20,
   },
   header: {
     alignItems: 'center',
     marginBottom: 40,
   },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-  },
   form: {
-    backgroundColor: '#fff',
     borderRadius: 16,
     padding: 24,
     shadowColor: '#000',
@@ -178,11 +177,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#e0e0e0',
     borderRadius: 12,
     paddingHorizontal: 16,
     marginBottom: 16,
-    backgroundColor: '#f9f9f9',
   },
   inputIcon: {
     marginRight: 12,
@@ -191,7 +188,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 16,
     fontSize: 16,
-    color: '#333',
+    fontFamily: 'Inter-Regular', // Secondary font for input text
   },
   eyeIcon: {
     padding: 4,
@@ -201,24 +198,21 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   forgotPasswordText: {
-    color: '#007AFF',
     fontSize: 14,
     fontWeight: '500',
+    fontFamily: 'Inter-Medium', // Secondary font for links
   },
   loginButton: {
-    backgroundColor: '#007AFF',
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
     marginBottom: 24,
   },
-  loginButtonDisabled: {
-    backgroundColor: '#ccc',
-  },
   loginButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+    fontFamily: 'Inter-SemiBold', // Secondary font for button text
   },
   signUpContainer: {
     flexDirection: 'row',
@@ -226,13 +220,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   signUpText: {
-    color: '#666',
     fontSize: 14,
+    fontFamily: 'Inter-Regular', // Secondary font for body text
   },
   signUpLink: {
-    color: '#007AFF',
     fontSize: 14,
     fontWeight: '600',
+    fontFamily: 'Inter-SemiBold', // Secondary font for links
   },
 });
 

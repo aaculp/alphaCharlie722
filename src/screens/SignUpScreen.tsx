@@ -12,6 +12,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
+import { OTWLogo } from '../components';
 import { supabase } from '../lib/supabase';
 import Icon from 'react-native-vector-icons/Ionicons';
 
@@ -28,6 +30,7 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({ onSwitchToLogin }) => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { signUp, signIn } = useAuth();
+  const { theme, isDark } = useTheme();
 
   const validateForm = () => {
     if (!name.trim()) {
@@ -143,56 +146,64 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({ onSwitchToLogin }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.header}>
-            <Text style={styles.title}>Create Account</Text>
-            <Text style={styles.subtitle}>Join us to discover amazing venues</Text>
+            <OTWLogo size={400} variant="full" />
           </View>
 
-          <View style={styles.form}>
-            <View style={styles.inputContainer}>
-              <Icon name="person-outline" size={20} color="#666" style={styles.inputIcon} />
+          <View style={[styles.form, { backgroundColor: theme.colors.surface }]}>
+            <View style={[styles.inputContainer, { 
+              borderColor: theme.colors.border, 
+              backgroundColor: isDark ? theme.colors.card : '#f9f9f9' 
+            }]}>
+              <Icon name="person-outline" size={20} color={theme.colors.textSecondary} style={styles.inputIcon} />
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: theme.colors.text }]}
                 placeholder="Full Name"
                 value={name}
                 onChangeText={setName}
                 autoCapitalize="words"
                 autoCorrect={false}
-                placeholderTextColor="#999"
+                placeholderTextColor={theme.colors.textSecondary}
               />
             </View>
 
-            <View style={styles.inputContainer}>
-              <Icon name="mail-outline" size={20} color="#666" style={styles.inputIcon} />
+            <View style={[styles.inputContainer, { 
+              borderColor: theme.colors.border, 
+              backgroundColor: isDark ? theme.colors.card : '#f9f9f9' 
+            }]}>
+              <Icon name="mail-outline" size={20} color={theme.colors.textSecondary} style={styles.inputIcon} />
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: theme.colors.text }]}
                 placeholder="Email"
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
-                placeholderTextColor="#999"
+                placeholderTextColor={theme.colors.textSecondary}
               />
             </View>
 
-            <View style={styles.inputContainer}>
-              <Icon name="lock-closed-outline" size={20} color="#666" style={styles.inputIcon} />
+            <View style={[styles.inputContainer, { 
+              borderColor: theme.colors.border, 
+              backgroundColor: isDark ? theme.colors.card : '#f9f9f9' 
+            }]}>
+              <Icon name="lock-closed-outline" size={20} color={theme.colors.textSecondary} style={styles.inputIcon} />
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: theme.colors.text }]}
                 placeholder="Password (min 6 characters)"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
                 autoCorrect={false}
-                placeholderTextColor="#999"
+                placeholderTextColor={theme.colors.textSecondary}
               />
               <TouchableOpacity
                 onPress={() => setShowPassword(!showPassword)}
@@ -201,22 +212,25 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({ onSwitchToLogin }) => {
                 <Icon
                   name={showPassword ? 'eye-outline' : 'eye-off-outline'}
                   size={20}
-                  color="#666"
+                  color={theme.colors.textSecondary}
                 />
               </TouchableOpacity>
             </View>
 
-            <View style={styles.inputContainer}>
-              <Icon name="lock-closed-outline" size={20} color="#666" style={styles.inputIcon} />
+            <View style={[styles.inputContainer, { 
+              borderColor: theme.colors.border, 
+              backgroundColor: isDark ? theme.colors.card : '#f9f9f9' 
+            }]}>
+              <Icon name="lock-closed-outline" size={20} color={theme.colors.textSecondary} style={styles.inputIcon} />
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: theme.colors.text }]}
                 placeholder="Confirm Password"
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
                 secureTextEntry={!showConfirmPassword}
                 autoCapitalize="none"
                 autoCorrect={false}
-                placeholderTextColor="#999"
+                placeholderTextColor={theme.colors.textSecondary}
               />
               <TouchableOpacity
                 onPress={() => setShowConfirmPassword(!showConfirmPassword)}
@@ -225,13 +239,17 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({ onSwitchToLogin }) => {
                 <Icon
                   name={showConfirmPassword ? 'eye-outline' : 'eye-off-outline'}
                   size={20}
-                  color="#666"
+                  color={theme.colors.textSecondary}
                 />
               </TouchableOpacity>
             </View>
 
             <TouchableOpacity
-              style={[styles.signUpButton, loading && styles.signUpButtonDisabled]}
+              style={[
+                styles.signUpButton, 
+                { backgroundColor: theme.colors.primary },
+                loading && { backgroundColor: theme.colors.textSecondary }
+              ]}
               onPress={handleSignUp}
               disabled={loading}
             >
@@ -241,9 +259,9 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({ onSwitchToLogin }) => {
             </TouchableOpacity>
 
             <View style={styles.loginContainer}>
-              <Text style={styles.loginText}>Already have an account? </Text>
+              <Text style={[styles.loginText, { color: theme.colors.textSecondary }]}>Already have an account? </Text>
               <TouchableOpacity onPress={onSwitchToLogin}>
-                <Text style={styles.loginLink}>Sign In</Text>
+                <Text style={[styles.loginLink, { color: theme.colors.primary }]}>Sign In</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -256,33 +274,20 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({ onSwitchToLogin }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   keyboardView: {
     flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     paddingHorizontal: 20,
   },
   header: {
     alignItems: 'center',
     marginBottom: 40,
   },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-  },
   form: {
-    backgroundColor: '#fff',
     borderRadius: 16,
     padding: 24,
     shadowColor: '#000',
@@ -298,11 +303,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#e0e0e0',
     borderRadius: 12,
     paddingHorizontal: 16,
     marginBottom: 16,
-    backgroundColor: '#f9f9f9',
   },
   inputIcon: {
     marginRight: 12,
@@ -311,26 +314,23 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 16,
     fontSize: 16,
-    color: '#333',
+    fontFamily: 'Inter-Regular', // Secondary font for input text
   },
   eyeIcon: {
     padding: 4,
   },
   signUpButton: {
-    backgroundColor: '#007AFF',
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
     marginTop: 8,
     marginBottom: 24,
   },
-  signUpButtonDisabled: {
-    backgroundColor: '#ccc',
-  },
   signUpButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+    fontFamily: 'Inter-SemiBold', // Secondary font for button text
   },
   loginContainer: {
     flexDirection: 'row',
@@ -338,13 +338,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loginText: {
-    color: '#666',
     fontSize: 14,
+    fontFamily: 'Inter-Regular', // Secondary font for body text
   },
   loginLink: {
-    color: '#007AFF',
     fontSize: 14,
     fontWeight: '600',
+    fontFamily: 'Inter-SemiBold', // Secondary font for links
   },
 });
 
