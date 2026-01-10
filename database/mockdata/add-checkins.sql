@@ -1,21 +1,22 @@
 -- Add Check-ins to Test Venue
--- Replace 'YOUR_VENUE_ID_HERE' with the actual venue ID from simple-test.sql
+-- Replace 'e8bbe779-5f94-4b82-933c-ad2b2c318d0b' with the actual venue ID from simple-test.sql
 
--- First, create some test user profiles
+-- First, create some test user profiles (delete existing ones first to avoid duplicates)
+DELETE FROM profiles WHERE email LIKE 'testuser%@example.com';
+
 INSERT INTO profiles (id, email, name) VALUES 
 (gen_random_uuid(), 'testuser1@example.com', 'Test User 1'),
 (gen_random_uuid(), 'testuser2@example.com', 'Test User 2'),
 (gen_random_uuid(), 'testuser3@example.com', 'Test User 3'),
 (gen_random_uuid(), 'testuser4@example.com', 'Test User 4'),
 (gen_random_uuid(), 'testuser5@example.com', 'Test User 5'),
-(gen_random_uuid(), 'testuser6@example.com', 'Test User 6')
-ON CONFLICT (email) DO NOTHING;
+(gen_random_uuid(), 'testuser6@example.com', 'Test User 6');
 
--- Add some check-ins (replace YOUR_VENUE_ID_HERE with actual venue ID)
+-- Add some check-ins (replace e8bbe779-5f94-4b82-933c-ad2b2c318d0b with actual venue ID)
 -- Active check-ins (currently in the venue)
 INSERT INTO check_ins (venue_id, user_id, checked_in_at, is_active) 
 SELECT 
-  'YOUR_VENUE_ID_HERE'::uuid,
+  'e8bbe779-5f94-4b82-933c-ad2b2c318d0b'::uuid,
   p.id,
   NOW() - INTERVAL '30 minutes',
   true
@@ -24,7 +25,7 @@ WHERE p.email = 'testuser1@example.com';
 
 INSERT INTO check_ins (venue_id, user_id, checked_in_at, is_active) 
 SELECT 
-  'YOUR_VENUE_ID_HERE'::uuid,
+  'e8bbe779-5f94-4b82-933c-ad2b2c318d0b'::uuid,
   p.id,
   NOW() - INTERVAL '1 hour',
   true
@@ -33,7 +34,7 @@ WHERE p.email = 'testuser2@example.com';
 
 INSERT INTO check_ins (venue_id, user_id, checked_in_at, is_active) 
 SELECT 
-  'YOUR_VENUE_ID_HERE'::uuid,
+  'e8bbe779-5f94-4b82-933c-ad2b2c318d0b'::uuid,
   p.id,
   NOW() - INTERVAL '45 minutes',
   true
@@ -43,7 +44,7 @@ WHERE p.email = 'testuser3@example.com';
 -- Completed check-ins (for analytics history)
 INSERT INTO check_ins (venue_id, user_id, checked_in_at, checked_out_at, is_active) 
 SELECT 
-  'YOUR_VENUE_ID_HERE'::uuid,
+  'e8bbe779-5f94-4b82-933c-ad2b2c318d0b'::uuid,
   p.id,
   NOW() - INTERVAL '3 hours',
   NOW() - INTERVAL '2 hours',
@@ -53,7 +54,7 @@ WHERE p.email = 'testuser4@example.com';
 
 INSERT INTO check_ins (venue_id, user_id, checked_in_at, checked_out_at, is_active) 
 SELECT 
-  'YOUR_VENUE_ID_HERE'::uuid,
+  'e8bbe779-5f94-4b82-933c-ad2b2c318d0b'::uuid,
   p.id,
   NOW() - INTERVAL '5 hours',
   NOW() - INTERVAL '4 hours',
@@ -64,7 +65,7 @@ WHERE p.email = 'testuser5@example.com';
 -- Yesterday's check-ins
 INSERT INTO check_ins (venue_id, user_id, checked_in_at, checked_out_at, is_active) 
 SELECT 
-  'YOUR_VENUE_ID_HERE'::uuid,
+  'e8bbe779-5f94-4b82-933c-ad2b2c318d0b'::uuid,
   p.id,
   NOW() - INTERVAL '1 day' + INTERVAL '2 hours',
   NOW() - INTERVAL '1 day' + INTERVAL '3 hours',
@@ -78,4 +79,4 @@ SELECT
   COUNT(*) as total_checkins,
   COUNT(CASE WHEN is_active THEN 1 END) as active_checkins
 FROM check_ins 
-WHERE venue_id = 'YOUR_VENUE_ID_HERE'::uuid;
+WHERE venue_id = 'e8bbe779-5f94-4b82-933c-ad2b2c318d0b'::uuid;

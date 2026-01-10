@@ -33,8 +33,17 @@ const VenueDashboardScreen: React.FC = () => {
       
       try {
         let venueId = venueBusinessAccount?.venues?.id;
+        
+        // TEMPORARY: For testing, use test venue if no business account
         if (!venueId) {
-          console.log('⚠️ No venue ID found, keeping mock data');
+          // Replace this with your actual test venue ID from get-venue-id.sql
+          const testVenueId = 'e8bbe779-5f94-4b82-933c-ad2b2c318d0b'; // TODO: Replace with actual ID
+          console.log('⚠️ No venue business account found, using test venue ID:', testVenueId);
+          venueId = testVenueId;
+        }
+
+        if (!venueId) {
+          console.log('⚠️ No valid venue ID found, keeping mock data');
           return; // Keep the mock data that's already loaded
         }
 
