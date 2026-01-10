@@ -1,16 +1,20 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
+import { VenueBusinessService } from '../services/venueBusinessService';
 
 interface AuthContextType {
   session: Session | null;
   user: User | null;
+  userType: 'customer' | 'venue_owner' | null;
+  venueBusinessAccount: any | null;
   loading: boolean;
   initializing: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, name?: string) => Promise<{ user: User | null; session: Session | null; autoSignedIn?: boolean; needsManualLogin?: boolean; }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
+  refreshUserType: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -30,8 +34,41 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
+  const [userType, setUserType] = useState<'customer' | 'venue_owner' | null>(null);
+  const [venueBusinessAccount, setVenueBusinessAccount] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
   const [initializing, setInitializing] = useState(true);
+
+  // Function to determine user type
+  const determineUserType = async (userId: string) => {
+    try {
+      console.log('🔍 Determining user type for:', userId);
+      
+      // Check if user has a venue business account
+      const businessAccount = await VenueBusinessService.getBusinessAccount(userId);
+      
+      if (businessAccount) {
+        console.log('🏢 User is a venue owner:', businessAccount);
+        setUserType('venue_owner');
+        setVenueBusinessAccount(businessAccount);
+      } else {
+        console.log('👤 User is a regular customer');
+        setUserType('customer');
+        setVenueBusinessAccount(null);
+      }
+    } catch (error) {
+      console.error('❌ Error determining user type:', error);
+      // Default to customer if we can't determine
+      setUserType('customer');
+      setVenueBusinessAccount(null);
+    }
+  };
+
+  const refreshUserType = async () => {
+    if (user?.id) {
+      await determineUserType(user.id);
+    }
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -66,6 +103,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           });
           setSession(session);
           setUser(session?.user ?? null);
+          
+          // Determine user type if we have a user
+          if (session?.user?.id) {
+            await determineUserType(session.user.id);
+          }
         }
 
         // Ensure minimum splash screen duration
@@ -82,6 +124,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (mounted) {
           setSession(null);
           setUser(null);
+          setUserType(null);
+          setVenueBusinessAccount(null);
         }
       } finally {
         if (mounted) {
@@ -107,6 +151,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setSession(session);
           setUser(session?.user ?? null);
           setLoading(false);
+          
+          // Determine user type when auth state changes
+          if (session?.user?.id) {
+            await determineUserType(session.user.id);
+          } else {
+            setUserType(null);
+            setVenueBusinessAccount(null);
+          }
         }
       }
     );
@@ -128,6 +180,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (error) {
         throw new Error(`Sign in failed: ${error.message}`);
       }
+
+      // User type will be determined by the auth state change listener
     } catch (error) {
       setLoading(false);
       throw error;
@@ -183,6 +237,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (error) {
         throw new Error(`Sign out failed: ${error.message}`);
       }
+      
+      // Clear user type data on sign out
+      setUserType(null);
+      setVenueBusinessAccount(null);
     } catch (error) {
       setLoading(false);
       throw error;
@@ -202,12 +260,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const value: AuthContextType = {
     session,
     user,
+    userType,
+    venueBusinessAccount,
     loading,
     initializing,
     signIn,
     signUp,
     signOut,
     resetPassword,
+    refreshUserType,
   };
 
   return (

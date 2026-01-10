@@ -8,6 +8,7 @@ import { useNavigationStyle } from '../contexts/NavigationStyleContext';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import NewFloatingTabBar from '../components/NewFloatingTabBar';
 import AnimatedTabBar from '../components/AnimatedTabBar';
+import VenueNavigator from './VenueNavigator';
 
 // Import screens
 import { HomeScreen, SearchScreen, VenueDetailScreen, SettingsScreen, SplashScreen, FavoritesScreen, QuickPicksScreen } from '../screens';
@@ -265,7 +266,7 @@ function MainTabNavigator() {
 
 // Main App Navigator with Authentication
 function AppNavigator() {
-  const { session, loading, initializing, user } = useAuth();
+  const { session, loading, initializing, user, userType } = useAuth();
 
   console.log('🧭 AppNavigator render:', { 
     hasSession: !!session, 
@@ -273,6 +274,7 @@ function AppNavigator() {
     initializing,
     userId: user?.id,
     userEmail: user?.email,
+    userType,
     timestamp: new Date().toISOString()
   });
 
@@ -291,11 +293,25 @@ function AppNavigator() {
   const shouldShowMainApp = !!session;
   console.log('🎯 AppNavigator: Navigation decision:', {
     shouldShowMainApp,
-    component: shouldShowMainApp ? 'MainTabNavigator' : 'AuthScreen'
+    userType,
+    component: shouldShowMainApp 
+      ? (userType === 'venue_owner' ? 'VenueNavigator' : 'MainTabNavigator')
+      : 'AuthScreen'
   });
 
-  // Return navigator without NavigationContainer (now handled in App.tsx)
-  return shouldShowMainApp ? <MainTabNavigator /> : <AuthScreen />;
+  // Return appropriate navigator based on user type
+  if (!shouldShowMainApp) {
+    return <AuthScreen />;
+  }
+
+  // Route to different UIs based on user type
+  if (userType === 'venue_owner') {
+    console.log('🏢 Routing to Venue Dashboard');
+    return <VenueNavigator />;
+  } else {
+    console.log('👤 Routing to Customer App');
+    return <MainTabNavigator />;
+  }
 }
 
 const styles = StyleSheet.create({

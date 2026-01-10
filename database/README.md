@@ -1,55 +1,73 @@
-# Database Setup Files
+# Database Setup Instructions
 
-This directory contains SQL scripts for setting up the Supabase database for the venue discovery app.
+This directory contains SQL scripts to set up the OTW app database schema in Supabase.
 
 ## Setup Order
 
 Run these scripts in your Supabase SQL Editor in the following order:
 
-### 1. Core Database Setup
-- **`safe-pulse-setup.sql`** - Creates user_tags and tag_likes tables for the Pulse community feedback system
-- **`pulse-permissions.sql`** - Sets up Row Level Security (RLS) policies and permissions for Pulse tables
+### 1. Core Setup (if not already done)
+- `checkin-database-setup.sql` - Check-in system
+- `safe-pulse-setup.sql` - User feedback system
+- `add-max-capacity.sql` - Venue capacity tracking
 
-### 2. Check-in System
-- **`checkin-database-setup.sql`** - Creates check_ins table for venue check-in/out functionality
+### 2. Venue Signup System (NEW)
+- `venue-signup-system.sql` - Complete venue signup and business account system
 
-### 3. Venue Contributions System
-- **`clean-venue-contributions-setup.sql`** - Creates venue_contributions table for user-generated venue information (authentication required)
+## Venue Signup System Features
 
-### 4. Venue Enhancements (Optional)
-- **`add-max-capacity.sql`** - Adds max_capacity column to venues table for activity level calculation
+The `venue-signup-system.sql` script creates:
 
-### 4. Test Data (Optional)
-- **`pulse-test-data-fixed.sql`** - Adds sample Pulse tags and likes for testing
-- **`simulate-checkins.sql`** - Generates random check-ins for all venues for testing
+### Tables
+- **venue_applications**: Stores venue signup applications
+- **venue_business_accounts**: Manages approved venue business accounts
+- **venue_push_notifications**: Tracks push notification campaigns
 
-## File Descriptions
+### Features
+- ✅ Venue application submission and tracking
+- ✅ Automatic business account creation on approval
+- ✅ Subscription tier management (Free, Core, Pro, Revenue+)
+- ✅ Push notification credit system
+- ✅ Row Level Security (RLS) policies
+- ✅ Admin approval workflow
+- ✅ Automatic venue creation on approval
 
-### Core Tables
-- **user_tags**: Community-generated tags for venues with like counts
-- **tag_likes**: Individual user likes for tags (many-to-many relationship)
-- **check_ins**: User check-ins/check-outs at venues with timestamps
-- **venue_contributions**: User-generated venue information (wait times, mood, popular items, amenities) with contribution counts
-- **venues**: Enhanced with max_capacity for activity level calculation
+### Subscription Tiers
+- **Free ($0)**: Basic venue profile, live activity indicator
+- **Core ($79/month)**: 20 push notifications, geo-targeting, analytics
+- **Pro ($179/month)**: 60 push notifications, flash offers, advanced features
+- **Revenue+ ($299/month)**: Unlimited pushes, automation, priority support
 
-### Security
-All tables use Row Level Security (RLS) with policies that:
-- Allow public read access for tags, check-ins, and venue contributions
-- Require authentication for creating/modifying data
-- Ensure users can only modify their own data
-- Venue contributions require authenticated users (no anonymous contributions)
+## Admin Functions
 
-### Performance
-Includes optimized indexes for:
-- Venue-based queries
-- User-based queries  
-- Like count sorting
-- Time-based queries
+To approve venue applications, you'll need admin access. Set a user as admin:
 
-## Usage Notes
+```sql
+UPDATE auth.users 
+SET raw_user_meta_data = raw_user_meta_data || '{"role": "admin"}'::jsonb 
+WHERE email = 'your-admin-email@example.com';
+```
 
-1. Make sure you have venues populated in your database before running test data scripts
-2. The Pulse system requires authenticated users to create tags and likes
-3. Venue contributions require authenticated users (gamification strategy for quality control)
-4. Check-ins automatically expire after 12 hours for data cleanup
-5. All scripts are designed to be re-runnable (use IF NOT EXISTS, ON CONFLICT, etc.)
+## Testing
+
+After running the scripts, you can:
+
+1. Submit venue applications through the app
+2. Check applications in the `venue_applications` table
+3. Approve applications (creates venue + business account automatically)
+4. Test subscription management and push credit system
+
+## Monitoring
+
+Key queries for monitoring:
+
+```sql
+-- Pending applications
+SELECT * FROM venue_applications WHERE status = 'pending';
+
+-- Active business accounts
+SELECT * FROM venue_business_accounts WHERE account_status = 'active';
+
+-- Subscription distribution
+SELECT subscription_tier, COUNT(*) FROM venue_business_accounts GROUP BY subscription_tier;
+```

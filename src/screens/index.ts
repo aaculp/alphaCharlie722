@@ -8,3 +8,9 @@ export { default as SignUpScreen } from './SignUpScreen';
 export { default as SplashScreen } from './SplashScreen';
 export { default as FavoritesScreen } from './FavoritesScreen';
 export { default as QuickPicksScreen } from './QuickPicksScreen';
+
+// Venue Owner Screens
+export { default as VenueDashboardScreen } from './VenueDashboardScreen';
+export { default as VenueProfileScreen } from './VenueProfileScreen';
+export { default as VenueAnalyticsScreen } from './VenueAnalyticsScreen';
+export { default as VenueSettingsScreen } from './VenueSettingsScreen';
