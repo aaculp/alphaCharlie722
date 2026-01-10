@@ -1,4 +1,6 @@
 export { default as OTWLogo } from './OTWLogo';
+export { default as UserSignUpForm } from './UserSignUpForm';
+export { default as VenueSignUpForm } from './VenueSignUpForm';
 export { 
   WaitTimesCard, 
   PopularItemsCard, 
