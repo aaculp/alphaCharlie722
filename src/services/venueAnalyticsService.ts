@@ -619,23 +619,90 @@ export class VenueAnalyticsService {
         });
       }
 
-      // Activity level changes (based on current check-ins)
-      if (recentCheckIns && recentCheckIns.length >= 2) {
-        const activityLevels = ['Vibey', 'Poppin', 'Lit'];
-        const level = activityLevels[Math.floor(Math.random() * activityLevels.length)];
-        activities.push({
-          type: 'activity_change',
-          title: `Activity level increased to "${level}"`,
-          time: this.getRelativeTime(new Date(now.getTime() - Math.random() * 3600000 * 3).toISOString()),
+      // Add more historical activities for a fuller feed
+      const historicalActivities = [
+        // Earlier today
+        {
+          type: 'checkin' as const,
+          title: 'Couple checked in for lunch',
+          time: this.getRelativeTime(new Date(now.getTime() - 3600000 * 4).toISOString()),
+          icon: 'people',
+          color: '#2196F3'
+        },
+        {
+          type: 'revenue' as const,
+          title: `Payment processed: $${(25 + Math.random() * 30).toFixed(2)}`,
+          time: this.getRelativeTime(new Date(now.getTime() - 3600000 * 5).toISOString()),
+          icon: 'card',
+          color: '#4CAF50'
+        },
+        {
+          type: 'profile_update' as const,
+          title: 'Daily specials updated',
+          time: this.getRelativeTime(new Date(now.getTime() - 3600000 * 6).toISOString()),
+          icon: 'create',
+          color: '#009688'
+        },
+        // Yesterday
+        {
+          type: 'system_event' as const,
+          title: 'End-of-day report generated',
+          time: this.getRelativeTime(new Date(now.getTime() - 3600000 * 18).toISOString()),
+          icon: 'settings',
+          color: '#607D8B'
+        },
+        {
+          type: 'checkin' as const,
+          title: 'Study group of 6 checked in',
+          time: this.getRelativeTime(new Date(now.getTime() - 3600000 * 20).toISOString()),
+          icon: 'people',
+          color: '#2196F3'
+        },
+        {
+          type: 'engagement' as const,
+          title: 'Customer posted photo on Instagram',
+          time: this.getRelativeTime(new Date(now.getTime() - 3600000 * 22).toISOString()),
+          icon: 'chatbubble',
+          color: '#03A9F4'
+        },
+        {
+          type: 'reservation' as const,
+          title: 'Reservation confirmed for 8 people',
+          time: this.getRelativeTime(new Date(now.getTime() - 3600000 * 24).toISOString()),
+          icon: 'calendar',
+          color: '#3F51B5'
+        },
+        // Day before yesterday
+        {
+          type: 'staff_action' as const,
+          title: 'New barista completed training',
+          time: this.getRelativeTime(new Date(now.getTime() - 3600000 * 36).toISOString()),
+          icon: 'person-add',
+          color: '#FF9800'
+        },
+        {
+          type: 'revenue' as const,
+          title: 'Weekly revenue milestone reached',
+          time: this.getRelativeTime(new Date(now.getTime() - 3600000 * 40).toISOString()),
+          icon: 'card',
+          color: '#4CAF50'
+        },
+        {
+          type: 'activity_change' as const,
+          title: 'Busiest day of the week achieved',
+          time: this.getRelativeTime(new Date(now.getTime() - 3600000 * 42).toISOString()),
           icon: 'trending-up',
           color: '#4CAF50'
-        });
-      }
+        }
+      ];
 
-      // Sort by time and return top 8 (increased from 4 for more variety)
+      // Add historical activities to the mix
+      activities.push(...historicalActivities);
+
+      // Sort by time and return top 15 (increased for endless feed feel)
       return activities
         .sort((a, b) => this.parseRelativeTime(a.time) - this.parseRelativeTime(b.time))
-        .slice(0, 8);
+        .slice(0, 15);
 
     } catch (error) {
       console.warn('Using mock data for recent activities:', error);
@@ -695,6 +762,55 @@ export class VenueAnalyticsService {
           time: '2 hours ago',
           icon: 'trending-up',
           color: '#4CAF50'
+        },
+        {
+          type: 'engagement' as const,
+          title: 'Customer shared venue on Instagram',
+          time: '3 hours ago',
+          icon: 'chatbubble',
+          color: '#03A9F4'
+        },
+        {
+          type: 'staff_action' as const,
+          title: 'Manager updated venue status',
+          time: '4 hours ago',
+          icon: 'person-add',
+          color: '#FF9800'
+        },
+        {
+          type: 'system_event' as const,
+          title: 'Daily backup completed',
+          time: '6 hours ago',
+          icon: 'settings',
+          color: '#607D8B'
+        },
+        {
+          type: 'capacity_alert' as const,
+          title: 'Venue reached peak capacity',
+          time: '8 hours ago',
+          icon: 'warning',
+          color: '#FF9800'
+        },
+        {
+          type: 'checkin' as const,
+          title: 'Business meeting started',
+          time: '10 hours ago',
+          icon: 'people',
+          color: '#2196F3'
+        },
+        {
+          type: 'revenue' as const,
+          title: 'Payment processed: $67.89',
+          time: '12 hours ago',
+          icon: 'card',
+          color: '#4CAF50'
+        },
+        {
+          type: 'reservation' as const,
+          title: 'Reservation confirmed for tonight',
+          time: '1 day ago',
+          icon: 'calendar',
+          color: '#3F51B5'
         }
       ];
     }

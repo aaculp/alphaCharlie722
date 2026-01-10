@@ -394,27 +394,39 @@ const VenueDashboardScreen: React.FC = () => {
 
       case 'activity':
         return (
-          <View>
+          <View style={styles.activityTabContainer}>
             <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-              Recent Activity {analyticsLoading && '(Updating...)'}
+              Recent Activity Feed {analyticsLoading && '(Updating...)'}
             </Text>
             
-            <View style={[
-              styles.activityCard,
-              { 
-                backgroundColor: theme.colors.surface,
-                shadowColor: theme.colors.shadow,
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: isDark ? 0 : 0.05,
-                shadowRadius: 4,
-                elevation: isDark ? 0 : 2,
-                borderWidth: isDark ? 0 : 1,
-                borderColor: theme.colors.border,
-              }
-            ]}>
+            <ScrollView 
+              style={[
+                styles.activityFeed,
+                { 
+                  backgroundColor: theme.colors.surface,
+                  shadowColor: theme.colors.shadow,
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: isDark ? 0 : 0.05,
+                  shadowRadius: 4,
+                  elevation: isDark ? 0 : 2,
+                  borderWidth: isDark ? 0 : 1,
+                  borderColor: theme.colors.border,
+                }
+              ]}
+              showsVerticalScrollIndicator={true}
+              contentContainerStyle={styles.activityFeedContent}
+            >
               {analytics?.recentActivities?.map((activity, index) => (
-                <View key={index} style={styles.activityItem}>
-                  <Icon name={activity.icon} size={20} color={activity.color} />
+                <View key={index} style={[
+                  styles.activityItem,
+                  { borderBottomColor: theme.colors.border }
+                ]}>
+                  <View style={[
+                    styles.activityIconContainer,
+                    { backgroundColor: activity.color + '20' }
+                  ]}>
+                    <Icon name={activity.icon} size={20} color={activity.color} />
+                  </View>
                   <View style={styles.activityContent}>
                     <Text style={[styles.activityTitle, { color: theme.colors.text }]}>
                       {activity.title}
@@ -422,14 +434,31 @@ const VenueDashboardScreen: React.FC = () => {
                     <Text style={[styles.activityTime, { color: theme.colors.textSecondary }]}>
                       {activity.time}
                     </Text>
+                    <View style={[
+                      styles.activityTypeBadge,
+                      { backgroundColor: activity.color + '15' }
+                    ]}>
+                      <Text style={[
+                        styles.activityTypeText,
+                        { color: activity.color }
+                      ]}>
+                        {activity.type.replace('_', ' ').toUpperCase()}
+                      </Text>
+                    </View>
                   </View>
                 </View>
               )) || (
-                <Text style={[styles.loadingText, { color: theme.colors.textSecondary }]}>
-                  No recent activity to display
-                </Text>
+                <View style={styles.emptyActivityContainer}>
+                  <Icon name="time-outline" size={48} color={theme.colors.textSecondary} />
+                  <Text style={[styles.emptyActivityText, { color: theme.colors.textSecondary }]}>
+                    No recent activity to display
+                  </Text>
+                  <Text style={[styles.emptyActivitySubtext, { color: theme.colors.textSecondary }]}>
+                    Activity will appear here as customers interact with your venue
+                  </Text>
+                </View>
               )}
-            </View>
+            </ScrollView>
           </View>
         );
 
@@ -810,6 +839,317 @@ const VenueDashboardScreen: React.FC = () => {
       case 'settings':
         return (
           <View>
+            {/* Venue Info Header */}
+            <View style={[
+              styles.venueInfoSection, 
+              { 
+                backgroundColor: theme.colors.surface,
+                shadowColor: theme.colors.shadow,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: isDark ? 0 : 0.1,
+                shadowRadius: 8,
+                elevation: isDark ? 0 : 4,
+                borderWidth: isDark ? 0 : 1,
+                borderColor: theme.colors.border,
+              }
+            ]}>
+              <View style={[styles.venueIcon, { backgroundColor: theme.colors.primary + '20' }]}>
+                <Icon name="storefront" size={40} color={theme.colors.primary} />
+              </View>
+              <View style={styles.venueDetails}>
+                <Text style={[styles.settingsVenueName, { color: theme.colors.text }]}>
+                  {venueBusinessAccount?.venues?.name || 'Demo Venue'}
+                </Text>
+                <Text style={[styles.venueEmail, { color: theme.colors.textSecondary }]}>
+                  {user?.email || 'demo@venue.com'}
+                </Text>
+                <Text style={[styles.subscriptionBadge, { 
+                  color: theme.colors.primary, 
+                  backgroundColor: theme.colors.primary + '20' 
+                }]}>
+                  {venueBusinessAccount?.subscription_tier?.toUpperCase() || 'FREE'} PLAN
+                </Text>
+              </View>
+            </View>
+
+            {/* Profile Performance Stats */}
+            <SectionHeader title="Profile Performance" />
+            <View style={styles.statsGrid}>
+              <DashboardCard
+                title="Profile Views"
+                value={analytics?.profileViews ? `${(analytics.profileViews / 1000).toFixed(1)}k` : '0'}
+                icon="eye-outline"
+                color="#9C27B0"
+              />
+              <DashboardCard
+                title="Photo Views"
+                value={analytics?.photoViews?.toString() || '0'}
+                icon="image-outline"
+                color="#FF9800"
+              />
+              <DashboardCard
+                title="Menu Views"
+                value={analytics?.menuViews?.toString() || '0'}
+                icon="restaurant-outline"
+                color="#4CAF50"
+              />
+              <DashboardCard
+                title="Completeness"
+                value={`${analytics?.profileCompleteness || 0}%`}
+                icon="checkmark-circle-outline"
+                color="#2196F3"
+              />
+            </View>
+
+            {/* Venue Profile Management */}
+            <SectionHeader title="Venue Profile" />
+            <View style={[
+              styles.section, 
+              { 
+                backgroundColor: theme.colors.surface,
+                shadowColor: theme.colors.shadow,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: isDark ? 0 : 0.05,
+                shadowRadius: 4,
+                elevation: isDark ? 0 : 2,
+                borderWidth: isDark ? 0 : 1,
+                borderColor: theme.colors.border,
+              }
+            ]}>
+              <SettingItem
+                icon="create-outline"
+                title="Edit Venue Details"
+                subtitle="Name, description, category, price range"
+                onPress={() => Alert.alert('Coming Soon', 'Venue details editing is being developed')}
+              />
+              <SettingItem
+                icon="location-outline"
+                title="Address & Location"
+                subtitle="Update address, coordinates, delivery zones"
+                onPress={() => Alert.alert('Coming Soon', 'Location management is being developed')}
+              />
+              <SettingItem
+                icon="time-outline"
+                title="Operating Hours"
+                subtitle="Mon-Sun: 8:00 AM - 10:00 PM"
+                onPress={() => Alert.alert('Coming Soon', 'Hours management is being developed')}
+              />
+              <SettingItem
+                icon="call-outline"
+                title="Contact Information"
+                subtitle="Phone, email, website, social media"
+                onPress={() => Alert.alert('Coming Soon', 'Contact management is being developed')}
+              />
+            </View>
+
+            {/* Media & Content */}
+            <SectionHeader title="Media & Content" />
+            <View style={[
+              styles.section, 
+              { 
+                backgroundColor: theme.colors.surface,
+                shadowColor: theme.colors.shadow,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: isDark ? 0 : 0.05,
+                shadowRadius: 4,
+                elevation: isDark ? 0 : 2,
+                borderWidth: isDark ? 0 : 1,
+                borderColor: theme.colors.border,
+              }
+            ]}>
+              <SettingItem
+                icon="camera-outline"
+                title="Photos & Gallery"
+                subtitle="Upload venue photos, food, atmosphere"
+                onPress={() => Alert.alert('Coming Soon', 'Photo management is being developed')}
+              />
+              <SettingItem
+                icon="restaurant-outline"
+                title="Menu & Pricing"
+                subtitle="Update menu items, prices, specials"
+                onPress={() => Alert.alert('Coming Soon', 'Menu management is being developed')}
+              />
+              <SettingItem
+                icon="pricetag-outline"
+                title="Amenities & Features"
+                subtitle="WiFi, parking, outdoor seating, etc."
+                onPress={() => Alert.alert('Coming Soon', 'Amenities management is being developed')}
+              />
+            </View>
+
+            {/* Notifications & Automation */}
+            <SectionHeader title="Notifications & Automation" />
+            <View style={[
+              styles.section, 
+              { 
+                backgroundColor: theme.colors.surface,
+                shadowColor: theme.colors.shadow,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: isDark ? 0 : 0.05,
+                shadowRadius: 4,
+                elevation: isDark ? 0 : 2,
+                borderWidth: isDark ? 0 : 1,
+                borderColor: theme.colors.border,
+              }
+            ]}>
+              <SettingItem
+                icon="notifications-outline"
+                title="Push Notifications"
+                subtitle="Send promotions to nearby customers"
+                rightComponent={
+                  <Switch
+                    value={notificationsEnabled}
+                    onValueChange={setNotificationsEnabled}
+                    trackColor={{ false: '#767577', true: theme.colors.primary + '80' }}
+                    thumbColor={notificationsEnabled ? theme.colors.primary : '#f4f3f4'}
+                  />
+                }
+                showArrow={false}
+              />
+              <SettingItem
+                icon="checkmark-circle-outline"
+                title="Auto-Accept Reservations"
+                subtitle="Automatically accept reservation requests"
+                rightComponent={
+                  <Switch
+                    value={autoAcceptReservations}
+                    onValueChange={setAutoAcceptReservations}
+                    trackColor={{ false: '#767577', true: theme.colors.primary + '80' }}
+                    thumbColor={autoAcceptReservations ? theme.colors.primary : '#f4f3f4'}
+                  />
+                }
+                showArrow={false}
+              />
+              <SettingItem
+                icon="flash-outline"
+                title="Flash Offers"
+                subtitle="Create time-limited promotions"
+                onPress={() => Alert.alert('Coming Soon', 'Flash offers are being developed')}
+              />
+            </View>
+
+            {/* App Preferences */}
+            <SectionHeader title="App Preferences" />
+            <View style={[
+              styles.section, 
+              { 
+                backgroundColor: theme.colors.surface,
+                shadowColor: theme.colors.shadow,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: isDark ? 0 : 0.05,
+                shadowRadius: 4,
+                elevation: isDark ? 0 : 2,
+                borderWidth: isDark ? 0 : 1,
+                borderColor: theme.colors.border,
+              }
+            ]}>
+              <TouchableOpacity 
+                style={[styles.settingItem, { borderBottomColor: theme.colors.border }]}
+                onPress={() => {
+                  Alert.alert(
+                    'Theme',
+                    'Choose your preferred theme',
+                    [
+                      { text: 'Light', onPress: () => handleThemeChange('light') },
+                      { text: 'Dark', onPress: () => handleThemeChange('dark') },
+                      { text: 'System', onPress: () => handleThemeChange('system') },
+                      { text: 'Cancel', style: 'cancel' },
+                    ]
+                  );
+                }}
+              >
+                <View style={styles.settingLeft}>
+                  <Icon name="moon" size={24} color={theme.colors.primary} style={styles.settingIcon} />
+                  <View style={styles.settingText}>
+                    <Text style={[styles.settingTitle, { color: theme.colors.text }]}>Theme</Text>
+                    <Text style={[styles.settingSubtitle, { color: theme.colors.textSecondary }]}>{getThemeDisplayText()}</Text>
+                  </View>
+                </View>
+                <View style={styles.settingRight}>
+                  <Icon name="chevron-forward" size={20} color={theme.colors.textSecondary} />
+                </View>
+              </TouchableOpacity>
+              <SettingItem
+                icon="language-outline"
+                title="Language"
+                subtitle="English"
+                onPress={() => Alert.alert('Coming Soon', 'Language settings are being developed')}
+              />
+            </View>
+
+            {/* Subscription & Billing */}
+            <SectionHeader title="Subscription & Billing" />
+            <View style={[
+              styles.section, 
+              { 
+                backgroundColor: theme.colors.surface,
+                shadowColor: theme.colors.shadow,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: isDark ? 0 : 0.05,
+                shadowRadius: 4,
+                elevation: isDark ? 0 : 2,
+                borderWidth: isDark ? 0 : 1,
+                borderColor: theme.colors.border,
+              }
+            ]}>
+              <SettingItem
+                icon="card-outline"
+                title="Subscription Plan"
+                subtitle={`${venueBusinessAccount?.subscription_tier?.toUpperCase() || 'FREE'} - Manage your plan`}
+                onPress={() => Alert.alert('Coming Soon', 'Subscription management is being developed')}
+              />
+              <SettingItem
+                icon="receipt-outline"
+                title="Billing History"
+                subtitle="View past invoices and payments"
+                onPress={() => Alert.alert('Coming Soon', 'Billing history is being developed')}
+              />
+              <SettingItem
+                icon="wallet-outline"
+                title="Payment Methods"
+                subtitle="Manage your payment options"
+                onPress={() => Alert.alert('Coming Soon', 'Payment management is being developed')}
+              />
+            </View>
+
+            {/* Support & Legal */}
+            <SectionHeader title="Support & Legal" />
+            <View style={[
+              styles.section, 
+              { 
+                backgroundColor: theme.colors.surface,
+                shadowColor: theme.colors.shadow,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: isDark ? 0 : 0.05,
+                shadowRadius: 4,
+                elevation: isDark ? 0 : 2,
+                borderWidth: isDark ? 0 : 1,
+                borderColor: theme.colors.border,
+              }
+            ]}>
+              <SettingItem
+                icon="help-circle-outline"
+                title="Help & Support"
+                subtitle="Get help with your venue account"
+                onPress={() => Alert.alert('Support', 'Contact support at support@otw.com')}
+              />
+              <SettingItem
+                icon="document-text-outline"
+                title="Terms of Service"
+                subtitle="Read our terms and conditions"
+                onPress={() => Alert.alert('Coming Soon', 'Terms of service viewer is being developed')}
+              />
+              <SettingItem
+                icon="shield-checkmark-outline"
+                title="Privacy Policy"
+                subtitle="Learn how we protect your data"
+                onPress={() => Alert.alert('Coming Soon', 'Privacy policy viewer is being developed')}
+              />
+            </View>
+          </View>
+        );
+        return (
+          <View>
             {/* Venue Info Section */}
             <View style={[
               styles.venueInfoSection, 
@@ -1076,18 +1416,6 @@ const VenueDashboardScreen: React.FC = () => {
           </View>
           <View style={styles.headerButtons}>
             <TouchableOpacity 
-              onPress={handleSignOut}
-              style={[
-                styles.headerButton, 
-                { 
-                  backgroundColor: theme.colors.surface,
-                  borderColor: theme.colors.border,
-                }
-              ]}
-            >
-              <Icon name="log-out-outline" size={20} color={theme.colors.textSecondary} />
-            </TouchableOpacity>
-            <TouchableOpacity 
               onPress={() => setActiveTab('settings')}
               style={[
                 styles.headerButton, 
@@ -1102,6 +1430,18 @@ const VenueDashboardScreen: React.FC = () => {
                 size={20} 
                 color={activeTab === 'settings' ? '#fff' : theme.colors.textSecondary} 
               />
+            </TouchableOpacity>
+            <TouchableOpacity 
+              onPress={handleSignOut}
+              style={[
+                styles.headerButton, 
+                { 
+                  backgroundColor: theme.colors.surface,
+                  borderColor: theme.colors.border,
+                }
+              ]}
+            >
+              <Icon name="log-out-outline" size={20} color={theme.colors.textSecondary} />
             </TouchableOpacity>
           </View>
         </View>
@@ -1132,11 +1472,6 @@ const VenueDashboardScreen: React.FC = () => {
             tab="hints" 
             title="Hints" 
             icon="bulb-outline" 
-          />
-          <TabButton 
-            tab="profile" 
-            title="Profile" 
-            icon="storefront-outline" 
           />
         </ScrollView>
 
@@ -1342,13 +1677,33 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 24,
   },
+  activityTabContainer: {
+    flex: 1,
+    minHeight: 0, // Important for flex containers
+  },
+  activityFeed: {
+    flex: 1,
+    borderRadius: 16,
+  },
+  activityFeedContent: {
+    padding: 4,
+  },
   activityItem: {
     flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+  },
+  activityIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    marginRight: 12,
   },
   activityContent: {
-    marginLeft: 12,
     flex: 1,
   },
   activityTitle: {
@@ -1360,6 +1715,41 @@ const styles = StyleSheet.create({
   activityTime: {
     fontSize: 14,
     fontFamily: 'Inter-Regular',
+    marginBottom: 6,
+  },
+  activityTypeBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  activityTypeText: {
+    fontSize: 10,
+    fontWeight: '600',
+    fontFamily: 'Inter-SemiBold',
+    letterSpacing: 0.5,
+  },
+  emptyActivityContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 80,
+    paddingHorizontal: 20,
+    minHeight: 300,
+  },
+  emptyActivityText: {
+    fontSize: 18,
+    fontWeight: '500',
+    fontFamily: 'Inter-Medium',
+    marginTop: 16,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptyActivitySubtext: {
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+    textAlign: 'center',
+    lineHeight: 20,
   },
   activityText: {
     fontSize: 16,
