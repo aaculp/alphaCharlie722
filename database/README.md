@@ -2,17 +2,24 @@
 
 This directory contains SQL scripts to set up the OTW app database schema in Supabase.
 
-## Setup Order
+## Folder Structure
 
+### `/setup/` - Core Database Setup
 Run these scripts in your Supabase SQL Editor in the following order:
 
-### 1. Core Setup (if not already done)
-- `checkin-database-setup.sql` - Check-in system
-- `safe-pulse-setup.sql` - User feedback system
-- `add-max-capacity.sql` - Venue capacity tracking
+1. `checkin-database-setup.sql` - Check-in system
+2. `safe-pulse-setup.sql` - User feedback system  
+3. `add-max-capacity.sql` - Venue capacity tracking
+4. `venue-signup-system.sql` - Complete venue signup and business account system
 
-### 2. Venue Signup System (NEW)
-- `venue-signup-system.sql` - Complete venue signup and business account system
+### `/mockdata/` - Test Data & Samples
+- `simple-test.sql` - Creates a basic test venue
+- `add-checkins.sql` - Adds sample check-ins for testing
+- `cleanup-test.sql` - Removes all test data
+- Other sample data scripts (can be deleted after use)
+
+### `/archive/` - Old/Unused Scripts
+- Deprecated scripts and old versions
 
 ## Venue Signup System Features
 
@@ -71,3 +78,29 @@ SELECT * FROM venue_business_accounts WHERE account_status = 'active';
 -- Subscription distribution
 SELECT subscription_tier, COUNT(*) FROM venue_business_accounts GROUP BY subscription_tier;
 ```
+
+## Quick Testing (Recommended)
+
+For testing the analytics dashboard:
+
+1. **Create test venue:**
+   ```sql
+   -- Copy and paste database/mockdata/simple-test.sql
+   ```
+
+2. **Copy the venue ID** from the results
+
+3. **Add check-ins:**
+   ```sql
+   -- Copy database/mockdata/add-checkins.sql
+   -- Replace 'YOUR_VENUE_ID_HERE' with the actual venue ID
+   ```
+
+4. **Test the analytics dashboard** - should show real data!
+
+5. **Cleanup when done:**
+   ```sql
+   -- Copy and paste database/mockdata/cleanup-test.sql
+   ```
+
+This approach is much simpler than the complex sample data scripts.

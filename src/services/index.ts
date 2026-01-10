@@ -6,3 +6,4 @@ export { UserFeedbackService } from './userFeedbackService';
 export { VenueContributionService } from './venueContributionService';
 export { VenueApplicationService } from './venueApplicationService';
 export { VenueBusinessService } from './venueBusinessService';
+export { VenueAnalyticsService } from './venueAnalyticsService';

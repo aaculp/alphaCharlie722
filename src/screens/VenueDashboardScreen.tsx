@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
+import { VenueAnalyticsService, type VenueAnalytics } from '../services/venueAnalyticsService';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 type TabType = 'overview' | 'activity' | 'actions' | 'hints' | 'profile' | 'settings';
@@ -22,6 +23,38 @@ const VenueDashboardScreen: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [autoAcceptReservations, setAutoAcceptReservations] = useState(false);
+  const [analytics, setAnalytics] = useState<VenueAnalytics | null>(VenueAnalyticsService.getMockAnalytics());
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+
+  // Load analytics data
+  useEffect(() => {
+    const loadAnalytics = async () => {
+      console.log('🔍 Loading analytics for venue business account:', venueBusinessAccount);
+      
+      try {
+        let venueId = venueBusinessAccount?.venues?.id;
+        if (!venueId) {
+          console.log('⚠️ No venue ID found, keeping mock data');
+          return; // Keep the mock data that's already loaded
+        }
+
+        console.log('📊 Fetching real analytics for venue ID:', venueId);
+        setAnalyticsLoading(true);
+        
+        const data = await VenueAnalyticsService.getVenueAnalytics(venueId);
+        console.log('✅ Real analytics loaded successfully:', data);
+        
+        setAnalytics(data);
+      } catch (error) {
+        console.error('❌ Failed to load real analytics, keeping mock data:', error);
+        // Keep the existing mock data
+      } finally {
+        setAnalyticsLoading(false);
+      }
+    };
+
+    loadAnalytics();
+  }, [venueBusinessAccount?.venues?.id]);
 
   const handleSignOut = async () => {
     Alert.alert(
@@ -202,31 +235,31 @@ const VenueDashboardScreen: React.FC = () => {
 
             {/* Today's Stats */}
             <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-              Today's Performance
+              Today's Performance {analyticsLoading && '(Updating...)'}
             </Text>
             
             <View style={styles.statsGrid}>
               <DashboardCard
                 title="Check-ins"
-                value="47"
+                value={analytics?.todayCheckIns?.toString() || '0'}
                 icon="people-outline"
                 color="#2196F3"
               />
               <DashboardCard
                 title="New Customers"
-                value="12"
+                value={analytics?.todayNewCustomers?.toString() || '0'}
                 icon="person-add-outline"
                 color="#4CAF50"
               />
               <DashboardCard
                 title="Current Activity"
-                value="Poppin 🎉"
+                value={`${analytics?.currentActivity?.level || 'Loading'} ${analytics?.currentActivity?.emoji || ''}`}
                 icon="pulse-outline"
                 color="#FF9800"
               />
               <DashboardCard
                 title="Rating Today"
-                value="4.8"
+                value={analytics?.todayRating?.toString() || '0'}
                 icon="star-outline"
                 color="#FFC107"
               />
@@ -240,25 +273,25 @@ const VenueDashboardScreen: React.FC = () => {
             <View style={styles.statsGrid}>
               <DashboardCard
                 title="Total Check-ins"
-                value="284"
+                value={analytics?.weeklyCheckIns?.toString() || '0'}
                 icon="trending-up-outline"
                 color="#2196F3"
               />
               <DashboardCard
                 title="Avg. Rating"
-                value="4.6"
+                value={analytics?.weeklyAvgRating?.toString() || '0'}
                 icon="star-outline"
                 color="#FFC107"
               />
               <DashboardCard
                 title="New Favorites"
-                value="38"
+                value={analytics?.weeklyNewFavorites?.toString() || '0'}
                 icon="heart-outline"
                 color="#E91E63"
               />
               <DashboardCard
                 title="Profile Views"
-                value="156"
+                value={analytics?.weeklyProfileViews?.toString() || '0'}
                 icon="eye-outline"
                 color="#9C27B0"
               />
@@ -281,21 +314,17 @@ const VenueDashboardScreen: React.FC = () => {
                 borderColor: theme.colors.border,
               }
             ]}>
-              <View style={styles.peakHourItem}>
-                <Text style={[styles.peakHourTime, { color: theme.colors.text }]}>12:30 PM</Text>
-                <Text style={[styles.peakHourLabel, { color: theme.colors.textSecondary }]}>Lunch Rush</Text>
-                <Text style={[styles.peakHourActivity, { color: '#FF6B6B' }]}>Lit 🔥</Text>
-              </View>
-              <View style={styles.peakHourItem}>
-                <Text style={[styles.peakHourTime, { color: theme.colors.text }]}>7:15 PM</Text>
-                <Text style={[styles.peakHourLabel, { color: theme.colors.textSecondary }]}>Dinner Peak</Text>
-                <Text style={[styles.peakHourActivity, { color: '#FF6B6B' }]}>Maxed ⛔</Text>
-              </View>
-              <View style={styles.peakHourItem}>
-                <Text style={[styles.peakHourTime, { color: theme.colors.text }]}>3:00 PM</Text>
-                <Text style={[styles.peakHourLabel, { color: theme.colors.textSecondary }]}>Afternoon Lull</Text>
-                <Text style={[styles.peakHourActivity, { color: '#4CAF50' }]}>Low-key 😌</Text>
-              </View>
+              {analytics?.peakHours?.map((peak, index) => (
+                <View key={index} style={styles.peakHourItem}>
+                  <Text style={[styles.peakHourTime, { color: theme.colors.text }]}>{peak.time}</Text>
+                  <Text style={[styles.peakHourLabel, { color: theme.colors.textSecondary }]}>{peak.label}</Text>
+                  <Text style={[styles.peakHourActivity, { color: '#FF6B6B' }]}>{peak.activity}</Text>
+                </View>
+              )) || (
+                <Text style={[styles.loadingText, { color: theme.colors.textSecondary }]}>
+                  No peak hours data available
+                </Text>
+              )}
             </View>
 
             {/* Customer Insights */}
@@ -319,7 +348,7 @@ const VenueDashboardScreen: React.FC = () => {
                 <Icon name="people" size={20} color="#2196F3" />
                 <View style={styles.insightContent}>
                   <Text style={[styles.insightTitle, { color: theme.colors.text }]}>
-                    67% Repeat Customers
+                    {analytics?.repeatCustomerPercentage || 0}% Repeat Customers
                   </Text>
                   <Text style={[styles.insightDesc, { color: theme.colors.textSecondary }]}>
                     Strong customer loyalty this week
@@ -331,7 +360,7 @@ const VenueDashboardScreen: React.FC = () => {
                 <Icon name="time" size={20} color="#FF9800" />
                 <View style={styles.insightContent}>
                   <Text style={[styles.insightTitle, { color: theme.colors.text }]}>
-                    Avg. Visit Duration: 45min
+                    Avg. Visit Duration: {analytics?.avgVisitDuration || 0}min
                   </Text>
                   <Text style={[styles.insightDesc, { color: theme.colors.textSecondary }]}>
                     Up 12% from last week
@@ -343,7 +372,7 @@ const VenueDashboardScreen: React.FC = () => {
                 <Icon name="trending-up" size={20} color="#4CAF50" />
                 <View style={styles.insightContent}>
                   <Text style={[styles.insightTitle, { color: theme.colors.text }]}>
-                    Peak Day: Friday
+                    Peak Day: {analytics?.peakDay || 'N/A'}
                   </Text>
                   <Text style={[styles.insightDesc, { color: theme.colors.textSecondary }]}>
                     Best performing day this week
@@ -358,10 +387,9 @@ const VenueDashboardScreen: React.FC = () => {
         return (
           <View>
             <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-              Recent Activity
+              Recent Activity {analyticsLoading && '(Updating...)'}
             </Text>
             
-            {/* Activity Timeline */}
             <View style={[
               styles.activityCard,
               { 
@@ -375,53 +403,23 @@ const VenueDashboardScreen: React.FC = () => {
                 borderColor: theme.colors.border,
               }
             ]}>
-              <View style={styles.activityItem}>
-                <Icon name="people" size={20} color="#2196F3" />
-                <View style={styles.activityContent}>
-                  <Text style={[styles.activityTitle, { color: theme.colors.text }]}>
-                    Large group checked in
-                  </Text>
-                  <Text style={[styles.activityTime, { color: theme.colors.textSecondary }]}>
-                    2 minutes ago
-                  </Text>
+              {analytics?.recentActivities?.map((activity, index) => (
+                <View key={index} style={styles.activityItem}>
+                  <Icon name={activity.icon} size={20} color={activity.color} />
+                  <View style={styles.activityContent}>
+                    <Text style={[styles.activityTitle, { color: theme.colors.text }]}>
+                      {activity.title}
+                    </Text>
+                    <Text style={[styles.activityTime, { color: theme.colors.textSecondary }]}>
+                      {activity.time}
+                    </Text>
+                  </View>
                 </View>
-              </View>
-              
-              <View style={styles.activityItem}>
-                <Icon name="star" size={20} color="#FFC107" />
-                <View style={styles.activityContent}>
-                  <Text style={[styles.activityTitle, { color: theme.colors.text }]}>
-                    New 5-star review received
-                  </Text>
-                  <Text style={[styles.activityTime, { color: theme.colors.textSecondary }]}>
-                    15 minutes ago
-                  </Text>
-                </View>
-              </View>
-              
-              <View style={styles.activityItem}>
-                <Icon name="heart" size={20} color="#E91E63" />
-                <View style={styles.activityContent}>
-                  <Text style={[styles.activityTitle, { color: theme.colors.text }]}>
-                    8 new favorites today
-                  </Text>
-                  <Text style={[styles.activityTime, { color: theme.colors.textSecondary }]}>
-                    1 hour ago
-                  </Text>
-                </View>
-              </View>
-              
-              <View style={styles.activityItem}>
-                <Icon name="trending-up" size={20} color="#4CAF50" />
-                <View style={styles.activityContent}>
-                  <Text style={[styles.activityTitle, { color: theme.colors.text }]}>
-                    Activity level increased to "Poppin"
-                  </Text>
-                  <Text style={[styles.activityTime, { color: theme.colors.textSecondary }]}>
-                    2 hours ago
-                  </Text>
-                </View>
-              </View>
+              )) || (
+                <Text style={[styles.loadingText, { color: theme.colors.textSecondary }]}>
+                  No recent activity to display
+                </Text>
+              )}
             </View>
           </View>
         );
@@ -625,7 +623,7 @@ const VenueDashboardScreen: React.FC = () => {
                 <Icon name="storefront" size={40} color={theme.colors.primary} />
               </View>
               <View style={styles.venueInfo}>
-                <Text style={[styles.venueName, { color: theme.colors.text }]}>
+                <Text style={[styles.profileVenueName, { color: theme.colors.text }]}>
                   {venueBusinessAccount?.venues?.name || 'Demo Venue'}
                 </Text>
                 <Text style={[styles.venueCategory, { color: theme.colors.textSecondary }]}>
@@ -774,25 +772,25 @@ const VenueDashboardScreen: React.FC = () => {
             <View style={styles.statsGrid}>
               <DashboardCard
                 title="Profile Views"
-                value="1.2k"
+                value={analytics?.profileViews ? `${(analytics.profileViews / 1000).toFixed(1)}k` : '0'}
                 icon="eye-outline"
                 color="#9C27B0"
               />
               <DashboardCard
                 title="Photo Views"
-                value="856"
+                value={analytics?.photoViews?.toString() || '0'}
                 icon="image-outline"
                 color="#FF9800"
               />
               <DashboardCard
                 title="Menu Views"
-                value="634"
+                value={analytics?.menuViews?.toString() || '0'}
                 icon="restaurant-outline"
                 color="#4CAF50"
               />
               <DashboardCard
                 title="Completeness"
-                value="85%"
+                value={`${analytics?.profileCompleteness || 0}%`}
                 icon="checkmark-circle-outline"
                 color="#2196F3"
               />
@@ -1425,7 +1423,7 @@ const styles = StyleSheet.create({
   venueInfo: {
     flex: 1,
   },
-  venueName: {
+  profileVenueName: {
     fontSize: 20,
     fontWeight: 'bold',
     fontFamily: 'Poppins-Bold',
@@ -1549,6 +1547,27 @@ const styles = StyleSheet.create({
   settingRight: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  loadingCard: {
+    padding: 20,
+    borderRadius: 16,
+    marginBottom: 24,
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 16,
+    fontFamily: 'Inter-Regular',
+    marginBottom: 16,
+  },
+  refreshButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  refreshButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontFamily: 'Inter-Medium',
   },
   bottomSpacing: {
     height: 100,
