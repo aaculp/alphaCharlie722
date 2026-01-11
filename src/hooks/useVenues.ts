@@ -57,51 +57,45 @@ export function useVenues(options: UseVenuesOptions = {}): UseVenuesReturn {
 
   const fetchVenues = useCallback(async () => {
     if (!enabled) {
+      console.log('⏸️ useVenues: Fetch disabled');
       setLoading(false);
       return;
     }
 
     try {
+      console.log('🔄 useVenues: Starting fetch...', { 
+        featured, 
+        limit,
+        timestamp: new Date().toISOString() 
+      });
       setLoading(true);
       setError(null);
 
-      console.log('🔄 useVenues: Starting fetch...', { featured, limit });
-
-      let result: Venue[];
-
-      // Add a timeout to prevent infinite loading
-      const fetchPromise = (async () => {
-        console.log('📡 useVenues: Calling VenueService...');
-        if (featured) {
-          return await VenueService.getFeaturedVenues(limit);
-        } else {
-          return await VenueService.getVenues({
+      console.log('📡 useVenues: Calling VenueService...');
+      const startTime = Date.now();
+      
+      const result = featured
+        ? await VenueService.getFeaturedVenues(limit)
+        : await VenueService.getVenues({
             search,
             category,
             location,
             limit,
             offset,
           });
-        }
-      })();
 
-      const timeoutPromise = new Promise<Venue[]>((_, reject) => {
-        setTimeout(() => {
-          console.log('⏱️ useVenues: Timeout reached after 10s');
-          reject(new Error('Request timeout - check network connection'));
-        }, 10000);
-      });
-
-      result = await Promise.race([fetchPromise, timeoutPromise]);
-      console.log('✅ useVenues: Fetch successful, got', result.length, 'venues');
+      const duration = Date.now() - startTime;
+      console.log('✅ useVenues: Fetch successful, got', result.length, 'venues in', duration, 'ms');
       setVenues(result);
     } catch (err) {
       const fetchError = err instanceof Error ? err : new Error('Failed to fetch venues');
       setError(fetchError);
-      console.error('Error fetching venues:', fetchError);
+      console.error('❌ useVenues: Fetch failed:', fetchError.message);
+      console.error('❌ Full error:', err);
       // Set empty venues on error so UI can show empty state
       setVenues([]);
     } finally {
+      console.log('🏁 useVenues: Fetch complete, setting loading to false');
       setLoading(false);
     }
   }, [featured, search, category, location, limit, offset, enabled]);

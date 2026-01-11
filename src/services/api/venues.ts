@@ -59,16 +59,32 @@ export class VenueService {
   static async getFeaturedVenues(limit?: number) {
     const venueLimit = limit || 10;
     
-    console.log('🏢 Fetching featured venues...');
+    console.log('🏢 Fetching featured venues...', {
+      limit: venueLimit,
+      timestamp: new Date().toISOString()
+    });
     
     try {
-      // Try with explicit anon key (no auth)
-      const { data, error } = await supabase
+      // Create a timeout promise
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Request timeout after 10 seconds')), 10000);
+      });
+
+      // Create the query promise
+      const queryPromise = supabase
         .from('venues')
         .select('*')
         .gte('rating', 4.0)
         .order('rating', { ascending: false })
         .limit(venueLimit);
+
+      console.log('⏱️ Starting query with 10s timeout...');
+      
+      // Race between query and timeout
+      const { data, error } = await Promise.race([
+        queryPromise,
+        timeoutPromise
+      ]) as any;
 
       console.log('📊 Query result:', { 
         success: !error, 
