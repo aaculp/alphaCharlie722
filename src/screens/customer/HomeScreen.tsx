@@ -157,7 +157,9 @@ const HomeScreen: React.FC = () => {
           </TouchableOpacity>
           {locationError && (
             <Text style={[styles.errorText, { color: theme.colors.error }]}>
-              {locationError.message}
+              {locationError.message === 'Location permission denied' 
+                ? 'Location permission denied. Please enable location in your device settings to use this feature.'
+                : locationError.message}
             </Text>
           )}
         </View>

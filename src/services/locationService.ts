@@ -14,6 +14,20 @@ export class LocationService {
   static async requestLocationPermission(): Promise<boolean> {
     if (Platform.OS === 'android') {
       try {
+        // First check if we already have permission
+        const checkResult = await PermissionsAndroid.check(
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
+        );
+        
+        console.log('📍 Permission check result:', checkResult);
+        
+        if (checkResult) {
+          console.log('✅ Location permission already granted');
+          return true;
+        }
+        
+        // Request permission
+        console.log('🔔 Requesting location permission...');
         const granted = await PermissionsAndroid.request(
           PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
           {
@@ -25,9 +39,17 @@ export class LocationService {
           }
         );
         
-        return granted === PermissionsAndroid.RESULTS.GRANTED;
+        console.log('📍 Permission request result:', granted);
+        
+        if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+          console.log('✅ Location permission granted');
+          return true;
+        } else {
+          console.log('❌ Location permission denied:', granted);
+          return false;
+        }
       } catch (err) {
-        console.warn('Error requesting location permission:', err);
+        console.warn('❌ Error requesting location permission:', err);
         return false;
       }
     }
