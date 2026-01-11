@@ -156,11 +156,27 @@ const HomeScreen: React.FC = () => {
             </Text>
           </TouchableOpacity>
           {locationError && (
-            <Text style={[styles.errorText, { color: theme.colors.error }]}>
-              {locationError.message === 'Location permission denied' 
-                ? 'Location permission denied. Please enable location in your device settings to use this feature.'
-                : locationError.message}
-            </Text>
+            <View style={styles.errorContainer}>
+              <Text style={[styles.errorText, { color: theme.colors.error }]}>
+                {locationError.message.includes('permanently denied')
+                  ? 'Location permission is disabled. Please enable it in Settings.'
+                  : locationError.message === 'Location permission denied' 
+                  ? 'Location permission is required.'
+                  : locationError.message}
+              </Text>
+              {(locationError.message.includes('permanently denied') || locationError.message === 'Location permission denied') && (
+                <TouchableOpacity 
+                  style={[styles.settingsButton, { backgroundColor: theme.colors.primary }]}
+                  onPress={() => {
+                    LocationService.openAppSettings();
+                  }}
+                >
+                  <Text style={styles.settingsButtonText}>
+                    Open Settings
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
           )}
         </View>
       )}
@@ -242,6 +258,22 @@ const styles = StyleSheet.create({
     marginTop: 8,
     textAlign: 'center',
     fontFamily: 'Inter-Regular',
+  },
+  errorContainer: {
+    marginTop: 8,
+    alignItems: 'center',
+  },
+  settingsButton: {
+    marginTop: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  settingsButtonText: {
+    color: '#fff',
+    fontSize: 11,
+    fontFamily: 'Inter-Medium',
+    textAlign: 'center',
   },
   scrollView: {
     flex: 1,
