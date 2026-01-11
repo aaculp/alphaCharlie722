@@ -45,6 +45,11 @@ Implemented location-based venue sorting feature that allows users to sort venue
 
 ### 8. Dependencies
 - Installed `@react-native-community/geolocation@3.4.0`
+- **IMPORTANT**: After installing, you MUST rebuild the Android app:
+  ```bash
+  npm run android
+  ```
+  This is required because the geolocation package includes native Android code that needs to be linked.
 
 ## How It Works
 
@@ -72,6 +77,13 @@ The backend already has infrastructure for location-based queries:
 - Currently using client-side sorting, but can switch to backend PostGIS queries for better performance with large datasets
 
 ## Testing
+
+**IMPORTANT: First-time setup**
+After pulling these changes, you MUST rebuild the Android app:
+```bash
+npm run android
+```
+This is required because `@react-native-community/geolocation` includes native code.
 
 To test:
 1. Enable location services in Settings
