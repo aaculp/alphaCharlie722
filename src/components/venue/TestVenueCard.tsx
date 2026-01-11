@@ -19,6 +19,7 @@ interface TestVenueCardProps {
   // Optional props to customize the engagement chip colors
   customerCountVariant?: 'themed' | 'traffic' | 'primary' | 'success' | 'warning' | 'error';
   engagementChipVariant?: 'themed' | 'colored' | 'traffic' | 'primary' | 'success' | 'warning' | 'error';
+  distance?: string; // Optional distance display (e.g., "1.2 km")
 }
 
 const TestVenueCard: React.FC<TestVenueCardProps> = ({
@@ -27,6 +28,7 @@ const TestVenueCard: React.FC<TestVenueCardProps> = ({
   onPress,
   customerCountVariant = 'traffic',
   engagementChipVariant = 'traffic',
+  distance,
 }) => {
   const { isDark } = useTheme();
 
@@ -67,6 +69,11 @@ const TestVenueCard: React.FC<TestVenueCardProps> = ({
               <Text style={[styles.venueLocation, { color: isDark ? 'rgba(255, 255, 255, 0.7)' : '#666666' }]} numberOfLines={1}>
                 {venue.location}
               </Text>
+              {distance && (
+                <View style={styles.distanceBadge}>
+                  <Text style={styles.distanceText}>{distance}</Text>
+                </View>
+              )}
             </View>
             <View style={styles.ratingRow}>
               <Text style={[styles.rating, { color: isDark ? 'white' : '#000000' }]}>⭐ {venue.rating}</Text>
@@ -173,6 +180,19 @@ const styles = StyleSheet.create({
     marginLeft: 4,
     fontFamily: 'Inter-Regular',
     flex: 1,
+  },
+  distanceBadge: {
+    backgroundColor: 'rgba(59, 130, 246, 0.9)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+    marginLeft: 8,
+  },
+  distanceText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '600',
+    fontFamily: 'Inter-SemiBold',
   },
   ratingRow: {
     flexDirection: 'row',

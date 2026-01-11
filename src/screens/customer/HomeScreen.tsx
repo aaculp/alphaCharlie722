@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -6,34 +6,45 @@ import {
   ScrollView,
   RefreshControl,
   ActivityIndicator,
+  TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { Venue, HomeStackParamList } from '../../types';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useLocationContext } from '../../contexts/LocationContext';
 import { useVenues, useCheckInStats } from '../../hooks';
+import { useLocation } from '../../hooks/useLocation';
+import { LocationService } from '../../services/locationService';
 import { populateVenuesDatabase } from '../../utils/populateVenues';
 import { TestVenueCard } from '../../components/venue';
+import Icon from 'react-native-vector-icons/Ionicons';
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<HomeStackParamList, 'HomeList'>;
 
 const HomeScreen: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
+  const [sortByDistance, setSortByDistance] = useState(false);
   const { theme } = useTheme();
+  const { locationEnabled } = useLocationContext();
   const navigation = useNavigation<HomeScreenNavigationProp>();
 
   // Use custom hooks for data management
   const { venues, loading, error, refetch } = useVenues({ featured: true, limit: 10 });
+  const { location, loading: locationLoading, error: locationError, refetch: refetchLocation } = useLocation();
   
   // Debug logging
   useEffect(() => {
     console.log('🏠 HomeScreen state:', { 
       venuesCount: venues.length, 
       loading, 
-      hasError: !!error 
+      hasError: !!error,
+      locationEnabled,
+      hasLocation: !!location,
+      sortByDistance
     });
-  }, [venues.length, loading, error]);
+  }, [venues.length, loading, error, locationEnabled, location, sortByDistance]);
   
   // Get venue IDs for check-in stats
   const venueIds = venues.map(v => v.id);
@@ -55,8 +66,48 @@ const HomeScreen: React.FC = () => {
   const onRefresh = async () => {
     setRefreshing(true);
     await refetch();
+    if (sortByDistance && locationEnabled) {
+      await refetchLocation();
+    }
     setRefreshing(false);
   };
+
+  const handleNearMePress = async () => {
+    if (!locationEnabled) {
+      console.log('📍 Location services disabled');
+      return;
+    }
+
+    if (sortByDistance) {
+      // Turn off distance sorting
+      setSortByDistance(false);
+    } else {
+      // Turn on distance sorting and fetch location
+      setSortByDistance(true);
+      if (!location) {
+        await refetchLocation();
+      }
+    }
+  };
+
+  // Sort venues by distance if location is available and sorting is enabled
+  const sortedVenues = useMemo(() => {
+    if (!sortByDistance || !location || !locationEnabled) {
+      return venues;
+    }
+
+    return [...venues].sort((a, b) => {
+      const distanceA = a.latitude && a.longitude 
+        ? LocationService.calculateDistance(location.latitude, location.longitude, a.latitude, a.longitude)
+        : Infinity;
+      
+      const distanceB = b.latitude && b.longitude
+        ? LocationService.calculateDistance(location.latitude, location.longitude, b.latitude, b.longitude)
+        : Infinity;
+      
+      return distanceA - distanceB;
+    });
+  }, [venues, location, sortByDistance, locationEnabled]);
 
   const handleVenuePress = (venue: Venue) => {
     navigation.navigate('VenueDetail', {
@@ -78,6 +129,40 @@ const HomeScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
+      {/* Near Me Button */}
+      {locationEnabled && (
+        <View style={styles.headerContainer}>
+          <TouchableOpacity
+            style={[
+              styles.nearMeButton,
+              { 
+                backgroundColor: sortByDistance ? theme.colors.primary : theme.colors.surface,
+                borderColor: theme.colors.border
+              }
+            ]}
+            onPress={handleNearMePress}
+            disabled={locationLoading}
+          >
+            <Icon 
+              name={sortByDistance ? "location" : "location-outline"} 
+              size={20} 
+              color={sortByDistance ? '#fff' : theme.colors.primary} 
+            />
+            <Text style={[
+              styles.nearMeText,
+              { color: sortByDistance ? '#fff' : theme.colors.primary }
+            ]}>
+              {locationLoading ? 'Getting location...' : sortByDistance ? 'Near Me' : 'Sort by Distance'}
+            </Text>
+          </TouchableOpacity>
+          {locationError && (
+            <Text style={[styles.errorText, { color: theme.colors.error }]}>
+              {locationError.message}
+            </Text>
+          )}
+        </View>
+      )}
+      
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -86,10 +171,22 @@ const HomeScreen: React.FC = () => {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {venues.length > 0 ? (
+        {sortedVenues.length > 0 ? (
           <View style={styles.venueList}>
-            {venues.map((venue) => {
+            {sortedVenues.map((venue) => {
               const venueCheckInStats = checkInStats.get(venue.id);
+              
+              // Calculate distance if location is available
+              let distance: string | undefined;
+              if (location && venue.latitude && venue.longitude) {
+                const distanceKm = LocationService.calculateDistance(
+                  location.latitude,
+                  location.longitude,
+                  venue.latitude,
+                  venue.longitude
+                );
+                distance = LocationService.formatDistance(distanceKm);
+              }
               
               return (
                 <TestVenueCard
@@ -99,6 +196,7 @@ const HomeScreen: React.FC = () => {
                   onPress={() => handleVenuePress(venue)}
                   customerCountVariant="traffic"
                   engagementChipVariant="traffic"
+                  distance={sortByDistance ? distance : undefined}
                 />
               );
             })}
@@ -117,6 +215,31 @@ const HomeScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  headerContainer: {
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+  },
+  nearMeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 25,
+    borderWidth: 1,
+    gap: 8,
+  },
+  nearMeText: {
+    fontSize: 16,
+    fontWeight: '600',
+    fontFamily: 'Inter-SemiBold',
+  },
+  errorText: {
+    fontSize: 12,
+    marginTop: 8,
+    textAlign: 'center',
+    fontFamily: 'Inter-Regular',
   },
   scrollView: {
     flex: 1,

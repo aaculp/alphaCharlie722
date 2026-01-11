@@ -10,6 +10,7 @@ import { AuthProvider } from './src/contexts/AuthContext';
 import { ThemeProvider, useTheme } from './src/contexts/ThemeContext';
 import { GridLayoutProvider } from './src/contexts/GridLayoutContext';
 import { NavigationStyleProvider } from './src/contexts/NavigationStyleContext';
+import { LocationProvider } from './src/contexts/LocationContext';
 import AppNavigator from './src/navigation/AppNavigator';
 
 function AppContent() {
@@ -49,9 +50,11 @@ function App() {
       <ThemeProvider>
         <GridLayoutProvider>
           <NavigationStyleProvider>
-            <AuthProvider>
-              <AppContent />
-            </AuthProvider>
+            <LocationProvider>
+              <AuthProvider>
+                <AppContent />
+              </AuthProvider>
+            </LocationProvider>
           </NavigationStyleProvider>
         </GridLayoutProvider>
       </ThemeProvider>

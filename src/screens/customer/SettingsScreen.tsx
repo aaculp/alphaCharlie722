@@ -14,12 +14,12 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useGridLayout, GridLayoutType } from '../../contexts/GridLayoutContext';
 import { useNavigationStyle, NavigationStyleType } from '../../contexts/NavigationStyleContext';
+import { useLocationContext } from '../../contexts/LocationContext';
 import { populateVenuesDatabase } from '../../utils/populateVenues';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 const SettingsScreen: React.FC = () => {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [locationEnabled, setLocationEnabled] = useState(true);
   const [experimentalFeaturesEnabled, setExperimentalFeaturesEnabled] = useState(false);
   const [gridLayoutExpanded, setGridLayoutExpanded] = useState(false);
   const [navigationStyleExpanded, setNavigationStyleExpanded] = useState(false);
@@ -27,6 +27,7 @@ const SettingsScreen: React.FC = () => {
   const { theme, themeMode, setThemeMode } = useTheme();
   const { gridLayout, setGridLayout } = useGridLayout();
   const { navigationStyle, setNavigationStyle } = useNavigationStyle();
+  const { locationEnabled, setLocationEnabled } = useLocationContext();
   const navigation = useNavigation<any>();
 
   const handleThemeChange = (mode: 'light' | 'dark' | 'system') => {
