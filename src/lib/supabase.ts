@@ -7,11 +7,33 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const supabaseUrl = 'https://cznhaaigowjhqdjtfeyz.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN6bmhhYWlnb3dqaHFkanRmZXl6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc0NjQ1NDcsImV4cCI6MjA4MzA0MDU0N30.UMOiS197aGaVsl92UPxwArgUE7iiuEsgVlefKawfD8g';
 
+// Custom AsyncStorage adapter with minimal logging
+const customAsyncStorage = {
+  getItem: async (key: string) => {
+    const value = await AsyncStorage.getItem(key);
+    // Only log on app startup (first call)
+    if (!customAsyncStorage._hasLogged) {
+      console.log('📦 First AsyncStorage.getItem:', key, value ? 'HAS DATA' : 'null');
+      customAsyncStorage._hasLogged = true;
+    }
+    return value;
+  },
+  setItem: async (key: string, value: string) => {
+    console.log('💾 AsyncStorage.setItem:', key, value ? 'SAVING SESSION' : 'null');
+    await AsyncStorage.setItem(key, value);
+  },
+  removeItem: async (key: string) => {
+    console.log('🗑️ AsyncStorage.removeItem:', key);
+    await AsyncStorage.removeItem(key);
+  },
+  _hasLogged: false,
+};
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    storage: AsyncStorage,
+    storage: customAsyncStorage as any,
     autoRefreshToken: true,
-    persistSession: true,
+    persistSession: true, // Re-enable now that we fixed the hang issue
     detectSessionInUrl: false,
     flowType: 'pkce',
   },

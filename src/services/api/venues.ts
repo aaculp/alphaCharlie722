@@ -65,26 +65,15 @@ export class VenueService {
     });
     
     try {
-      // Create a timeout promise
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Request timeout after 10 seconds')), 10000);
-      });
-
-      // Create the query promise
-      const queryPromise = supabase
+      console.log('⏱️ Starting query...');
+      
+      // Simple query without timeout first to see if it works
+      const { data, error } = await supabase
         .from('venues')
         .select('*')
         .gte('rating', 4.0)
         .order('rating', { ascending: false })
         .limit(venueLimit);
-
-      console.log('⏱️ Starting query with 10s timeout...');
-      
-      // Race between query and timeout
-      const { data, error } = await Promise.race([
-        queryPromise,
-        timeoutPromise
-      ]) as any;
 
       console.log('📊 Query result:', { 
         success: !error, 

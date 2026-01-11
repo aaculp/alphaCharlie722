@@ -3,7 +3,7 @@
  */
 
 import React from 'react';
-import { StatusBar, StyleSheet } from 'react-native';
+import { StatusBar, StyleSheet, useColorScheme } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { AuthProvider } from './src/contexts/AuthContext';
@@ -14,12 +14,17 @@ import AppNavigator from './src/navigation/AppNavigator';
 
 function AppContent() {
   const { isLoading, theme, isDark } = useTheme();
+  const systemColorScheme = useColorScheme();
 
   // Show a simple loading view while theme is loading
+  // Use system color scheme to avoid black flicker
   if (isLoading) {
+    const loadingBg = systemColorScheme === 'dark' ? '#000000' : '#f5f5f5';
+    const statusBarStyle = systemColorScheme === 'dark' ? 'light-content' : 'dark-content';
+    
     return (
-      <SafeAreaView style={styles.loadingContainer}>
-        <StatusBar barStyle="light-content" backgroundColor="#000000" />
+      <SafeAreaView style={[styles.loadingContainer, { backgroundColor: loadingBg }]}>
+        <StatusBar barStyle={statusBarStyle} backgroundColor={loadingBg} />
       </SafeAreaView>
     );
   }

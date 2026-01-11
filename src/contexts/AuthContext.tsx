@@ -83,7 +83,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           event,
           hasSession: !!authSession,
           userId: authSession?.user?.id,
-          userEmail: authSession?.user?.email
+          userEmail: authSession?.user?.email,
+          accessToken: authSession?.access_token ? 'present' : 'missing',
+          refreshToken: authSession?.refresh_token ? 'present' : 'missing'
         });
         
         authListenerReady = true;
@@ -93,10 +95,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setUser(authSession?.user ?? null);
           setLoading(false);
           
-          // Determine user type when auth state changes
-          if (authSession?.user?.id) {
-            await determineUserType(authSession.user.id);
-          } else {
+          // DO NOT call determineUserType here - it causes queries to hang!
+          // We'll determine user type after initialization completes
+          if (!authSession?.user?.id) {
             setUserType(null);
             setVenueBusinessAccount(null);
           }
@@ -151,9 +152,51 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
         
         if (authListenerReady) {
-          console.log('✅ Auth listener restored session');
+          console.log('✅ Auth listener fired');
+          
+          // Check if we actually have a valid session
+          // If getSession() hangs or returns no session, we'll timeout and show login
+          console.log('⏳ Verifying session is valid...');
+          
+          let hasValidSession = false;
+          try {
+            const sessionCheckPromise = supabase.auth.getSession();
+            const timeoutPromise = new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Session check timeout')), 2000)
+            );
+            
+            const { data: { session: currentSession } } = await Promise.race([
+              sessionCheckPromise,
+              timeoutPromise
+            ]) as any;
+            
+            if (currentSession?.access_token) {
+              console.log('✅ Valid session confirmed');
+              hasValidSession = true;
+            } else {
+              console.log('⚠️ No valid session found');
+            }
+          } catch (error) {
+            console.warn('⚠️ Session verification failed:', error);
+          }
+          
+          // If no valid session, clear the auth state so user sees login screen
+          if (!hasValidSession && mounted) {
+            console.log('🔄 Clearing invalid session, user will need to log in');
+            setSession(null);
+            setUser(null);
+            setUserType(null);
+            setVenueBusinessAccount(null);
+          } else if (hasValidSession && mounted) {
+            // Determine user type AFTER auth listener completes (not inside the callback)
+            const currentUser = session?.user;
+            if (currentUser?.id) {
+              console.log('🔍 Determining user type after initialization...');
+              await determineUserType(currentUser.id);
+            }
+          }
         } else {
-          console.log('ℹ️ No session restored by auth listener - user needs to log in');
+          console.log('ℹ️ No session to restore - user needs to log in');
         }
 
         // Ensure minimum splash screen duration
@@ -192,7 +235,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signIn = async (email: string, password: string) => {
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      console.log('🔐 Signing in...');
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -200,6 +244,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (error) {
         throw new Error(`Sign in failed: ${error.message}`);
       }
+
+      console.log('✅ Sign in successful:', {
+        hasSession: !!data.session,
+        userId: data.user?.id,
+        accessToken: data.session?.access_token ? 'present' : 'missing'
+      });
+
+      // Check if session was persisted
+      setTimeout(async () => {
+        const keys = await AsyncStorage.getAllKeys();
+        const supabaseKeys = keys.filter((key: string) => key.includes('supabase'));
+        console.log('🔑 Supabase keys after sign in:', supabaseKeys);
+      }, 1000);
 
       // User type will be determined by the auth state change listener
     } catch (error) {
