@@ -11,10 +11,10 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, RouteProp } from '@react-navigation/native';
-import type { SearchStackParamList, HomeStackParamList, Venue, VenueCheckInStats } from '../../types';
+import type { SearchStackParamList, HomeStackParamList, Venue } from '../../types';
 import { useTheme } from '../../contexts/ThemeContext';
 import { VenueService } from '../../services/api/venues';
-import { CheckInService } from '../../services/api/checkins';
+import { useCheckInStats } from '../../hooks';
 import { ModernVenueCards } from '../../components/venue/VenueInfoComponents';
 import { VenueCustomerCount } from '../../components/venue';
 import { UserFeedback } from '../../components/checkin';
@@ -158,7 +158,14 @@ const VenueDetailScreen: React.FC = () => {
   const scrollViewRef = useRef<ScrollView>(null);
   const [venue, setVenue] = useState<Venue | null>(null);
   const [loading, setLoading] = useState(true);
-  const [checkInStats, setCheckInStats] = useState<VenueCheckInStats | null>(null);
+
+  // Use useCheckInStats hook for check-in statistics
+  const { stats } = useCheckInStats({ 
+    venueIds: venueId,
+    enabled: !!venueId 
+  });
+  
+  const checkInStats = stats.get(venueId) || null;
 
   // Fetch venue details (try Supabase first, fallback to mock data)
   useEffect(() => {
@@ -171,13 +178,6 @@ const VenueDetailScreen: React.FC = () => {
         
         if (supabaseVenue) {
           setVenue(supabaseVenue);
-          // Load check-in stats for the venue
-          try {
-            const stats = await CheckInService.getVenueCheckInStats(venueId);
-            setCheckInStats(stats);
-          } catch (error) {
-            console.error('Error loading check-in stats:', error);
-          }
         } else {
           // Fallback to mock data for search screen
           const mockVenue = getMockVenueDetails(venueId);

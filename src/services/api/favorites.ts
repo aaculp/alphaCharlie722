@@ -1,5 +1,4 @@
 import { supabase } from '../../lib/supabase';
-import type { Database } from '../../lib/supabase';
 
 // type Favorite = Database['public']['Tables']['favorites']['Row'];
 

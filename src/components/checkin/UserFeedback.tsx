@@ -202,18 +202,6 @@ const UserFeedback: React.FC<UserFeedbackProps> = ({ venue }) => {
     }
   };
 
-  const handleDeleteTag = async (tagId: string) => {
-    if (!user) return;
-
-    try {
-      await UserFeedbackService.deleteTag(tagId, user.id);
-      setTags(prev => prev.filter(tag => tag.id !== tagId));
-    } catch (error) {
-      console.error('Error deleting tag:', error);
-      Alert.alert('Error', 'Failed to delete tag');
-    }
-  };
-
   // Don't render if tables don't exist - but after all hooks are called
   if (!tablesExist) {
     return null;

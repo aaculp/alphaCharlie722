@@ -24,7 +24,7 @@ const SettingsScreen: React.FC = () => {
   const [gridLayoutExpanded, setGridLayoutExpanded] = useState(false);
   const [navigationStyleExpanded, setNavigationStyleExpanded] = useState(false);
   const { signOut, user } = useAuth();
-  const { theme, isDark, themeMode, setThemeMode } = useTheme();
+  const { theme, themeMode, setThemeMode } = useTheme();
   const { gridLayout, setGridLayout } = useGridLayout();
   const { navigationStyle, setNavigationStyle } = useNavigationStyle();
   const navigation = useNavigation<any>();

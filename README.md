@@ -106,6 +106,333 @@ npm run fresh-start
 npm run clean
 ```
 
+## Custom Hooks
+
+The application uses custom React hooks to separate business logic from UI components, improving code reusability and maintainability.
+
+### Available Hooks
+
+#### useVenues
+Manages venue data fetching and state.
+
+```typescript
+import { useVenues } from '@/hooks';
+
+// Fetch featured venues
+const { venues, loading, error, refetch } = useVenues({ 
+  featured: true, 
+  limit: 10 
+});
+
+// Fetch all venues with search
+const { venues, loading, error } = useVenues({ 
+  search: 'coffee',
+  category: 'Cafe',
+  limit: 50 
+});
+
+// Manual refetch (e.g., pull-to-refresh)
+await refetch();
+```
+
+**Options:**
+- `featured?: boolean` - Filter for featured venues only
+- `search?: string` - Search query for venue name/description
+- `category?: string` - Filter by category
+- `location?: string` - Filter by location
+- `limit?: number` - Maximum number of venues to fetch
+- `offset?: number` - Pagination offset
+
+**Returns:**
+- `venues: Venue[]` - Array of venue objects
+- `loading: boolean` - Loading state
+- `error: Error | null` - Error state
+- `refetch: () => Promise<void>` - Function to manually refetch data
+
+#### useFavorites
+Manages user favorites with optimistic updates.
+
+```typescript
+import { useFavorites } from '@/hooks';
+
+const { favorites, loading, toggleFavorite, isFavorite } = useFavorites();
+
+// Check if venue is favorited
+const isVenueFavorited = isFavorite(venueId);
+
+// Toggle favorite (with optimistic update)
+const success = await toggleFavorite(venueId);
+if (!success) {
+  // Handle error (e.g., show alert)
+}
+```
+
+**Returns:**
+- `favorites: Set<string>` - Set of favorited venue IDs
+- `loading: boolean` - Loading state
+- `error: Error | null` - Error state
+- `toggleFavorite: (venueId: string) => Promise<boolean>` - Toggle favorite status
+- `isFavorite: (venueId: string) => boolean` - Check if venue is favorited
+
+**Features:**
+- Optimistic UI updates for instant feedback
+- Automatic rollback on error
+- Authentication-aware (returns empty set when not logged in)
+
+#### useCheckInStats
+Fetches check-in statistics for one or multiple venues.
+
+```typescript
+import { useCheckInStats } from '@/hooks';
+
+// Single venue
+const { stats, loading } = useCheckInStats({ 
+  venueIds: venueId,
+  enabled: !!venueId 
+});
+const venueStats = stats.get(venueId);
+
+// Multiple venues
+const venueIds = venues.map(v => v.id);
+const { stats, loading } = useCheckInStats({ 
+  venueIds,
+  enabled: venueIds.length > 0 
+});
+```
+
+**Options:**
+- `venueIds: string | string[]` - Single venue ID or array of IDs
+- `enabled?: boolean` - Conditionally enable/disable fetching
+
+**Returns:**
+- `stats: Map<string, VenueCheckInStats>` - Map of venue IDs to stats
+- `loading: boolean` - Loading state
+- `error: Error | null` - Error state
+- `refetch: () => Promise<void>` - Function to manually refetch data
+
+**Features:**
+- Debounced fetching to prevent excessive API calls
+- Supports both single and multiple venue queries
+- Includes user-specific check-in status
+
+#### useCheckInActions
+Handles check-in and check-out actions.
+
+```typescript
+import { useCheckInActions } from '@/hooks';
+
+const { checkIn, checkOut, loading } = useCheckInActions({
+  onSuccess: (isCheckedIn) => {
+    console.log('Check-in status:', isCheckedIn);
+    // Refresh data, show success message, etc.
+  },
+  onError: (error) => {
+    console.error('Check-in error:', error);
+    // Show error alert
+  }
+});
+
+// Check in to a venue
+await checkIn(venueId, venueName);
+
+// Check out from current venue
+await checkOut(checkInId);
+```
+
+**Options:**
+- `onSuccess?: (isCheckedIn: boolean) => void` - Success callback
+- `onError?: (error: Error) => void` - Error callback
+
+**Returns:**
+- `checkIn: (venueId: string, venueName: string) => Promise<void>` - Check in function
+- `checkOut: (checkInId: string) => Promise<void>` - Check out function
+- `loading: boolean` - Loading state
+- `error: Error | null` - Error state
+
+**Features:**
+- Prevents duplicate requests
+- Automatic previous check-out when checking into new venue
+- Authentication-aware
+
+#### useDebounce
+Debounces rapidly changing values (useful for search inputs).
+
+```typescript
+import { useDebounce } from '@/hooks';
+
+const [searchQuery, setSearchQuery] = useState('');
+const debouncedSearchQuery = useDebounce(searchQuery, 300);
+
+// Use debouncedSearchQuery for filtering/API calls
+useEffect(() => {
+  // This only runs 300ms after user stops typing
+  filterVenues(debouncedSearchQuery);
+}, [debouncedSearchQuery]);
+```
+
+**Parameters:**
+- `value: T` - Value to debounce (generic type)
+- `delay?: number` - Delay in milliseconds (default: 300ms)
+
+**Returns:**
+- `T` - Debounced value
+
+**Features:**
+- Generic type support
+- Configurable delay
+- Automatic cleanup on unmount
+
+### Hook Usage Patterns
+
+#### Pattern 1: Data Fetching in Screens
+
+```typescript
+// HomeScreen.tsx
+import { useVenues, useCheckInStats } from '@/hooks';
+
+const HomeScreen = () => {
+  // Fetch venues
+  const { venues, loading, refetch } = useVenues({ featured: true });
+  
+  // Fetch check-in stats for all venues
+  const venueIds = venues.map(v => v.id);
+  const { stats } = useCheckInStats({ venueIds });
+  
+  // Pull-to-refresh
+  const onRefresh = async () => {
+    await refetch();
+  };
+  
+  return (
+    <ScrollView refreshControl={<RefreshControl onRefresh={onRefresh} />}>
+      {venues.map(venue => (
+        <VenueCard 
+          key={venue.id}
+          venue={venue}
+          checkInCount={stats.get(venue.id)?.active_checkins || 0}
+        />
+      ))}
+    </ScrollView>
+  );
+};
+```
+
+#### Pattern 2: Search with Debouncing
+
+```typescript
+// SearchScreen.tsx
+import { useState, useEffect } from 'react';
+import { useVenues, useDebounce } from '@/hooks';
+
+const SearchScreen = () => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const debouncedQuery = useDebounce(searchQuery, 300);
+  
+  const { venues, loading } = useVenues({ limit: 50 });
+  const [filteredVenues, setFilteredVenues] = useState(venues);
+  
+  useEffect(() => {
+    // Filter only runs after user stops typing for 300ms
+    const filtered = venues.filter(v => 
+      v.name.toLowerCase().includes(debouncedQuery.toLowerCase())
+    );
+    setFilteredVenues(filtered);
+  }, [debouncedQuery, venues]);
+  
+  return (
+    <View>
+      <TextInput 
+        value={searchQuery}
+        onChangeText={setSearchQuery}
+        placeholder="Search venues..."
+      />
+      <FlatList data={filteredVenues} />
+    </View>
+  );
+};
+```
+
+#### Pattern 3: Favorites Management
+
+```typescript
+// VenueCard.tsx
+import { useFavorites } from '@/hooks';
+import { Alert } from 'react-native';
+
+const VenueCard = ({ venue }) => {
+  const { isFavorite, toggleFavorite } = useFavorites();
+  
+  const handleToggleFavorite = async () => {
+    const success = await toggleFavorite(venue.id);
+    if (!success) {
+      Alert.alert('Error', 'Failed to update favorite');
+    }
+  };
+  
+  return (
+    <TouchableOpacity onPress={handleToggleFavorite}>
+      <Icon 
+        name={isFavorite(venue.id) ? 'heart' : 'heart-outline'}
+        color={isFavorite(venue.id) ? '#FF3B30' : '#999'}
+      />
+    </TouchableOpacity>
+  );
+};
+```
+
+#### Pattern 4: Check-In Actions
+
+```typescript
+// VenueDetailScreen.tsx
+import { useCheckInActions, useCheckInStats } from '@/hooks';
+
+const VenueDetailScreen = ({ route }) => {
+  const { venueId, venueName } = route.params;
+  
+  const { stats, refetch: refetchStats } = useCheckInStats({ venueIds: venueId });
+  const venueStats = stats.get(venueId);
+  
+  const { checkIn, checkOut, loading } = useCheckInActions({
+    onSuccess: async () => {
+      await refetchStats(); // Refresh stats after check-in/out
+    },
+    onError: (error) => {
+      Alert.alert('Error', error.message);
+    }
+  });
+  
+  const handleCheckIn = async () => {
+    await checkIn(venueId, venueName);
+  };
+  
+  const handleCheckOut = async () => {
+    if (venueStats?.user_checkin_id) {
+      await checkOut(venueStats.user_checkin_id);
+    }
+  };
+  
+  return (
+    <View>
+      {venueStats?.user_is_checked_in ? (
+        <Button title="Check Out" onPress={handleCheckOut} disabled={loading} />
+      ) : (
+        <Button title="Check In" onPress={handleCheckIn} disabled={loading} />
+      )}
+    </View>
+  );
+};
+```
+
+### Best Practices
+
+1. **Always handle loading states**: Show loading indicators while data is being fetched
+2. **Handle errors gracefully**: Display user-friendly error messages
+3. **Use debouncing for search**: Prevent excessive API calls with `useDebounce`
+4. **Leverage optimistic updates**: Use `useFavorites` for instant UI feedback
+5. **Conditional fetching**: Use the `enabled` flag to prevent unnecessary API calls
+6. **Refetch on user actions**: Call `refetch()` after mutations to keep data fresh
+7. **Type safety**: All hooks are fully typed with TypeScript interfaces
+
 ## Dependencies
 
 - React Navigation v6 (Bottom Tabs & Native Stack)
@@ -151,7 +478,12 @@ src/
 │   ├── NavigationStyleContext.tsx
 │   └── ThemeContext.tsx
 ├── hooks/                  # Custom React hooks
-│   ├── useEngagementColor.ts
+│   ├── useCheckInActions.ts  # Check-in/out actions
+│   ├── useCheckInStats.ts    # Check-in statistics
+│   ├── useDebounce.ts        # Debounce utility
+│   ├── useEngagementColor.ts # Engagement color logic
+│   ├── useFavorites.ts       # Favorites management
+│   ├── useVenues.ts          # Venue data management
 │   └── index.ts
 ├── lib/                    # External library configurations
 │   └── supabase.ts

@@ -16,10 +16,9 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { SearchStackParamList, Venue } from '../../types';
-import { VenueService } from '../../services/api/venues';
-import { FavoriteService } from '../../services/api/favorites';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { useVenues, useFavorites, useDebounce } from '../../hooks';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 type SearchScreenNavigationProp = NativeStackNavigationProp<
@@ -56,58 +55,29 @@ const priceRanges = [
 
 const SearchScreen: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [venues, setVenues] = useState<Venue[]>([]);
   const [filteredVenues, setFilteredVenues] = useState<Venue[]>([]);
-  const [loading, setLoading] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>(['All']);
   const [selectedFilters, setSelectedFilters] = useState<string[]>(['all']);
   const [selectedPriceRanges, setSelectedPriceRanges] = useState<string[]>(['all_prices']);
-  const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
   const navigation = useNavigation<SearchScreenNavigationProp>();
   const { theme } = useTheme();
   const { user } = useAuth();
 
+  // Use custom hooks for data management
+  const { venues, loading } = useVenues({ limit: 50 });
+  const { toggleFavorite: toggleFavoriteHook, isFavorite } = useFavorites();
+  
+  // Debounce search query to optimize filtering
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+
   // Animation for drawer
   const slideAnim = useRef(new Animated.Value(Dimensions.get('window').width * 0.4)).current;
-
-  // Load all venues on component mount
-  useEffect(() => {
-    loadVenues();
-    if (user) {
-      loadUserFavorites();
-    }
-  }, [user]);
 
   // Filter venues when search query, categories, filters, or price ranges change
   useEffect(() => {
     filterVenues();
-  }, [searchQuery, selectedCategories, selectedFilters, selectedPriceRanges, venues]);
-
-  const loadVenues = async () => {
-    setLoading(true);
-    try {
-      const allVenues = await VenueService.getVenues({ limit: 50 });
-      setVenues(allVenues);
-    } catch (error) {
-      Alert.alert('Error', 'Failed to load venues. Please try again.');
-      console.error('Error loading venues:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadUserFavorites = async () => {
-    if (!user) return;
-
-    try {
-      const userFavorites = await FavoriteService.getUserFavorites(user.id);
-      const favoriteIds = new Set(userFavorites.map(fav => fav.venue_id));
-      setFavorites(favoriteIds);
-    } catch (error) {
-      console.error('Error loading favorites:', error);
-    }
-  };
+  }, [debouncedSearchQuery, selectedCategories, selectedFilters, selectedPriceRanges, venues]);
 
   const filterVenues = useCallback(() => {
     console.log('🔍 Filtering venues:', {
@@ -157,15 +127,15 @@ const SearchScreen: React.FC = () => {
     });
 
     // Filter by search query last
-    if (searchQuery.trim() !== '') {
-      const query = searchQuery.toLowerCase();
+    if (debouncedSearchQuery.trim() !== '') {
+      const query = debouncedSearchQuery.toLowerCase();
       filtered = filtered.filter(venue =>
         venue.name.toLowerCase().includes(query) ||
         venue.category.toLowerCase().includes(query) ||
         venue.location.toLowerCase().includes(query) ||
         venue.description?.toLowerCase().includes(query)
       );
-      console.log(`🔎 After search filter (${searchQuery}):`, filtered.length);
+      console.log(`🔎 After search filter (${debouncedSearchQuery}):`, filtered.length);
     }
 
     // Sort by rating (highest first)
@@ -173,7 +143,7 @@ const SearchScreen: React.FC = () => {
 
     console.log('✅ Final filtered venues:', filtered.length);
     setFilteredVenues(filtered);
-  }, [venues, selectedCategories, selectedFilters, selectedPriceRanges, searchQuery]);
+  }, [venues, selectedCategories, selectedFilters, selectedPriceRanges, debouncedSearchQuery]);
 
   // Helper function to check if venue is open now
   const isVenueOpenNow = (venue: Venue) => {
@@ -305,27 +275,15 @@ const SearchScreen: React.FC = () => {
     });
   };
 
-  const toggleFavorite = async (venueId: string) => {
+  const handleToggleFavorite = async (venueId: string) => {
     if (!user) {
       Alert.alert('Login Required', 'Please log in to save favorites.');
       return;
     }
 
-    try {
-      const newFavoriteStatus = await FavoriteService.toggleFavorite(user.id, venueId);
-
-      setFavorites(prev => {
-        const newFavorites = new Set(prev);
-        if (newFavoriteStatus) {
-          newFavorites.add(venueId);
-        } else {
-          newFavorites.delete(venueId);
-        }
-        return newFavorites;
-      });
-    } catch (error) {
+    const success = await toggleFavoriteHook(venueId);
+    if (!success) {
       Alert.alert('Error', 'Failed to update favorite. Please try again.');
-      console.error('Error toggling favorite:', error);
     }
   };
 
@@ -561,12 +519,12 @@ const SearchScreen: React.FC = () => {
         />
         <TouchableOpacity
           style={[styles.favoriteButtonSmall, { backgroundColor: theme.colors.surface + 'E6' }]}
-          onPress={() => toggleFavorite(item.id)}
+          onPress={() => handleToggleFavorite(item.id)}
         >
           <Icon
-            name={favorites.has(item.id) ? 'heart' : 'heart-outline'}
+            name={isFavorite(item.id) ? 'heart' : 'heart-outline'}
             size={16}
-            color={favorites.has(item.id) ? '#FF3B30' : theme.colors.textSecondary}
+            color={isFavorite(item.id) ? '#FF3B30' : theme.colors.textSecondary}
           />
         </TouchableOpacity>
       </View>

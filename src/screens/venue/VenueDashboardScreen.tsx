@@ -18,8 +18,7 @@ type TabType = 'overview' | 'activity' | 'actions' | 'hints' | 'profile' | 'sett
 
 const VenueDashboardScreen: React.FC = () => {
   const { theme, isDark, themeMode, setThemeMode } = useTheme();
-  const { user, venueBusinessAccount, signOut } = useAuth();
-  const [loading, setLoading] = useState(false);
+  const { user, venueBusinessAccount } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [autoAcceptReservations, setAutoAcceptReservations] = useState(false);

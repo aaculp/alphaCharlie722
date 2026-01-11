@@ -56,19 +56,37 @@ export class VenueService {
   }
 
   // Get featured venues for the home feed
-  static async getFeaturedVenues(limit: number = 10) {
-    const { data, error } = await supabase
-      .from('venues')
-      .select('*')
-      .gte('rating', 4.0)
-      .order('rating', { ascending: false })
-      .limit(limit);
+  static async getFeaturedVenues(limit?: number) {
+    const venueLimit = limit || 10;
+    
+    console.log('🏢 Fetching featured venues...');
+    
+    try {
+      // Try with explicit anon key (no auth)
+      const { data, error } = await supabase
+        .from('venues')
+        .select('*')
+        .gte('rating', 4.0)
+        .order('rating', { ascending: false })
+        .limit(venueLimit);
 
-    if (error) {
-      throw new Error(`Failed to fetch featured venues: ${error.message}`);
+      console.log('📊 Query result:', { 
+        success: !error, 
+        count: data?.length || 0,
+        error: error?.message 
+      });
+
+      if (error) {
+        console.error('❌ Supabase error:', error);
+        throw new Error(`Failed to fetch featured venues: ${error.message}`);
+      }
+
+      console.log('✅ Successfully fetched', data?.length || 0, 'venues');
+      return data || [];
+    } catch (err) {
+      console.error('💥 Exception caught:', err);
+      throw err;
     }
-
-    return data || [];
   }
 
   // Create a new venue (for admin/business owners)

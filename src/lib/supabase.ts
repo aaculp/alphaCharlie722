@@ -7,6 +7,16 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const supabaseUrl = 'https://cznhaaigowjhqdjtfeyz.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN6bmhhYWlnb3dqaHFkanRmZXl6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc0NjQ1NDcsImV4cCI6MjA4MzA0MDU0N30.UMOiS197aGaVsl92UPxwArgUE7iiuEsgVlefKawfD8g';
 
+// Custom fetch with timeout for React Native
+const fetchWithTimeout = (url: string, options: RequestInit = {}, timeout = 10000) => {
+  return Promise.race([
+    fetch(url, options),
+    new Promise<Response>((_, reject) =>
+      setTimeout(() => reject(new Error('Request timeout')), timeout)
+    ),
+  ]);
+};
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     storage: AsyncStorage,
@@ -14,6 +24,16 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     detectSessionInUrl: false,
     flowType: 'pkce',
+    storageKey: 'supabase.auth.token',
+  },
+  global: {
+    headers: {
+      'X-Client-Info': 'alphacharlie722-app',
+    },
+    fetch: fetchWithTimeout as any,
+  },
+  db: {
+    schema: 'public',
   },
 });
 

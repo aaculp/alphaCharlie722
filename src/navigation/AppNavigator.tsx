@@ -4,7 +4,6 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useNavigationStyle } from '../contexts/NavigationStyleContext';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { NewFloatingTabBar, AnimatedTabBar } from '../components/navigation';
 import type {
   RootTabParamList,
@@ -22,17 +21,6 @@ const Tab = createBottomTabNavigator<RootTabParamList>();
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
 const SearchStack = createNativeStackNavigator<SearchStackParamList>();
 const SettingsStack = createNativeStackNavigator<SettingsStackParamList>();
-
-// Loading component
-const LoadingScreen = () => {
-  const { theme } = useTheme();
-  
-  return (
-    <View style={[styles.loadingContainer, { backgroundColor: theme.colors.background }]}>
-      <ActivityIndicator size="large" color={theme.colors.primary} />
-    </View>
-  );
-};
 
 // Home Stack Navigator
 function HomeStackNavigator() {
@@ -111,31 +99,7 @@ function SettingsStackNavigator() {
 
 // Main Tab Navigator
 function MainTabNavigator() {
-  const { theme, isDark } = useTheme();
   const { navigationStyle } = useNavigationStyle();
-  
-  const getTabIcon = (routeName: string, focused: boolean) => {
-    let iconName: string;
-    
-    switch (routeName) {
-      case 'Home':
-        iconName = focused ? 'home' : 'home-outline';
-        break;
-      case 'QuickPicks':
-        iconName = focused ? 'walk' : 'walk-outline';
-        break;
-      case 'Search':
-        iconName = focused ? 'search' : 'search-outline';
-        break;
-      case 'Settings':
-        iconName = focused ? 'settings' : 'settings-outline';
-        break;
-      default:
-        iconName = 'help-outline';
-    }
-    
-    return iconName;
-  };
 
   const getTabLabel = (routeName: string) => {
     switch (routeName) {
@@ -292,12 +256,13 @@ function AppNavigator() {
   return <MainTabNavigator />;
 }
 
-const styles = StyleSheet.create({
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});
+// Unused styles - kept for potential future use
+// const styles = StyleSheet.create({
+//   loadingContainer: {
+//     flex: 1,
+//     justifyContent: 'center',
+//     alignItems: 'center',
+//   },
+// });
 
 export default AppNavigator;

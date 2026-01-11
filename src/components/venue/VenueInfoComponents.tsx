@@ -293,9 +293,9 @@ export const ModernVenueCards: React.FC<{ venue: Venue }> = ({ venue }) => {
 
   // Contribution state
   const [contributions, setContributions] = useState<VenueContributionCount[]>([]);
-  const [userContributions, setUserContributions] = useState<VenueContribution[]>([]);
+  const [_userContributions, setUserContributions] = useState<VenueContribution[]>([]);
   const [userContributionsByType, setUserContributionsByType] = useState<Record<string, string[]>>({});
-  const [loading, setLoading] = useState(false);
+  const [_loading, setLoading] = useState(false);
 
   // Load contributions on mount
   useEffect(() => {

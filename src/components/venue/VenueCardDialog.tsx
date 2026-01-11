@@ -6,7 +6,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Dimensions,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -182,11 +181,10 @@ const VenueCardDialog: React.FC<VenueCardDialogProps> = ({
   userSelections,
   contributionCounts,
 }) => {
-  const { theme, isDark } = useTheme();
+  const { theme } = useTheme();
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
 
   const cardData = CARD_OPTIONS[cardType];
-  const { width, height } = Dimensions.get('window');
 
   // Initialize selected options with user's previous selections when dialog opens
   React.useEffect(() => {

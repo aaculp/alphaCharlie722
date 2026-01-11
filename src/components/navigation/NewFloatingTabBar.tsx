@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import {
   View,
   TouchableOpacity,
@@ -15,6 +15,7 @@ import Animated, {
   withSpring,
   useDerivedValue,
   interpolate,
+  SharedValue,
 } from 'react-native-reanimated';
 
 interface NewFloatingTabBarProps {
@@ -23,9 +24,94 @@ interface NewFloatingTabBarProps {
   navigation: any;
 }
 
+interface TabItemProps {
+  route: any;
+  index: number;
+  isFocused: boolean;
+  options: any;
+  onPress: () => void;
+  activeIndex: SharedValue<number>;
+  tabWidth: number;
+  theme: any;
+}
+
 const { width: screenWidth } = Dimensions.get('window');
 const TAB_BAR_WIDTH = screenWidth - 40; // 20px margin on each side
 const INDICATOR_SIZE = 50;
+
+// Separate component for each tab item to fix Rules of Hooks
+const TabItem = memo(({ route, index, isFocused, options, onPress, activeIndex, tabWidth, theme }: TabItemProps) => {
+  const getTabIcon = (routeName: string, focused: boolean) => {
+    let iconName: string;
+    switch (routeName) {
+      case 'Home':
+        iconName = focused ? 'home' : 'home-outline';
+        break;
+      case 'QuickPicks':
+        iconName = focused ? 'flash' : 'flash-outline';
+        break;
+      case 'Search':
+        iconName = focused ? 'search' : 'search-outline';
+        break;
+      case 'Settings':
+        iconName = focused ? 'settings' : 'settings-outline';
+        break;
+      default:
+        iconName = 'help-outline';
+    }
+    return iconName;
+  };
+
+  // Tab animation
+  const tabStyle = useAnimatedStyle(() => {
+    const scale = interpolate(
+      activeIndex.value,
+      [index - 1, index, index + 1],
+      [1, 1.05, 1],
+      'clamp'
+    );
+
+    return {
+      transform: [{ scale }],
+    };
+  });
+
+  // Icon animation with perfect centering
+  const iconStyle = useAnimatedStyle(() => {
+    const iconScale = interpolate(
+      activeIndex.value,
+      [index - 1, index, index + 1],
+      [1, 1.15, 1],
+      'clamp'
+    );
+
+    return {
+      transform: [{ scale: iconScale }],
+    };
+  });
+
+  return (
+    <Animated.View key={route.key} style={[styles.tabContainer, { width: tabWidth }, tabStyle]}>
+      <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityState={isFocused ? { selected: true } : {}}
+        accessibilityLabel={options.tabBarAccessibilityLabel}
+        testID={options.tabBarTestID}
+        onPress={onPress}
+        style={styles.tab}
+        activeOpacity={0.7}
+      >
+        <Animated.View style={[styles.iconContainer, iconStyle]}>
+          <Icon
+            name={getTabIcon(route.name, isFocused)}
+            size={24}
+            color={isFocused ? 'white' : theme.colors.textSecondary}
+          />
+        </Animated.View>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+});
 
 const NewFloatingTabBar: React.FC<NewFloatingTabBarProps> = ({
   state,
@@ -49,7 +135,7 @@ const NewFloatingTabBar: React.FC<NewFloatingTabBarProps> = ({
       stiffness: 300,
       mass: 0.8,
     });
-  }, [state.index]);
+  }, [state.index, activeIndex]);
 
   // Calculate indicator position
   const indicatorPosition = useDerivedValue(() => {
@@ -63,17 +149,6 @@ const NewFloatingTabBar: React.FC<NewFloatingTabBarProps> = ({
       transform: [{ translateX: indicatorPosition.value }],
     };
   });
-
-  const getTabIcon = (routeName: string, focused: boolean) => {
-    const icons: Record<string, { focused: string; unfocused: string }> = {
-      Home: { focused: 'home', unfocused: 'home-outline' },
-      QuickPicks: { focused: 'walk', unfocused: 'walk-outline' },
-      Search: { focused: 'search', unfocused: 'search-outline' },
-      Settings: { focused: 'settings', unfocused: 'settings-outline' },
-    };
-    
-    return icons[routeName]?.[focused ? 'focused' : 'unfocused'] || 'help-outline';
-  };
 
   const renderTab = (route: any, index: number) => {
     const { options } = descriptors[route.key];
@@ -91,54 +166,18 @@ const NewFloatingTabBar: React.FC<NewFloatingTabBarProps> = ({
       }
     };
 
-    // Tab animation
-    const tabStyle = useAnimatedStyle(() => {
-      const scale = interpolate(
-        activeIndex.value,
-        [index - 1, index, index + 1],
-        [1, 1.05, 1],
-        'clamp'
-      );
-
-      return {
-        transform: [{ scale }],
-      };
-    });
-
-    // Icon animation with perfect centering
-    const iconStyle = useAnimatedStyle(() => {
-      const iconScale = interpolate(
-        activeIndex.value,
-        [index - 1, index, index + 1],
-        [1, 1.15, 1],
-        'clamp'
-      );
-
-      return {
-        transform: [{ scale: iconScale }],
-      };
-    });
-
     return (
-      <Animated.View key={route.key} style={[styles.tabContainer, { width: tabWidth }, tabStyle]}>
-        <TouchableOpacity
-          accessibilityRole="button"
-          accessibilityState={isFocused ? { selected: true } : {}}
-          accessibilityLabel={options.tabBarAccessibilityLabel}
-          testID={options.tabBarTestID}
-          onPress={onPress}
-          style={styles.tab}
-          activeOpacity={0.7}
-        >
-          <Animated.View style={[styles.iconContainer, iconStyle]}>
-            <Icon
-              name={getTabIcon(route.name, isFocused)}
-              size={24}
-              color={isFocused ? 'white' : theme.colors.textSecondary}
-            />
-          </Animated.View>
-        </TouchableOpacity>
-      </Animated.View>
+      <TabItem
+        key={route.key}
+        route={route}
+        index={index}
+        isFocused={isFocused}
+        options={options}
+        onPress={onPress}
+        activeIndex={activeIndex}
+        tabWidth={tabWidth}
+        theme={theme}
+      />
     );
   };
 

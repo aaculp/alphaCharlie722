@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, memo } from 'react';
 import {
   View,
   TouchableOpacity,
@@ -15,6 +15,7 @@ import Animated, {
   withSpring,
   interpolate,
   withTiming,
+  SharedValue,
 } from 'react-native-reanimated';
 import {
   Gesture,
@@ -27,6 +28,219 @@ interface AnimatedTabBarProps {
   descriptors: any;
   navigation: any;
 }
+
+interface TabItemProps {
+  route: any;
+  index: number;
+  isFocused: boolean;
+  options: any;
+  onPress: () => void;
+  slidePosition: SharedValue<number>;
+  tabWidth: number;
+  theme: any;
+}
+
+// Separate component for each tab item to fix Rules of Hooks
+const TabItem = memo(({ route, index, isFocused, options, onPress, slidePosition, tabWidth, theme }: TabItemProps) => {
+  const getTabIcon = (routeName: string, focused: boolean) => {
+    let iconName: string;
+    switch (routeName) {
+      case 'Home':
+        iconName = focused ? 'home' : 'home-outline';
+        break;
+      case 'QuickPicks':
+        iconName = focused ? 'flash' : 'flash-outline';
+        break;
+      case 'Search':
+        iconName = focused ? 'search' : 'search-outline';
+        break;
+      case 'Settings':
+        iconName = focused ? 'settings' : 'settings-outline';
+        break;
+      default:
+        iconName = 'help-outline';
+    }
+    return iconName;
+  };
+
+  const getTabLabel = (routeName: string) => {
+    switch (routeName) {
+      case 'Home':
+        return 'Feed';
+      case 'QuickPicks':
+        return 'Quick Picks';
+      case 'Search':
+        return 'Search';
+      case 'Settings':
+        return 'Settings';
+      default:
+        return routeName;
+    }
+  };
+
+  // Individual tab animation with improved responsiveness
+  const tabAnimatedStyle = useAnimatedStyle(() => {
+    const scale = interpolate(
+      slidePosition.value,
+      [
+        (index - 1) * tabWidth,
+        index * tabWidth,
+        (index + 1) * tabWidth,
+      ],
+      [1, 1.06, 1],
+      'clamp'
+    );
+
+    return {
+      transform: [{ scale: withSpring(scale, { 
+        damping: 16, 
+        stiffness: 280,
+      }) }],
+    };
+  });
+
+  const iconAnimatedStyle = useAnimatedStyle(() => {
+    const iconScale = interpolate(
+      slidePosition.value,
+      [
+        (index - 1) * tabWidth,
+        index * tabWidth,
+        (index + 1) * tabWidth,
+      ],
+      [1, 1.12, 1],
+      'clamp'
+    );
+
+    const translateY = interpolate(
+      slidePosition.value,
+      [
+        (index - 1) * tabWidth,
+        index * tabWidth,
+        (index + 1) * tabWidth,
+      ],
+      [0, -2.5, 0],
+      'clamp'
+    );
+
+    return {
+      transform: [
+        { scale: withSpring(iconScale, { 
+          damping: 14, 
+          stiffness: 300,
+        }) },
+        { translateY: withSpring(translateY, { 
+          damping: 16, 
+          stiffness: 280,
+        }) }
+      ],
+    };
+  });
+
+  const labelAnimatedStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(
+      slidePosition.value,
+      [
+        (index - 1) * tabWidth,
+        index * tabWidth,
+        (index + 1) * tabWidth,
+      ],
+      [0.65, 1, 0.65],
+      'clamp'
+    );
+
+    const translateY = interpolate(
+      slidePosition.value,
+      [
+        (index - 1) * tabWidth,
+        index * tabWidth,
+        (index + 1) * tabWidth,
+      ],
+      [3, 0, 3],
+      'clamp'
+    );
+
+    const scale = interpolate(
+      slidePosition.value,
+      [
+        (index - 1) * tabWidth,
+        index * tabWidth,
+        (index + 1) * tabWidth,
+      ],
+      [0.95, 1, 0.95],
+      'clamp'
+    );
+
+    return {
+      opacity: withTiming(opacity, { duration: 180 }),
+      transform: [
+        { translateY: withSpring(translateY, { 
+          damping: 16, 
+          stiffness: 280,
+        }) },
+        { scale: withSpring(scale, { 
+          damping: 18, 
+          stiffness: 300,
+        }) }
+      ],
+    };
+  });
+
+  return (
+    <Animated.View
+      key={route.key}
+      style={[styles.tabContainer, tabAnimatedStyle]}
+    >
+      <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityState={isFocused ? { selected: true } : {}}
+        accessibilityLabel={options.tabBarAccessibilityLabel}
+        testID={options.tabBarTestID}
+        onPress={onPress}
+        style={styles.tab}
+        activeOpacity={0.7}
+      >
+        <View style={styles.tabContent}>
+          <Animated.View style={[
+            styles.iconContainer, 
+            iconAnimatedStyle,
+            // Enhanced centering adjustments for each icon
+            route.name === 'Settings' && { 
+              marginLeft: -1,
+            },
+            route.name === 'Search' && { 
+              marginLeft: -0.5,
+            },
+            route.name === 'QuickPicks' && { 
+              marginLeft: 0.5,
+            },
+          ]}>
+            <Icon
+              name={getTabIcon(route.name, isFocused)}
+              size={24}
+              color={
+                isFocused
+                  ? 'white'
+                  : theme.colors.textSecondary
+              }
+            />
+          </Animated.View>
+          <Animated.Text
+            style={[
+              styles.tabLabel,
+              {
+                color: isFocused ? 'white' : theme.colors.textSecondary,
+                fontFamily: 'Inter-Medium',
+              },
+              labelAnimatedStyle,
+            ]}
+          >
+            {getTabLabel(route.name)}
+          </Animated.Text>
+        </View>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+});
 
 const AnimatedTabBar: React.FC<AnimatedTabBarProps> = ({
   state,
@@ -51,7 +265,7 @@ const AnimatedTabBar: React.FC<AnimatedTabBarProps> = ({
         mass: 0.5,
       }
     );
-  }, [state.index, tabWidth]);
+  }, [state.index, tabWidth, slidePosition]);
 
   // Animated style for sliding indicator
   const slidingIndicatorStyle = useAnimatedStyle(() => {
@@ -87,44 +301,6 @@ const AnimatedTabBar: React.FC<AnimatedTabBarProps> = ({
         }
       }
     });
-
-  const getTabIcon = (routeName: string, focused: boolean) => {
-    let iconName: string;
-    
-    switch (routeName) {
-      case 'Home':
-        iconName = focused ? 'home' : 'home-outline';
-        break;
-      case 'QuickPicks':
-        iconName = focused ? 'walk' : 'walk-outline';
-        break;
-      case 'Search':
-        iconName = focused ? 'search' : 'search-outline';
-        break;
-      case 'Settings':
-        iconName = focused ? 'settings' : 'settings-outline';
-        break;
-      default:
-        iconName = 'help-outline';
-    }
-    
-    return iconName;
-  };
-
-  const getTabLabel = (routeName: string) => {
-    switch (routeName) {
-      case 'Home':
-        return 'Feed';
-      case 'QuickPicks':
-        return 'Quick Picks';
-      case 'Search':
-        return 'Search';
-      case 'Settings':
-        return 'Settings';
-      default:
-        return routeName;
-    }
-  };
 
   return (
     <GestureHandlerRootView style={[
@@ -169,167 +345,18 @@ const AnimatedTabBar: React.FC<AnimatedTabBarProps> = ({
               }
             };
 
-            // Individual tab animation with improved responsiveness
-            const tabAnimatedStyle = useAnimatedStyle(() => {
-              const scale = interpolate(
-                slidePosition.value,
-                [
-                  (index - 1) * tabWidth,
-                  index * tabWidth,
-                  (index + 1) * tabWidth,
-                ],
-                [1, 1.06, 1],
-                'clamp'
-              );
-
-              return {
-                transform: [{ scale: withSpring(scale, { 
-                  damping: 16, 
-                  stiffness: 280,
-                }) }],
-              };
-            });
-
-            const iconAnimatedStyle = useAnimatedStyle(() => {
-              const iconScale = interpolate(
-                slidePosition.value,
-                [
-                  (index - 1) * tabWidth,
-                  index * tabWidth,
-                  (index + 1) * tabWidth,
-                ],
-                [1, 1.12, 1],
-                'clamp'
-              );
-
-              const translateY = interpolate(
-                slidePosition.value,
-                [
-                  (index - 1) * tabWidth,
-                  index * tabWidth,
-                  (index + 1) * tabWidth,
-                ],
-                [0, -2.5, 0],
-                'clamp'
-              );
-
-              return {
-                transform: [
-                  { scale: withSpring(iconScale, { 
-                    damping: 14, 
-                    stiffness: 300,
-                  }) },
-                  { translateY: withSpring(translateY, { 
-                    damping: 16, 
-                    stiffness: 280,
-                  }) }
-                ],
-              };
-            });
-
-            const labelAnimatedStyle = useAnimatedStyle(() => {
-              const opacity = interpolate(
-                slidePosition.value,
-                [
-                  (index - 1) * tabWidth,
-                  index * tabWidth,
-                  (index + 1) * tabWidth,
-                ],
-                [0.65, 1, 0.65],
-                'clamp'
-              );
-
-              const translateY = interpolate(
-                slidePosition.value,
-                [
-                  (index - 1) * tabWidth,
-                  index * tabWidth,
-                  (index + 1) * tabWidth,
-                ],
-                [3, 0, 3],
-                'clamp'
-              );
-
-              const scale = interpolate(
-                slidePosition.value,
-                [
-                  (index - 1) * tabWidth,
-                  index * tabWidth,
-                  (index + 1) * tabWidth,
-                ],
-                [0.95, 1, 0.95],
-                'clamp'
-              );
-
-              return {
-                opacity: withTiming(opacity, { duration: 180 }),
-                transform: [
-                  { translateY: withSpring(translateY, { 
-                    damping: 16, 
-                    stiffness: 280,
-                  }) },
-                  { scale: withSpring(scale, { 
-                    damping: 18, 
-                    stiffness: 300,
-                  }) }
-                ],
-              };
-            });
-
             return (
-              <Animated.View
+              <TabItem
                 key={route.key}
-                style={[styles.tabContainer, tabAnimatedStyle]}
-              >
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  accessibilityState={isFocused ? { selected: true } : {}}
-                  accessibilityLabel={options.tabBarAccessibilityLabel}
-                  testID={options.tabBarTestID}
-                  onPress={onPress}
-                  style={styles.tab}
-                  activeOpacity={0.7}
-                >
-                  <View style={styles.tabContent}>
-                    <Animated.View style={[
-                      styles.iconContainer, 
-                      iconAnimatedStyle,
-                      // Enhanced centering adjustments for each icon
-                      route.name === 'Settings' && { 
-                        marginLeft: -1,
-                      },
-                      route.name === 'Search' && { 
-                        marginLeft: -0.5,
-                      },
-                      route.name === 'QuickPicks' && { 
-                        marginLeft: 0.5,
-                      },
-                    ]}>
-                      <Icon
-                        name={getTabIcon(route.name, isFocused)}
-                        size={24}
-                        color={
-                          isFocused
-                            ? 'white'
-                            : theme.colors.textSecondary
-                        }
-                      />
-                    </Animated.View>
-                    <Animated.Text
-                      style={[
-                        styles.tabLabel,
-                        {
-                          color: isFocused ? 'white' : theme.colors.textSecondary,
-                          fontFamily: 'Inter-Medium',
-                        },
-                        labelAnimatedStyle,
-                      ]}
-                    >
-                      {getTabLabel(route.name)}
-                    </Animated.Text>
-                  </View>
-                </TouchableOpacity>
-              </Animated.View>
+                route={route}
+                index={index}
+                isFocused={isFocused}
+                options={options}
+                onPress={onPress}
+                slidePosition={slidePosition}
+                tabWidth={tabWidth}
+                theme={theme}
+              />
             );
           })}
         </Animated.View>
