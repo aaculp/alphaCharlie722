@@ -1,4 +1,3 @@
-import Geolocation from '@react-native-community/geolocation';
 import { PermissionsAndroid, Platform } from 'react-native';
 
 export interface LocationCoordinates {
@@ -49,24 +48,29 @@ export class LocationService {
     }
 
     return new Promise((resolve, reject) => {
-      Geolocation.getCurrentPosition(
-        (position) => {
-          resolve({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-            accuracy: position.coords.accuracy,
-          });
-        },
-        (error) => {
-          console.error('Error getting location:', error);
-          reject(new Error(`Failed to get location: ${error.message}`));
-        },
-        {
-          enableHighAccuracy: false,
-          timeout: 15000,
-          maximumAge: 10000,
-        }
-      );
+      // Use React Native's built-in geolocation (works with new architecture)
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            resolve({
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+              accuracy: position.coords.accuracy,
+            });
+          },
+          (error) => {
+            console.error('Error getting location:', error);
+            reject(new Error(`Failed to get location: ${error.message}`));
+          },
+          {
+            enableHighAccuracy: false,
+            timeout: 15000,
+            maximumAge: 10000,
+          }
+        );
+      } else {
+        reject(new Error('Geolocation is not supported'));
+      }
     });
   }
 

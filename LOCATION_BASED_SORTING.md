@@ -8,9 +8,10 @@ Implemented location-based venue sorting feature that allows users to sort venue
 ### 1. Location Service (`src/services/locationService.ts`)
 - Created comprehensive location service with:
   - `requestLocationPermission()` - Handles Android permission requests
-  - `getCurrentLocation()` - Gets user's current coordinates using `@react-native-community/geolocation`
+  - `getCurrentLocation()` - Gets user's current coordinates using **React Native's built-in `navigator.geolocation` API**
   - `calculateDistance()` - Haversine formula for distance calculation between two coordinates
   - `formatDistance()` - Formats distance for display (e.g., "1.2 km" or "500 m")
+- **Note**: Uses built-in geolocation API instead of external package for better compatibility with React Native's new architecture (Bridgeless mode)
 
 ### 2. Location Hook (`src/hooks/useLocation.ts`)
 - Custom React hook for accessing location in components
@@ -44,12 +45,9 @@ Implemented location-based venue sorting feature that allows users to sort venue
 - Added `ACCESS_COARSE_LOCATION` permission
 
 ### 8. Dependencies
-- Installed `@react-native-community/geolocation@3.4.0`
-- **IMPORTANT**: After installing, you MUST rebuild the Android app:
-  ```bash
-  npm run android
-  ```
-  This is required because the geolocation package includes native Android code that needs to be linked.
+- **No external dependencies required!**
+- Uses React Native's built-in `navigator.geolocation` API
+- This approach is compatible with React Native's new architecture (Bridgeless mode)
 
 ## How It Works
 
@@ -78,12 +76,7 @@ The backend already has infrastructure for location-based queries:
 
 ## Testing
 
-**IMPORTANT: First-time setup**
-After pulling these changes, you MUST rebuild the Android app:
-```bash
-npm run android
-```
-This is required because `@react-native-community/geolocation` includes native code.
+**No rebuild required!** The built-in geolocation API works without any native linking.
 
 To test:
 1. Enable location services in Settings
