@@ -1,8 +1,8 @@
-export { VenueService } from './venueService';
-export { AuthService } from './authService';
-export { FavoriteService } from './favoriteService';
-export { CheckInService } from './checkInService';
-export { UserFeedbackService } from './userFeedbackService';
+export { VenueService } from './api/venues';
+export { AuthService } from './api/auth';
+export { FavoriteService } from './api/favorites';
+export { CheckInService } from './api/checkins';
+export { UserFeedbackService } from './api/feedback';
 export { VenueContributionService } from './venueContributionService';
 export { VenueApplicationService } from './venueApplicationService';
 export { VenueBusinessService } from './venueBusinessService';

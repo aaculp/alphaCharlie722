@@ -115,52 +115,259 @@ npm run clean
 
 ## Project Structure
 
+The OTW application follows a domain-driven folder structure for improved code organization and maintainability.
+
 ```
 src/
 ├── assets/
-│   └── images/           # Logo assets and images
-├── components/           # Reusable UI components
-│   ├── CheckInButton.tsx
-│   ├── CheckInModal.tsx
-│   ├── OTWLogo.tsx
-│   ├── PulseLikeButton.tsx
-│   ├── UserFeedback.tsx
-│   ├── VenueInfoComponents.tsx
-│   └── index.ts
-├── contexts/             # React contexts
+│   └── images/              # Logo assets and images
+├── components/              # UI Components organized by domain
+│   ├── checkin/            # Check-in related components
+│   │   ├── CheckInButton.tsx
+│   │   ├── CheckInModal.tsx
+│   │   ├── PulseLikeButton.tsx
+│   │   ├── UserFeedback.tsx
+│   │   └── index.ts
+│   ├── navigation/         # Navigation components
+│   │   ├── AnimatedTabBar.tsx
+│   │   ├── NewFloatingTabBar.tsx
+│   │   └── index.ts
+│   ├── shared/             # Shared components across features
+│   │   ├── OTWLogo.tsx
+│   │   └── index.ts
+│   ├── ui/                 # Reusable UI primitives (future)
+│   ├── venue/              # Venue-specific components
+│   │   ├── TestVenueCard.tsx
+│   │   ├── VenueCardDialog.tsx
+│   │   ├── VenueCustomerCount.tsx
+│   │   ├── VenueEngagementChip.tsx
+│   │   ├── VenueInfoComponents.tsx
+│   │   ├── VenueSignUpForm.tsx
+│   │   └── index.ts
+│   └── index.ts            # Main component exports
+├── contexts/               # React contexts
 │   ├── AuthContext.tsx
+│   ├── GridLayoutContext.tsx
+│   ├── NavigationStyleContext.tsx
 │   └── ThemeContext.tsx
-├── lib/                  # External library configurations
+├── hooks/                  # Custom React hooks
+│   ├── useEngagementColor.ts
+│   └── index.ts
+├── lib/                    # External library configurations
 │   └── supabase.ts
 ├── navigation/
-│   └── AppNavigator.tsx  # Main navigation configuration
-├── screens/              # Screen components
-│   ├── HomeScreen.tsx    # Feed/Home screen
-│   ├── SearchScreen.tsx  # Venue search screen
-│   ├── VenueDetailScreen.tsx # Individual venue details
-│   ├── SettingsScreen.tsx # User settings
-│   └── index.ts          # Screen exports
-├── services/             # API and business logic
-│   ├── authService.ts
-│   ├── checkInService.ts
-│   ├── favoriteService.ts
-│   ├── userFeedbackService.ts
-│   └── venueService.ts
-└── utils/                # Utility functions
+│   └── AppNavigator.tsx    # Main navigation configuration
+├── screens/                # Screen components organized by user type
+│   ├── auth/              # Authentication screens
+│   │   ├── AuthScreen.tsx
+│   │   ├── SplashScreen.tsx
+│   │   └── index.ts
+│   ├── customer/          # Customer-facing screens
+│   │   ├── FavoritesScreen.tsx
+│   │   ├── HomeScreen.tsx
+│   │   ├── QuickPicksScreen.tsx
+│   │   ├── SearchScreen.tsx
+│   │   ├── SettingsScreen.tsx
+│   │   ├── VenueDetailScreen.tsx
+│   │   └── index.ts
+│   ├── venue/             # Venue owner screens
+│   │   ├── VenueDashboardScreen.tsx
+│   │   └── index.ts
+│   └── index.ts           # Main screen exports
+├── services/               # Business logic and API layer
+│   ├── api/               # API services organized by domain
+│   │   ├── auth.ts
+│   │   ├── checkins.ts
+│   │   ├── favorites.ts
+│   │   ├── feedback.ts
+│   │   ├── venues.ts
+│   │   └── index.ts
+│   ├── venueAnalyticsService.ts
+│   ├── venueApplicationService.ts
+│   ├── venueBusinessService.ts
+│   ├── venueContributionService.ts
+│   └── index.ts
+├── types/                  # Centralized TypeScript type definitions
+│   ├── checkin.types.ts   # Check-in related types
+│   ├── navigation.types.ts # Navigation types
+│   ├── user.types.ts      # User related types
+│   ├── venue.types.ts     # Venue related types
+│   └── index.ts
+└── utils/                  # Utility functions organized by purpose
+    ├── constants/         # Application constants
+    │   ├── colors.ts
+    │   ├── spacing.ts
+    │   └── index.ts
+    ├── formatting/        # Formatting utilities
+    │   ├── activity.ts
+    │   └── index.ts
+    ├── validation/        # Validation utilities (future)
     └── populateVenues.ts
 
-database/                 # SQL setup scripts
-├── checkin-database-setup.sql
-├── pulse-permissions.sql
-├── pulse-test-data-fixed.sql
-├── safe-pulse-setup.sql
-├── simulate-checkins.sql
+database/                   # SQL setup scripts
+├── mockdata/              # Mock data for testing
+├── setup/                 # Database setup scripts
 └── README.md
 
-docs/                     # Documentation
+docs/                       # Documentation
 ├── supabase-setup.md
 └── user-feedback-system.md
 ```
+
+### Folder Structure Principles
+
+1. **Domain-Driven Organization**: Code is grouped by feature/domain rather than by technical type
+2. **Discoverability**: Related code lives together, making it easier to find and understand
+3. **Scalability**: Easy to add new features without cluttering existing directories
+4. **Separation of Concerns**: Clear boundaries between UI, business logic, and data layers
+
+### Key Directories
+
+- **components/**: UI components organized by domain (venue, checkin, navigation, shared)
+- **screens/**: Screen components organized by user type (customer, venue owner, auth)
+- **types/**: Centralized TypeScript type definitions for better type reusability
+- **services/api/**: API layer services organized by domain
+- **utils/**: Utility functions organized by purpose (formatting, validation, constants)
+
+## Import Patterns and Conventions
+
+### Import Patterns
+
+The project uses a combination of relative and absolute imports for optimal code organization:
+
+#### Relative Imports (within same feature/domain)
+Use relative imports when importing files within the same feature directory:
+
+```typescript
+// Within src/components/venue/
+import { VenueCard } from './VenueCard';
+import { VenueCustomerCount } from './VenueCustomerCount';
+```
+
+#### Absolute Imports (across features)
+Use absolute imports when importing from different features or shared code:
+
+```typescript
+// From any file
+import { VenueCard } from '@/components/venue';
+import { useVenues } from '@/hooks';
+import { Venue } from '@/types';
+import { VenueService } from '@/services/api';
+```
+
+#### Index File Imports
+Each domain folder has an `index.ts` file for clean imports:
+
+```typescript
+// Instead of:
+import { VenueCard } from '@/components/venue/VenueCard';
+import { VenueCustomerCount } from '@/components/venue/VenueCustomerCount';
+
+// Use:
+import { VenueCard, VenueCustomerCount } from '@/components/venue';
+```
+
+### Naming Conventions
+
+#### Files
+- **Components**: PascalCase (e.g., `VenueCard.tsx`, `CheckInButton.tsx`)
+- **Screens**: PascalCase with "Screen" suffix (e.g., `HomeScreen.tsx`, `VenueDetailScreen.tsx`)
+- **Services**: camelCase with "Service" suffix (e.g., `venueService.ts`, `authService.ts`)
+- **Types**: camelCase with ".types" suffix (e.g., `venue.types.ts`, `user.types.ts`)
+- **Utilities**: camelCase (e.g., `activity.ts`, `colors.ts`)
+- **Index files**: Always `index.ts`
+
+#### Code
+- **Components**: PascalCase (e.g., `VenueCard`, `CheckInModal`)
+- **Functions**: camelCase (e.g., `getActivityLevel`, `formatDate`)
+- **Constants**: UPPER_SNAKE_CASE (e.g., `ACTIVITY_COLORS`, `SPACING`)
+- **Types/Interfaces**: PascalCase (e.g., `Venue`, `CheckIn`, `VenueQueryOptions`)
+- **Hooks**: camelCase with "use" prefix (e.g., `useVenues`, `useEngagementColor`)
+
+#### Exports
+- **Prefer named exports** over default exports for better tree-shaking and refactoring
+- **Use index files** to create clean public APIs for each domain
+
+```typescript
+// Good: Named exports
+export const VenueCard = () => { /* ... */ };
+export const VenueCustomerCount = () => { /* ... */ };
+
+// Avoid: Default exports
+export default VenueCard;
+```
+
+## Adding New Features
+
+### Component Placement Guidelines
+
+When adding new components, follow these guidelines:
+
+1. **Venue-specific components** → `src/components/venue/`
+2. **Check-in related components** → `src/components/checkin/`
+3. **Navigation components** → `src/components/navigation/`
+4. **Reusable UI primitives** → `src/components/ui/`
+5. **Shared across features** → `src/components/shared/`
+
+### Screen Placement Guidelines
+
+When adding new screens:
+
+1. **Customer-facing screens** → `src/screens/customer/`
+2. **Venue owner screens** → `src/screens/venue/`
+3. **Authentication screens** → `src/screens/auth/`
+
+### Service Placement Guidelines
+
+When adding new services:
+
+1. **API services** → `src/services/api/`
+2. **Business logic services** → `src/services/`
+
+### Type Placement Guidelines
+
+When adding new types:
+
+1. **Domain-specific types** → `src/types/{domain}.types.ts`
+2. **Shared types** → `src/types/index.ts`
+
+### Example: Adding a New Feature
+
+Let's say you're adding a "Rewards" feature:
+
+```
+1. Create component directory:
+   src/components/rewards/
+   ├── RewardCard.tsx
+   ├── RewardsList.tsx
+   └── index.ts
+
+2. Create screen:
+   src/screens/customer/RewardsScreen.tsx
+   (Add export to src/screens/customer/index.ts)
+
+3. Create types:
+   src/types/rewards.types.ts
+   (Add export to src/types/index.ts)
+
+4. Create service:
+   src/services/api/rewards.ts
+   (Add export to src/services/api/index.ts)
+
+5. Update navigation:
+   Add route to AppNavigator.tsx
+```
+
+### Migration Guide for Existing Code
+
+If you're updating existing code that hasn't been refactored yet:
+
+1. **Identify the domain**: Determine which domain the code belongs to (venue, checkin, etc.)
+2. **Move the file**: Move it to the appropriate domain folder
+3. **Update imports**: Update all import statements in the moved file
+4. **Update exports**: Add the export to the domain's `index.ts` file
+5. **Update consumers**: Update all files that import the moved code
+6. **Test**: Verify the application still works correctly
 
 ## Troubleshooting
 

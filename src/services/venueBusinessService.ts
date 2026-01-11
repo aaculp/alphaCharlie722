@@ -2,7 +2,7 @@ import { supabase } from '../lib/supabase';
 import type { Database } from '../lib/supabase';
 
 type VenueBusinessAccount = Database['public']['Tables']['venue_business_accounts']['Row'];
-type VenueBusinessAccountInsert = Database['public']['Tables']['venue_business_accounts']['Insert'];
+// type VenueBusinessAccountInsert = Database['public']['Tables']['venue_business_accounts']['Insert'];
 type VenueBusinessAccountUpdate = Database['public']['Tables']['venue_business_accounts']['Update'];
 
 export class VenueBusinessService {

@@ -1,13 +1,28 @@
-export { default as HomeScreen } from './HomeScreen';
-export { default as SearchScreen } from './SearchScreen';
-export { default as VenueDetailScreen } from './VenueDetailScreen';
-export { default as SettingsScreen } from './SettingsScreen';
-export { default as AuthScreen } from './AuthScreen';
+/**
+ * Screens Index
+ * 
+ * Central export point for all screens in the application.
+ * Re-exports screens from organized user type folders while maintaining
+ * backward compatibility for existing imports.
+ */
+
+// Customer Screens - Re-export from customer directory
+export {
+  HomeScreen,
+  SearchScreen,
+  VenueDetailScreen,
+  FavoritesScreen,
+  SettingsScreen,
+  QuickPicksScreen,
+} from './customer';
+
+// Auth Screens - Re-export from auth directory
+export { AuthScreen, SplashScreen } from './auth';
+
+// Venue Owner Screens - Re-export from venue directory
+export { VenueDashboardScreen } from './venue';
+
+// Legacy auth screens (still in root directory)
+// TODO: Move these to auth directory in future cleanup
 export { default as LoginScreen } from './LoginScreen';
 export { default as SignUpScreen } from './SignUpScreen';
-export { default as SplashScreen } from './SplashScreen';
-export { default as FavoritesScreen } from './FavoritesScreen';
-export { default as QuickPicksScreen } from './QuickPicksScreen';
-
-// Venue Owner Screens
-export { default as VenueDashboardScreen } from './VenueDashboardScreen';

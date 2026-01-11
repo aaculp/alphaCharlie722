@@ -1,7 +1,7 @@
 import { supabase } from '../lib/supabase';
-import { CheckInService } from './checkInService';
-import { FavoriteService } from './favoriteService';
-import type { Database } from '../lib/supabase';
+import { CheckInService } from './api/checkins';
+// import { FavoriteService } from './api/favorites';
+// import type { Database } from '../lib/supabase';
 
 export interface VenueAnalytics {
   // Today's Performance

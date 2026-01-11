@@ -2,11 +2,12 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { VenueBusinessService } from '../services/venueBusinessService';
+import type { UserType } from '../types';
 
 interface AuthContextType {
   session: Session | null;
   user: User | null;
-  userType: 'customer' | 'venue_owner' | null;
+  userType: UserType | null;
   venueBusinessAccount: any | null;
   loading: boolean;
   initializing: boolean;
@@ -34,7 +35,7 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [userType, setUserType] = useState<'customer' | 'venue_owner' | null>(null);
+  const [userType, setUserType] = useState<UserType | null>(null);
   const [venueBusinessAccount, setVenueBusinessAccount] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
   const [initializing, setInitializing] = useState(true);
@@ -81,15 +82,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Record start time for minimum splash duration
         const startTime = Date.now();
         const MINIMUM_SPLASH_DURATION = 5000; // 5 seconds
+        const MAXIMUM_INIT_DURATION = 10000; // 10 seconds max
         
         // Add a small delay to ensure AsyncStorage is ready
         await new Promise<void>(resolve => setTimeout(resolve, 100));
         
-        const { data: { session }, error } = await supabase.auth.getSession();
+        // Create a timeout promise
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error('Auth initialization timeout')), MAXIMUM_INIT_DURATION);
+        });
         
-        if (error) {
+        // Race between getting session and timeout
+        const { data: { session }, error } = await Promise.race([
+          supabase.auth.getSession(),
+          timeoutPromise
+        ]).catch((err) => {
+          console.warn('⚠️ Auth initialization timed out or failed:', err);
+          return { data: { session: null }, error: err };
+        });
+        
+        if (error && error.message !== 'Auth initialization timeout') {
           console.error('❌ Error getting session:', error);
-          throw error;
         }
         
         if (mounted) {

@@ -199,11 +199,22 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
       } catch (error) {
         console.error('❌ Error loading theme preference:', error);
       } finally {
+        console.log('🎨 Theme loading complete, setting isLoading to false');
         setIsLoading(false);
       }
     };
 
-    loadThemePreference();
+    // Add a timeout to ensure loading doesn't hang
+    const timeoutId = setTimeout(() => {
+      console.log('⏰ Theme loading timeout, forcing isLoading to false');
+      setIsLoading(false);
+    }, 3000);
+
+    loadThemePreference().finally(() => {
+      clearTimeout(timeoutId);
+    });
+
+    return () => clearTimeout(timeoutId);
   }, []);
 
   // Determine if we should use dark theme

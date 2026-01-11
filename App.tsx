@@ -15,9 +15,13 @@ import AppNavigator from './src/navigation/AppNavigator';
 function AppContent() {
   const { isLoading, theme, isDark } = useTheme();
 
-  // Show loading while theme is loading
+  // Show a simple loading view while theme is loading
   if (isLoading) {
-    return null;
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#000000', justifyContent: 'center', alignItems: 'center' }}>
+        <StatusBar barStyle="light-content" backgroundColor="#000000" />
+      </SafeAreaView>
+    );
   }
 
   return (

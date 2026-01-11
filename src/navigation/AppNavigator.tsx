@@ -1,41 +1,22 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import Icon from 'react-native-vector-icons/Ionicons';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useNavigationStyle } from '../contexts/NavigationStyleContext';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
-import NewFloatingTabBar from '../components/NewFloatingTabBar';
-import AnimatedTabBar from '../components/AnimatedTabBar';
-import VenueDashboardScreen from '../screens/VenueDashboardScreen';
+import { NewFloatingTabBar, AnimatedTabBar } from '../components/navigation';
+import type {
+  RootTabParamList,
+  SettingsStackParamList,
+  HomeStackParamList,
+  SearchStackParamList,
+} from '../types';
 
 // Import screens
-import { HomeScreen, SearchScreen, VenueDetailScreen, SettingsScreen, SplashScreen, FavoritesScreen, QuickPicksScreen } from '../screens';
-import AuthScreen from '../screens/AuthScreen';
-
-// Type definitions
-export type RootTabParamList = {
-  Home: undefined;
-  QuickPicks: undefined;
-  Search: undefined;
-  Settings: undefined;
-};
-
-export type SettingsStackParamList = {
-  SettingsList: undefined;
-  Favorites: undefined;
-};
-
-export type HomeStackParamList = {
-  HomeList: undefined;
-  VenueDetail: { venueId: string; venueName: string };
-};
-
-export type SearchStackParamList = {
-  SearchList: undefined;
-  VenueDetail: { venueId: string; venueName: string };
-};
+import { HomeScreen, SearchScreen, VenueDetailScreen, SettingsScreen, FavoritesScreen, QuickPicksScreen } from '../screens/customer';
+import { SplashScreen, AuthScreen } from '../screens/auth';
+import { VenueDashboardScreen } from '../screens/venue';
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
@@ -284,12 +265,7 @@ function AppNavigator() {
     return <SplashScreen />;
   }
 
-  // TEMPORARY: Always show venue interface for testing
-  // TODO: Remove this and uncomment the proper logic below
-  console.log('🏢 TEMPORARY: Always showing Venue Dashboard for testing');
-  return <VenueDashboardScreen />;
-
-  /* COMMENTED OUT FOR TESTING - UNCOMMENT WHEN READY
+  // Determine which screen to show based on auth state
   const shouldShowMainApp = !!session;
   console.log('🎯 AppNavigator: Navigation decision:', {
     shouldShowMainApp,
@@ -299,20 +275,21 @@ function AppNavigator() {
       : 'AuthScreen'
   });
 
-  // Return appropriate navigator based on user type
+  // Show auth screen if not logged in
   if (!shouldShowMainApp) {
+    console.log('🔐 AppNavigator: Showing auth screen (no session)');
     return <AuthScreen />;
   }
 
-  // Route to different UIs based on user type
+  // Show venue dashboard for venue owners
   if (userType === 'venue_owner') {
-    console.log('🏢 Routing to Venue Dashboard');
+    console.log('🏢 AppNavigator: Showing venue dashboard (venue owner)');
     return <VenueDashboardScreen />;
-  } else {
-    console.log('👤 Routing to Customer App');
-    return <MainTabNavigator />;
   }
-  */
+
+  // Show main tab navigator for customers
+  console.log('👤 AppNavigator: Showing main tab navigator (customer)');
+  return <MainTabNavigator />;
 }
 
 const styles = StyleSheet.create({
