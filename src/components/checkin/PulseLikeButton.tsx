@@ -170,7 +170,8 @@ const PulseLikeButton: React.FC<PulseLikeButtonProps> = ({
 
       setPrevLikeCount(likeCount);
     }
-  }, [likeCount, prevLikeCount, currentState.showFireAnimation]);
+  }, [likeCount, prevLikeCount, currentState.showFireAnimation]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Note: fireAnimation and likeAnimation are Animated.Value refs (stable references that don't need to be in dependencies)
 
   const handlePress = () => {
     if (!disabled) {

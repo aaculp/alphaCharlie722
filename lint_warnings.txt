@@ -1,0 +1,117 @@
+  21:28  warning  Inline style: {
+  28:26  warning  Inline style: { flex: 1 }                                                                                      react-native/no-inline-styles
+   4:7  warning  'originalConsole' is assigned a value but never used  no-unused-vars
+  76:9  warning  'React' is assigned a value but never used            no-unused-vars
+  138:44  warning  Inline style: { backgroundColor: "isDark ? theme.colors.card : '#f9f9f9'" }  react-native/no-inline-styles
+  154:44  warning  Inline style: { backgroundColor: "isDark ? theme.colors.card : '#f9f9f9'" }  react-native/no-inline-styles
+  171:44  warning  Inline style: { backgroundColor: "isDark ? theme.colors.card : '#f9f9f9'" }  react-native/no-inline-styles
+  198:44  warning  Inline style: { backgroundColor: "isDark ? theme.colors.card : '#f9f9f9'" }  react-native/no-inline-styles
+  193:11  warning  Inline style: { opacity: '(loading || showModal) ? 0.6 : 1' }  react-native/no-inline-styles
+  124:51  warning  Inline style: { color: '#B8860B' }                                                                                            react-native/no-inline-styles
+  167:17  warning  Inline style: {
+  216:11  warning  Inline style: { opacity: 'disabled ? 0.6 : 1' }                                                                                         react-native/no-inline-styles
+  269:15  warning  Inline style: { opacity: 'creating ? 0.6 : 1' }                                                              react-native/no-inline-styles
+  207:42  warning  Inline style: { marginLeft: -1 }                                                                                                                                  react-native/no-inline-styles
+  210:40  warning  Inline style: { marginLeft: -0.5 }                                                                                                                                react-native/no-inline-styles
+  213:44  warning  Inline style: { marginLeft: 0.5 }                                                                                                                                 react-native/no-inline-styles
+  230:15  warning  Inline style: {
+  308:7   warning  Inline style: {
+  189:11  warning  Inline style: {
+  50:9   warning  Inline style: {
+  62:45  warning  Inline style: { color: "isDark ? 'white' : '#000000'" }                                                                                                                                                                                                                            react-native/no-inline-styles
+  67:51  warning  Inline style: { color: "isDark ? 'rgba(255, 255, 255, 0.7)' : '#666666'" }                                                                                                                                                                                                         react-native/no-inline-styles
+  72:44  warning  Inline style: { color: "isDark ? 'white' : '#000000'" }                                                                                                                                                                                                                            react-native/no-inline-styles
+  73:49  warning  Inline style: { color: "isDark ? 'rgba(255, 255, 255, 0.7)' : '#666666'" }                                                                                                                                                                                                         react-native/no-inline-styles
+  293:25  warning  Inline style: { borderWidth: 'wasUserSelection ? 2 : 1' }                             react-native/no-inline-styles
+  306:25  warning  Inline style: { fontFamily: "wasUserSelection ? 'Inter-SemiBold' : 'Inter-Medium'" }  react-native/no-inline-styles
+  382:17  warning  Inline style: { opacity: 1 }                                                          react-native/no-inline-styles
+  111:7  warning  Inline style: { justifyContent: 'center' }  react-native/no-inline-styles
+  125:9  warning  Inline style: { color: 'white' }            react-native/no-inline-styles
+  122:9   warning  Inline style: { justifyContent: 'center' }  react-native/no-inline-styles
+  134:11  warning  Inline style: { color: 'white' }            react-native/no-inline-styles
+  418:55  warning  Inline style: { color: '#FF69B4' }                                                                                                                  react-native/no-inline-styles
+  430:23  warning  Inline style: { borderWidth: 'isUserContrib ? 2 : 1' }                                                                                              react-native/no-inline-styles
+  436:60  warning  Inline style: {
+  446:57  warning  Inline style: { color: '#FF69B4' }                                                                                                                  react-native/no-inline-styles
+  466:55  warning  Inline style: { color: '#6B73FF' }                                                                                                                  react-native/no-inline-styles
+  478:23  warning  Inline style: { borderWidth: 'isUserContrib ? 2 : 1' }                                                                                              react-native/no-inline-styles
+  484:60  warning  Inline style: {
+  494:57  warning  Inline style: { color: '#6B73FF' }                                                                                                                  react-native/no-inline-styles
+  516:55  warning  Inline style: { color: '#FF6B6B' }                                                                                                                  react-native/no-inline-styles
+  528:23  warning  Inline style: { borderWidth: 'isUserContrib ? 2 : 1' }                                                                                              react-native/no-inline-styles
+  534:60  warning  Inline style: {
+  544:57  warning  Inline style: { color: '#FF6B6B' }                                                                                                                  react-native/no-inline-styles
+  563:55  warning  Inline style: { color: '#52C41A' }                                                                                                                  react-native/no-inline-styles
+  575:23  warning  Inline style: { borderWidth: 'isUserContrib ? 2 : 1' }                                                                                              react-native/no-inline-styles
+  581:60  warning  Inline style: {
+  591:57  warning  Inline style: { color: '#52C41A' }                                                                                                                  react-native/no-inline-styles
+  258:44  warning  Inline style: { backgroundColor: "isDark ? theme.colors.card : '#f9f9f9'" }  react-native/no-inline-styles
+  273:44  warning  Inline style: { backgroundColor: "isDark ? theme.colors.card : '#f9f9f9'" }  react-native/no-inline-styles
+  288:44  warning  Inline style: { backgroundColor: "isDark ? theme.colors.card : '#f9f9f9'" }  react-native/no-inline-styles
+  305:64  warning  Inline style: { backgroundColor: "isDark ? theme.colors.card : '#f9f9f9'" }  react-native/no-inline-styles
+  320:64  warning  Inline style: { backgroundColor: "isDark ? theme.colors.card : '#f9f9f9'" }  react-native/no-inline-styles
+  337:44  warning  Inline style: { backgroundColor: "isDark ? theme.colors.card : '#f9f9f9'" }  react-native/no-inline-styles
+  353:44  warning  Inline style: { backgroundColor: "isDark ? theme.colors.card : '#f9f9f9'" }  react-native/no-inline-styles
+  368:44  warning  Inline style: { backgroundColor: "isDark ? theme.colors.card : '#f9f9f9'" }  react-native/no-inline-styles
+  384:44  warning  Inline style: { backgroundColor: "isDark ? theme.colors.card : '#f9f9f9'" }  react-native/no-inline-styles
+  390:33  warning  Inline style: { minHeight: 80 }                                              react-native/no-inline-styles
+  404:44  warning  Inline style: { backgroundColor: "isDark ? theme.colors.card : '#f9f9f9'" }  react-native/no-inline-styles
+  419:44  warning  Inline style: { backgroundColor: "isDark ? theme.colors.card : '#f9f9f9'" }  react-native/no-inline-styles
+  436:44  warning  Inline style: { backgroundColor: "isDark ? theme.colors.card : '#f9f9f9'" }  react-native/no-inline-styles
+  463:44  warning  Inline style: { backgroundColor: "isDark ? theme.colors.card : '#f9f9f9'" }  react-native/no-inline-styles
+  81:21  warning  'session' is already declared in the upper scope on line 37 column 10  @typescript-eslint/no-shadow
+  123:17  warning  Do not define components during render. React will see a new component type on every render and destroy the entire subtreeΓÇÖs DOM nodes and state (https://reactjs.org/docs/reconciliation.html#elements-of-different-types). Instead, move this component definition out of the parent component ΓÇ£MainTabNavigatorΓÇ¥ and pass data as props. If you want to allow component creation in props, set allowAsProps option to true  react/no-unstable-nested-components
+  168:17  warning  Do not define components during render. React will see a new component type on every render and destroy the entire subtreeΓÇÖs DOM nodes and state (https://reactjs.org/docs/reconciliation.html#elements-of-different-types). Instead, move this component definition out of the parent component ΓÇ£MainTabNavigatorΓÇ¥ and pass data as props. If you want to allow component creation in props, set allowAsProps option to true  react/no-unstable-nested-components
+  73:50  warning  Inline style: { backgroundColor: "isDark ? theme.colors.card : '#f9f9f9'" }  react-native/no-inline-styles
+  90:50  warning  Inline style: { backgroundColor: "isDark ? theme.colors.card : '#f9f9f9'" }  react-native/no-inline-styles
+  25:21  warning  Do not define components during render. React will see a new component type on every render and destroy the entire subtreeΓÇÖs DOM nodes and state (https://reactjs.org/docs/reconciliation.html#elements-of-different-types). Instead, move this component definition out of the parent component ΓÇ£SignUpScreenΓÇ¥ and pass data as props  react/no-unstable-nested-components
+  41:11  warning  Inline style: { fontWeight: "isActive ? '600' : '400'" }                                                                                                                                                                                                                                                                                react-native/no-inline-styles
+  167:20  warning  Missing radix parameter                                                                                                                                                                      radix
+  167:47  warning  Missing radix parameter                                                                                                                                                                      radix
+  168:21  warning  Missing radix parameter                                                                                                                                                                      radix
+  168:49  warning  Missing radix parameter                                                                                                                                                                      radix
+  171:32  warning  Missing radix parameter                                                                                                                                                                      radix
+  172:33  warning  Missing radix parameter                                                                                                                                                                      radix
+  173:32  warning  Missing radix parameter                                                                                                                                                                      radix
+  174:33  warning  Missing radix parameter                                                                                                                                                                      radix
+  330:19  warning  Inline style: {
+  446:19  warning  Inline style: {
+  494:17  warning  Inline style: {
+  101:23  warning  Do not define components during render. React will see a new component type on every render and destroy the entire subtreeΓÇÖs DOM nodes and state (https://reactjs.org/docs/reconciliation.html#elements-of-different-types). Instead, move this component definition out of the parent component ΓÇ£SettingsScreenΓÇ¥ and pass data as props  react/no-unstable-nested-components
+  133:25  warning  Do not define components during render. React will see a new component type on every render and destroy the entire subtreeΓÇÖs DOM nodes and state (https://reactjs.org/docs/reconciliation.html#elements-of-different-types). Instead, move this component definition out of the parent component ΓÇ£SettingsScreenΓÇ¥ and pass data as props  react/no-unstable-nested-components
+  137:28  warning  Do not define components during render. React will see a new component type on every render and destroy the entire subtreeΓÇÖs DOM nodes and state (https://reactjs.org/docs/reconciliation.html#elements-of-different-types). Instead, move this component definition out of the parent component ΓÇ£SettingsScreenΓÇ¥ and pass data as props  react/no-unstable-nested-components
+  151:9   warning  Inline style: {
+  161:11  warning  Inline style: {
+  181:33  warning  Do not define components during render. React will see a new component type on every render and destroy the entire subtreeΓÇÖs DOM nodes and state (https://reactjs.org/docs/reconciliation.html#elements-of-different-types). Instead, move this component definition out of the parent component ΓÇ£SettingsScreenΓÇ¥ and pass data as props  react/no-unstable-nested-components
+  195:9   warning  Inline style: {
+  205:11  warning  Inline style: {
+  281:54  warning  Inline style: { color: '#10B981' }  react-native/no-inline-styles
+  349:22  warning  Inline style: { height: 90 }        react-native/no-inline-styles
+    96:23  warning  Do not define components during render. React will see a new component type on every render and destroy the entire subtreeΓÇÖs DOM nodes and state (https://reactjs.org/docs/reconciliation.html#elements-of-different-types). Instead, move this component definition out of the parent component ΓÇ£VenueDashboardScreenΓÇ¥ and pass data as props  react/no-unstable-nested-components
+   128:25  warning  Do not define components during render. React will see a new component type on every render and destroy the entire subtreeΓÇÖs DOM nodes and state (https://reactjs.org/docs/reconciliation.html#elements-of-different-types). Instead, move this component definition out of the parent component ΓÇ£VenueDashboardScreenΓÇ¥ and pass data as props  react/no-unstable-nested-components
+   132:21  warning  Do not define components during render. React will see a new component type on every render and destroy the entire subtreeΓÇÖs DOM nodes and state (https://reactjs.org/docs/reconciliation.html#elements-of-different-types). Instead, move this component definition out of the parent component ΓÇ£VenueDashboardScreenΓÇ¥ and pass data as props  react/no-unstable-nested-components
+   147:11  warning  Inline style: {
+   166:11  warning  Inline style: { color: "isActive ? '#fff' : theme.colors.text" }                                                                                                                                                                                                                                                                                react-native/no-inline-styles
+   176:25  warning  Do not define components during render. React will see a new component type on every render and destroy the entire subtreeΓÇÖs DOM nodes and state (https://reactjs.org/docs/reconciliation.html#elements-of-different-types). Instead, move this component definition out of the parent component ΓÇ£VenueDashboardScreenΓÇ¥ and pass data as props  react/no-unstable-nested-components
+   192:9   warning  Inline style: {
+   222:15  warning  Inline style: {
+   320:15  warning  Inline style: {
+   335:58  warning  Inline style: { color: '#FF6B6B' }                                                                                                                                                                                                                                                                                                              react-native/no-inline-styles
+   350:15  warning  Inline style: {
+   410:17  warning  Inline style: {
+   479:19  warning  Inline style: {
+   503:19  warning  Inline style: {
+   527:19  warning  Inline style: {
+   551:19  warning  Inline style: {
+   584:15  warning  Inline style: {
+   652:15  warning  Inline style: {
+   715:15  warning  Inline style: {
+   756:15  warning  Inline style: {
+   791:15  warning  Inline style: {
+   842:15  warning  Inline style: {
+   891:15  warning  Inline style: {
+   926:15  warning  Inline style: {
+  1011:9   warning  Inline style: { borderBottomWidth: 1 }                                                                                                                                                                                                                                                                                                          react-native/no-inline-styles
+  303:25  warning  Missing radix parameter  radix
+  845:19  warning  Missing radix parameter  radix
+Γ£û 125 problems (9 errors, 116 warnings)

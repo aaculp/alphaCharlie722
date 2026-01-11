@@ -78,24 +78,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     // Listen for auth changes FIRST (before trying to get session)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      async (event, authSession) => {
         console.log('🔔 Auth state changed:', {
           event,
-          hasSession: !!session,
-          userId: session?.user?.id,
-          userEmail: session?.user?.email
+          hasSession: !!authSession,
+          userId: authSession?.user?.id,
+          userEmail: authSession?.user?.email
         });
         
         authListenerReady = true;
         
         if (mounted) {
-          setSession(session);
-          setUser(session?.user ?? null);
+          setSession(authSession);
+          setUser(authSession?.user ?? null);
           setLoading(false);
           
           // Determine user type when auth state changes
-          if (session?.user?.id) {
-            await determineUserType(session.user.id);
+          if (authSession?.user?.id) {
+            await determineUserType(authSession.user.id);
           } else {
             setUserType(null);
             setVenueBusinessAccount(null);

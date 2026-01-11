@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -97,12 +97,7 @@ const UserFeedback: React.FC<UserFeedbackProps> = ({ venue }) => {
   const [likingTags, setLikingTags] = useState<Set<string>>(new Set());
   const [tablesExist, setTablesExist] = useState(true);
 
-  // Load tags when component mounts
-  useEffect(() => {
-    loadTags();
-  }, [venue.id, user?.id]);
-
-  const loadTags = async () => {
+  const loadTags = useCallback(async () => {
     try {
       setLoading(true);
       const venueTags = await UserFeedbackService.getVenueTags(venue.id, user?.id);
@@ -122,7 +117,12 @@ const UserFeedback: React.FC<UserFeedbackProps> = ({ venue }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [venue.id, user?.id]);
+
+  // Load tags when component mounts
+  useEffect(() => {
+    loadTags();
+  }, [loadTags]);
 
   const handleCreateTag = async () => {
     if (!user) {

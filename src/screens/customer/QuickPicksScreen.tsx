@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -114,14 +114,7 @@ const QuickPicksScreen: React.FC = () => {
   const { user } = useAuth();
   const navigation = useNavigation<QuickPicksScreenNavigationProp>();
 
-  useEffect(() => {
-    loadVenues();
-    if (user) {
-      loadUserFavorites();
-    }
-  }, [user]);
-
-  const loadVenues = async () => {
+  const loadVenues = useCallback(async () => {
     try {
       const allVenues = await VenueService.getVenues({ limit: 100 });
       setVenues(allVenues);
@@ -131,9 +124,9 @@ const QuickPicksScreen: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const loadUserFavorites = async () => {
+  const loadUserFavorites = useCallback(async () => {
     if (!user) return;
     
     try {
@@ -143,7 +136,14 @@ const QuickPicksScreen: React.FC = () => {
     } catch (error) {
       console.error('Error loading favorites:', error);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    loadVenues();
+    if (user) {
+      loadUserFavorites();
+    }
+  }, [loadVenues, loadUserFavorites, user]);
 
   const toggleFavorite = async (venueId: string) => {
     if (!user) {

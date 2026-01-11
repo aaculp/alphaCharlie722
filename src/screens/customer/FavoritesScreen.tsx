@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -44,13 +44,7 @@ const FavoritesScreen: React.FC = () => {
   const { user } = useAuth();
   const navigation = useNavigation<FavoritesScreenNavigationProp>();
 
-  useEffect(() => {
-    if (user) {
-      loadFavorites();
-    }
-  }, [user]);
-
-  const loadFavorites = async () => {
+  const loadFavorites = useCallback(async () => {
     if (!user) return;
     
     setLoading(true);
@@ -63,7 +57,13 @@ const FavoritesScreen: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      loadFavorites();
+    }
+  }, [user, loadFavorites]);
 
   const removeFavorite = async (venueId: string) => {
     if (!user) return;

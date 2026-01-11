@@ -1,4 +1,5 @@
 /* eslint-env jest */
+/* eslint-disable no-unused-vars */
 
 // Suppress console logs during tests
 const originalConsole = global.console;

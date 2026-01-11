@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -297,20 +297,14 @@ export const ModernVenueCards: React.FC<{ venue: Venue }> = ({ venue }) => {
   const [userContributionsByType, setUserContributionsByType] = useState<Record<string, string[]>>({});
   const [_loading, setLoading] = useState(false);
 
-  // Load contributions on mount
-  useEffect(() => {
-    loadContributions();
-    loadUserContributions();
-  }, [venue.id]);
-
-  const loadContributions = async () => {
+  const loadContributions = useCallback(async () => {
     const result = await VenueContributionService.getVenueContributions(venue.id);
     if (result.success && result.data) {
       setContributions(result.data);
     }
-  };
+  }, [venue.id]);
 
-  const loadUserContributions = async () => {
+  const loadUserContributions = useCallback(async () => {
     const result = await VenueContributionService.getUserContributionsForVenue(venue.id);
     if (result.success && result.data) {
       setUserContributions(result.data);
@@ -325,7 +319,13 @@ export const ModernVenueCards: React.FC<{ venue: Venue }> = ({ venue }) => {
       });
       setUserContributionsByType(contributionsByType);
     }
-  };
+  }, [venue.id]);
+
+  // Load contributions on mount
+  useEffect(() => {
+    loadContributions();
+    loadUserContributions();
+  }, [loadContributions, loadUserContributions]);
 
   const handleIconPress = (cardType: 'wait_times' | 'mood' | 'popular' | 'amenities') => {
     setSelectedCardType(cardType);

@@ -300,7 +300,7 @@ export class VenueAnalyticsService {
         .slice(0, 3);
 
       const peakHours = sortedHours.map(([hour, count]) => {
-        const hourNum = parseInt(hour);
+        const hourNum = parseInt(hour, 10);
         const time = `${hourNum === 0 ? 12 : hourNum > 12 ? hourNum - 12 : hourNum}:${hourNum < 12 ? '00 AM' : '00 PM'}`;
         
         let label: string;
@@ -842,7 +842,7 @@ export class VenueAnalyticsService {
     const match = timeString.match(/(\d+)\s+(minute|hour|day)/);
     if (!match) return 999999;
     
-    const value = parseInt(match[1]);
+    const value = parseInt(match[1], 10);
     const unit = match[2];
     
     switch (unit) {

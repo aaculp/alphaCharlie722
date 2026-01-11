@@ -74,11 +74,6 @@ const SearchScreen: React.FC = () => {
   // Animation for drawer
   const slideAnim = useRef(new Animated.Value(Dimensions.get('window').width * 0.4)).current;
 
-  // Filter venues when search query, categories, filters, or price ranges change
-  useEffect(() => {
-    filterVenues();
-  }, [debouncedSearchQuery, selectedCategories, selectedFilters, selectedPriceRanges, venues]);
-
   const filterVenues = useCallback(() => {
     console.log('🔍 Filtering venues:', {
       selectedCategories,
@@ -143,7 +138,12 @@ const SearchScreen: React.FC = () => {
 
     console.log('✅ Final filtered venues:', filtered.length);
     setFilteredVenues(filtered);
-  }, [venues, selectedCategories, selectedFilters, selectedPriceRanges, debouncedSearchQuery]);
+  }, [searchQuery, venues, selectedCategories, selectedFilters, selectedPriceRanges, debouncedSearchQuery]);
+
+  // Filter venues when search query, categories, filters, or price ranges change
+  useEffect(() => {
+    filterVenues();
+  }, [filterVenues]);
 
   // Helper function to check if venue is open now
   const isVenueOpenNow = (venue: Venue) => {
@@ -164,14 +164,14 @@ const SearchScreen: React.FC = () => {
 
     const [, openHour, openMin, openPeriod, closeHour, closeMin, closePeriod] = timeMatch;
 
-    let openTime = parseInt(openHour) * 100 + parseInt(openMin);
-    let closeTime = parseInt(closeHour) * 100 + parseInt(closeMin);
+    let openTime = parseInt(openHour, 10) * 100 + parseInt(openMin, 10);
+    let closeTime = parseInt(closeHour, 10) * 100 + parseInt(closeMin, 10);
 
     // Convert to 24-hour format
-    if (openPeriod === 'PM' && parseInt(openHour) !== 12) openTime += 1200;
-    if (closePeriod === 'PM' && parseInt(closeHour) !== 12) closeTime += 1200;
-    if (openPeriod === 'AM' && parseInt(openHour) === 12) openTime -= 1200;
-    if (closePeriod === 'AM' && parseInt(closeHour) === 12) closeTime -= 1200;
+    if (openPeriod === 'PM' && parseInt(openHour, 10) !== 12) openTime += 1200;
+    if (closePeriod === 'PM' && parseInt(closeHour, 10) !== 12) closeTime += 1200;
+    if (openPeriod === 'AM' && parseInt(openHour, 10) === 12) openTime -= 1200;
+    if (closePeriod === 'AM' && parseInt(closeHour, 10) === 12) closeTime -= 1200;
 
     // Handle overnight hours (close time is next day)
     if (closeTime < openTime) {
