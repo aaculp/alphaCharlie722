@@ -48,9 +48,6 @@ const TabItem = memo(({ route, index, isFocused, options, onPress, slidePosition
       case 'Home':
         iconName = focused ? 'home' : 'home-outline';
         break;
-      case 'QuickPicks':
-        iconName = focused ? 'flash' : 'flash-outline';
-        break;
       case 'Search':
         iconName = focused ? 'search' : 'search-outline';
         break;
@@ -67,8 +64,6 @@ const TabItem = memo(({ route, index, isFocused, options, onPress, slidePosition
     switch (routeName) {
       case 'Home':
         return 'Feed';
-      case 'QuickPicks':
-        return 'Quick Picks';
       case 'Search':
         return 'Search';
       case 'Settings':
@@ -209,9 +204,6 @@ const TabItem = memo(({ route, index, isFocused, options, onPress, slidePosition
             },
             route.name === 'Search' && { 
               marginLeft: -0.5,
-            },
-            route.name === 'QuickPicks' && { 
-              marginLeft: 0.5,
             },
           ]}>
             <Icon

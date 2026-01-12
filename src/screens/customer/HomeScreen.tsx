@@ -21,6 +21,7 @@ import { LocationService } from '../../services/locationService';
 import { CheckInService } from '../../services/api/checkins';
 import { populateVenuesDatabase } from '../../utils/populateVenues';
 import { TestVenueCard } from '../../components/venue';
+import { QuickPickChip } from '../../components/quickpicks';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<HomeStackParamList, 'HomeList'>;
@@ -32,10 +33,95 @@ interface CheckInInfo {
   venueName: string;
 }
 
+interface QuickPickCategory {
+  id: string;
+  title: string;
+  icon?: string;
+  emoji?: string;
+  color: string;
+  filter: (venues: Venue[]) => Venue[];
+}
+
+const quickPickCategories: QuickPickCategory[] = [
+  {
+    id: 'party',
+    title: 'Party',
+    emoji: '💃',
+    color: '#9C27B0',
+    filter: (venues) => venues.filter(v =>
+      (v.category === 'Nightclubs' || v.category === 'Bars' || v.category === 'Lounges') &&
+      (v.rating || 0) >= 4.0
+    )
+  },
+  {
+    id: 'date_night',
+    title: 'Date Night',
+    icon: 'heart',
+    color: '#E91E63',
+    filter: (venues) => venues.filter(v =>
+      v.category === 'Fine Dining' &&
+      (v.rating || 0) >= 4.5
+    )
+  },
+  {
+    id: 'best_burgers',
+    title: 'Best Burgers',
+    icon: 'fast-food',
+    color: '#FF6B35',
+    filter: (venues) => venues.filter(v =>
+      v.category === 'Fast Food' &&
+      (v.name.toLowerCase().includes('burger') ||
+        v.description?.toLowerCase().includes('burger')) &&
+      (v.rating || 0) >= 4.0
+    )
+  },
+  {
+    id: 'study_cafes',
+    title: 'Study Cafes',
+    icon: 'library',
+    color: '#4CAF50',
+    filter: (venues) => venues.filter(v =>
+      v.category === 'Coffee Shops' &&
+      (v.rating || 0) >= 4.3
+    )
+  },
+  {
+    id: 'game_day',
+    title: 'Game Day',
+    icon: 'tv',
+    color: '#FF9800',
+    filter: (venues) => venues.filter(v =>
+      v.category === 'Sports Bars' &&
+      (v.rating || 0) >= 4.0
+    )
+  },
+  {
+    id: 'craft_beer',
+    title: 'Craft Beer',
+    icon: 'wine',
+    color: '#795548',
+    filter: (venues) => venues.filter(v =>
+      v.category === 'Breweries' &&
+      (v.rating || 0) >= 4.2
+    )
+  },
+  {
+    id: 'budget_eats',
+    title: 'Budget Eats',
+    icon: 'cash',
+    color: '#2196F3',
+    filter: (venues) => venues.filter(v =>
+      v.price_range === '$' &&
+      (v.rating || 0) >= 4.0
+    )
+  },
+];
+
 const HomeScreen: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [sortByDistance, setSortByDistance] = useState(false);
   const [userCheckIns, setUserCheckIns] = useState<Map<string, CheckInInfo>>(new Map());
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const { theme } = useTheme();
   const { locationEnabled } = useLocationContext();
   const { user } = useAuth();
@@ -44,19 +130,19 @@ const HomeScreen: React.FC = () => {
   // Use custom hooks for data management
   const { venues, loading, error, refetch } = useVenues({ featured: true, limit: 10 });
   const { location, loading: locationLoading, error: locationError, refetch: refetchLocation } = useLocation();
-  
+
   // Debug logging
   useEffect(() => {
-    console.log('🏠 HomeScreen state:', { 
-      venuesCount: venues.length, 
-      loading, 
+    console.log('🏠 HomeScreen state:', {
+      venuesCount: venues.length,
+      loading,
       hasError: !!error,
       locationEnabled,
       hasLocation: !!location,
       sortByDistance
     });
   }, [venues.length, loading, error, locationEnabled, location, sortByDistance]);
-  
+
   // Get venue IDs for check-in stats
   const venueIds = venues.map(v => v.id);
   const { stats: checkInStats, refetch: refetchCheckInStats } = useCheckInStats({ venueIds, enabled: venueIds.length > 0 });
@@ -100,7 +186,7 @@ const HomeScreen: React.FC = () => {
         await refetch();
       }
     };
-    
+
     populateIfNeeded();
   }, [loading, venues.length, error, refetch]);
 
@@ -138,17 +224,40 @@ const HomeScreen: React.FC = () => {
     }
 
     return [...venues].sort((a, b) => {
-      const distanceA = a.latitude && a.longitude 
+      const distanceA = a.latitude && a.longitude
         ? LocationService.calculateDistance(location.latitude, location.longitude, a.latitude, a.longitude)
         : Infinity;
-      
+
       const distanceB = b.latitude && b.longitude
         ? LocationService.calculateDistance(location.latitude, location.longitude, b.latitude, b.longitude)
         : Infinity;
-      
+
       return distanceA - distanceB;
     });
   }, [venues, location, sortByDistance, locationEnabled]);
+
+  // Filter venues by selected category
+  const filteredVenues = useMemo(() => {
+    if (!selectedCategory) {
+      return sortedVenues;
+    }
+
+    const category = quickPickCategories.find(cat => cat.id === selectedCategory);
+    if (!category) {
+      return sortedVenues;
+    }
+
+    return category.filter(sortedVenues);
+  }, [sortedVenues, selectedCategory]);
+
+  const handleCategoryPress = (categoryId: string) => {
+    if (selectedCategory === categoryId) {
+      // Deselect if already selected
+      setSelectedCategory(null);
+    } else {
+      setSelectedCategory(categoryId);
+    }
+  };
 
   const handleVenuePress = (venue: Venue) => {
     navigation.navigate('VenueDetail', {
@@ -171,7 +280,7 @@ const HomeScreen: React.FC = () => {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
       {/* Near Me Button */}
-      {locationEnabled && (
+      {/* {locationEnabled && (
         <View style={styles.headerContainer}>
           <TouchableOpacity
             style={[
@@ -221,7 +330,7 @@ const HomeScreen: React.FC = () => {
           )}
         </View>
       )}
-      
+       */}
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -230,12 +339,41 @@ const HomeScreen: React.FC = () => {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {sortedVenues.length > 0 ? (
+        {/* Quick Picks Section */}
+        <View style={styles.quickPicksSection}>
+          <View style={styles.quickPicksHeader}>
+            <Text style={[styles.quickPicksTitle, { color: theme.colors.text }]}>Quick Picks</Text>
+            {selectedCategory && (
+              <TouchableOpacity onPress={() => setSelectedCategory(null)}>
+                <Text style={[styles.clearFilter, { color: theme.colors.primary }]}>Clear</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.quickPicksScroll}
+          >
+            {quickPickCategories.map((category) => (
+              <QuickPickChip
+                key={category.id}
+                title={category.title}
+                icon={category.icon}
+                emoji={category.emoji}
+                color={category.color}
+                onPress={() => handleCategoryPress(category.id)}
+                selected={selectedCategory === category.id}
+              />
+            ))}
+          </ScrollView>
+        </View>
+
+        {filteredVenues.length > 0 ? (
           <View style={styles.venueList}>
-            {sortedVenues.map((venue) => {
+            {filteredVenues.map((venue) => {
               const venueCheckInStats = checkInStats.get(venue.id);
               const userCheckInInfo = userCheckIns.get(venue.id);
-              
+
               // Calculate distance if location is available
               let distance: string | undefined;
               if (location && venue.latitude && venue.longitude) {
@@ -247,7 +385,7 @@ const HomeScreen: React.FC = () => {
                 );
                 distance = LocationService.formatDistance(distanceKm);
               }
-              
+
               return (
                 <TestVenueCard
                   key={venue.id}
@@ -350,6 +488,29 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 90, // Space for floating tab bar
+  },
+  quickPicksSection: {
+    marginBottom: 16,
+  },
+  quickPicksHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 15,
+    marginBottom: 12,
+    marginTop: 8,
+  },
+  quickPicksTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    fontFamily: 'Poppins-SemiBold',
+  },
+  clearFilter: {
+    fontSize: 14,
+    fontFamily: 'Inter-SemiBold',
+  },
+  quickPicksScroll: {
+    paddingHorizontal: 15,
   },
   venueList: {
     paddingHorizontal: 15,

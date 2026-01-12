@@ -1,7 +1,6 @@
 // Root tab navigation types
 export type RootTabParamList = {
   Home: undefined;
-  QuickPicks: undefined;
   Search: undefined;
   Settings: undefined;
 };

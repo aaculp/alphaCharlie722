@@ -13,7 +13,7 @@ import type {
 } from '../types';
 
 // Import screens
-import { HomeScreen, SearchScreen, VenueDetailScreen, SettingsScreen, FavoritesScreen, QuickPicksScreen } from '../screens/customer';
+import { HomeScreen, SearchScreen, VenueDetailScreen, SettingsScreen, FavoritesScreen } from '../screens/customer';
 import { SplashScreen, AuthScreen } from '../screens/auth';
 import { VenueDashboardScreen } from '../screens/venue';
 
@@ -105,8 +105,6 @@ function MainTabNavigator() {
     switch (routeName) {
       case 'Home':
         return 'Feed';
-      case 'QuickPicks':
-        return 'Quick Picks';
       case 'Search':
         return 'Search';
       case 'Settings':
@@ -143,11 +141,6 @@ function MainTabNavigator() {
           name="Home" 
           component={HomeStackNavigator}
           options={{ title: 'Feed' }}
-        />
-        <Tab.Screen 
-          name="QuickPicks" 
-          component={QuickPicksScreen}
-          options={{ title: 'Quick Picks' }}
         />
         <Tab.Screen 
           name="Search" 
@@ -188,11 +181,6 @@ function MainTabNavigator() {
           name="Home" 
           component={HomeStackNavigator}
           options={{ title: getTabLabel('Home') }}
-        />
-        <Tab.Screen 
-          name="QuickPicks" 
-          component={QuickPicksScreen}
-          options={{ title: getTabLabel('QuickPicks') }}
         />
         <Tab.Screen 
           name="Search" 

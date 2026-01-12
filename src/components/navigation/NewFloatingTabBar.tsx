@@ -47,9 +47,6 @@ const TabItem = memo(({ route, index, isFocused, options, onPress, activeIndex, 
       case 'Home':
         iconName = focused ? 'home' : 'home-outline';
         break;
-      case 'QuickPicks':
-        iconName = focused ? 'flash' : 'flash-outline';
-        break;
       case 'Search':
         iconName = focused ? 'search' : 'search-outline';
         break;
