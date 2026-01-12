@@ -409,7 +409,14 @@ export const ModernVenueCards: React.FC<{ venue: Venue }> = ({ venue }) => {
         <View style={styles.modernCardsRow}>
           {/* Wait Times Square */}
           {(waitTimes.length > 0 || getContributionsByType('wait_times').length > 0) && (
-            <View style={[styles.modernCard, { backgroundColor: theme.colors.surface }]}>
+            <View style={[
+              styles.modernCard, 
+              { 
+                backgroundColor: theme.colors.surface,
+                borderColor: '#FF69B4' + '60',
+                borderWidth: 2,
+              }
+            ]}>
               <TouchableOpacity
                 onPress={() => handleIconPress('wait_times')}
                 style={styles.modernCardHeader}
@@ -428,8 +435,8 @@ export const ModernVenueCards: React.FC<{ venue: Venue }> = ({ venue }) => {
                     <View key={index} style={[
                       styles.modernChip,
                       {
-                        backgroundColor: '#FF69B4' + '15',
-                        borderColor: '#FF69B4' + '30',
+                        backgroundColor: '#FF69B4' + '40',
+                        borderColor: '#FF69B4' + '60',
                         borderWidth: isUserContrib ? 2 : 1, // Thicker border for user contributions
                       }
                     ]}>
@@ -457,7 +464,14 @@ export const ModernVenueCards: React.FC<{ venue: Venue }> = ({ venue }) => {
 
           {/* Combined Mood & Atmosphere Square */}
           {(atmosphereTags.length > 0 || moodTags.length > 0 || getContributionsByType('mood').length > 0) && (
-            <View style={[styles.modernCard, { backgroundColor: theme.colors.surface }]}>
+            <View style={[
+              styles.modernCard, 
+              { 
+                backgroundColor: theme.colors.surface,
+                borderColor: '#6B73FF' + '60',
+                borderWidth: 2,
+              }
+            ]}>
               <TouchableOpacity
                 onPress={() => handleIconPress('mood')}
                 style={styles.modernCardHeader}
@@ -476,8 +490,8 @@ export const ModernVenueCards: React.FC<{ venue: Venue }> = ({ venue }) => {
                     <View key={`mood-${index}`} style={[
                       styles.modernChip,
                       {
-                        backgroundColor: '#6B73FF' + '15',
-                        borderColor: '#6B73FF' + '30',
+                        backgroundColor: '#6B73FF' + '40',
+                        borderColor: '#6B73FF' + '60',
                         borderWidth: isUserContrib ? 2 : 1,
                       }
                     ]}>
@@ -507,7 +521,14 @@ export const ModernVenueCards: React.FC<{ venue: Venue }> = ({ venue }) => {
         <View style={styles.modernCardsRow}>
           {/* Popular Items Square */}
           {(popularItems.length > 0 || getContributionsByType('popular').length > 0) && (
-            <View style={[styles.modernCard, { backgroundColor: theme.colors.surface }]}>
+            <View style={[
+              styles.modernCard, 
+              { 
+                backgroundColor: theme.colors.surface,
+                borderColor: '#FF6B6B' + '60',
+                borderWidth: 2,
+              }
+            ]}>
               <TouchableOpacity
                 onPress={() => handleIconPress('popular')}
                 style={styles.modernCardHeader}
@@ -526,8 +547,8 @@ export const ModernVenueCards: React.FC<{ venue: Venue }> = ({ venue }) => {
                     <View key={index} style={[
                       styles.modernChip,
                       {
-                        backgroundColor: '#FF6B6B' + '15',
-                        borderColor: '#FF6B6B' + '30',
+                        backgroundColor: '#FF6B6B' + '40',
+                        borderColor: '#FF6B6B' + '60',
                         borderWidth: isUserContrib ? 2 : 1,
                       }
                     ]}>
@@ -554,7 +575,14 @@ export const ModernVenueCards: React.FC<{ venue: Venue }> = ({ venue }) => {
 
           {/* Amenities Square */}
           {((venue.amenities && venue.amenities.length > 0) || getContributionsByType('amenities').length > 0) && (
-            <View style={[styles.modernCard, { backgroundColor: theme.colors.surface }]}>
+            <View style={[
+              styles.modernCard, 
+              { 
+                backgroundColor: theme.colors.surface,
+                borderColor: '#52C41A' + '60',
+                borderWidth: 2,
+              }
+            ]}>
               <TouchableOpacity
                 onPress={() => handleIconPress('amenities')}
                 style={styles.modernCardHeader}
@@ -573,8 +601,8 @@ export const ModernVenueCards: React.FC<{ venue: Venue }> = ({ venue }) => {
                     <View key={index} style={[
                       styles.modernChip,
                       {
-                        backgroundColor: '#52C41A' + '15',
-                        borderColor: '#52C41A' + '30',
+                        backgroundColor: '#52C41A' + '40',
+                        borderColor: '#52C41A' + '60',
                         borderWidth: isUserContrib ? 2 : 1,
                       }
                     ]}>
