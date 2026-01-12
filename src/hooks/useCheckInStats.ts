@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { CheckInService } from '../services/api/checkins';
 import { useDebounce } from './useDebounce';
@@ -13,6 +13,7 @@ export interface UseCheckInStatsReturn {
   stats: Map<string, VenueCheckInStats>;
   loading: boolean;
   error: Error | null;
+  refetch: () => Promise<void>;
 }
 
 /**
@@ -54,45 +55,50 @@ export function useCheckInStats(options: UseCheckInStatsOptions): UseCheckInStat
   // Debounce venue IDs to prevent excessive API calls
   const debouncedVenueIds = useDebounce(venueIdsArray, 300);
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      if (!enabled || debouncedVenueIds.length === 0) {
-        setLoading(false);
-        return;
-      }
+  const fetchStats = useCallback(async () => {
+    if (!enabled || debouncedVenueIds.length === 0) {
+      setLoading(false);
+      return;
+    }
 
-      try {
-        setLoading(true);
-        setError(null);
+    try {
+      setLoading(true);
+      setError(null);
 
-        const userId = user?.id;
-        const statsArray = await CheckInService.getMultipleVenueStats(
-          debouncedVenueIds,
-          userId
-        );
+      const userId = user?.id;
+      const statsArray = await CheckInService.getMultipleVenueStats(
+        debouncedVenueIds,
+        userId
+      );
 
-        // Convert array to Map for easy lookup
-        const statsMap = new Map<string, VenueCheckInStats>();
-        statsArray.forEach(stat => {
-          statsMap.set(stat.venue_id, stat);
-        });
+      // Convert array to Map for easy lookup
+      const statsMap = new Map<string, VenueCheckInStats>();
+      statsArray.forEach(stat => {
+        statsMap.set(stat.venue_id, stat);
+      });
 
-        setStats(statsMap);
-      } catch (err) {
-        const fetchError = err instanceof Error ? err : new Error('Failed to fetch check-in stats');
-        setError(fetchError);
-        console.error('Error fetching check-in stats:', fetchError);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchStats();
+      setStats(statsMap);
+    } catch (err) {
+      const fetchError = err instanceof Error ? err : new Error('Failed to fetch check-in stats');
+      setError(fetchError);
+      console.error('Error fetching check-in stats:', fetchError);
+    } finally {
+      setLoading(false);
+    }
   }, [debouncedVenueIds, user, enabled]);
+
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
+
+  const refetch = useCallback(async () => {
+    await fetchStats();
+  }, [fetchStats]);
 
   return {
     stats,
     loading,
     error,
+    refetch,
   };
 }

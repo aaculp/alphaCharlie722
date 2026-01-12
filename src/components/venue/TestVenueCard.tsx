@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,8 @@ import {
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { VenueCustomerCount, VenueEngagementChip } from './index';
+import { CheckInButton } from '../checkin';
+import { useEngagementColor } from '../../hooks/useEngagementColor';
 import type { Venue } from '../../types';
 
 interface TestVenueCardProps {
@@ -20,6 +22,11 @@ interface TestVenueCardProps {
   customerCountVariant?: 'themed' | 'traffic' | 'primary' | 'success' | 'warning' | 'error';
   engagementChipVariant?: 'themed' | 'colored' | 'traffic' | 'primary' | 'success' | 'warning' | 'error';
   distance?: string; // Optional distance display (e.g., "1.2 km")
+  // Check-in props
+  onCheckInChange?: (isCheckedIn: boolean, newCount: number) => void;
+  userCheckInId?: string;
+  userCheckInTime?: string;
+  isUserCheckedIn?: boolean;
 }
 
 const TestVenueCard: React.FC<TestVenueCardProps> = ({
@@ -29,8 +36,31 @@ const TestVenueCard: React.FC<TestVenueCardProps> = ({
   customerCountVariant = 'traffic',
   engagementChipVariant = 'traffic',
   distance,
+  onCheckInChange,
+  userCheckInId,
+  userCheckInTime,
+  isUserCheckedIn = false,
 }) => {
   const { isDark } = useTheme();
+  const [localCheckInCount, setLocalCheckInCount] = useState(checkInCount);
+  
+  // IMPORTANT: Call hooks unconditionally at the top level
+  const engagementColor = useEngagementColor(localCheckInCount, venue.max_capacity || 100);
+
+  // Sync local state with prop changes
+  useEffect(() => {
+    setLocalCheckInCount(checkInCount);
+  }, [checkInCount]);
+
+  const handleCheckInChange = (isCheckedIn: boolean, newCount: number) => {
+    // Update local count for immediate UI feedback
+    setLocalCheckInCount(newCount);
+    
+    // Call parent callback if provided
+    if (onCheckInChange) {
+      onCheckInChange(isCheckedIn, newCount);
+    }
+  };
 
   return (
     <TouchableOpacity
@@ -53,9 +83,8 @@ const TestVenueCard: React.FC<TestVenueCardProps> = ({
           backgroundColor: isDark
             ? 'rgba(20, 20, 20, 0.8)'
             : 'rgba(255, 255, 255, 0.8)',
-          borderColor: isDark
-            ? 'rgba(255, 255, 255, 0.1)'
-            : 'rgba(0, 0, 0, 0.1)',
+          borderColor: engagementColor.borderColor,
+          borderWidth: 2,
         }
       ]}>
         <View style={styles.contentRow}>
@@ -79,19 +108,38 @@ const TestVenueCard: React.FC<TestVenueCardProps> = ({
               <Text style={[styles.rating, { color: isDark ? 'white' : '#000000' }]}>⭐ {venue.rating}</Text>
               <Text style={[styles.reviewCount, { color: isDark ? 'rgba(255, 255, 255, 0.7)' : '#666666' }]}>({venue.review_count})</Text>
             </View>
+            
+            {/* Check-In Button */}
+            {onCheckInChange && (
+              <View style={styles.checkInButtonInline}>
+                <CheckInButton
+                  venueId={venue.id}
+                  venueName={venue.name}
+                  venueImage={venue.image_url || undefined}
+                  isCheckedIn={isUserCheckedIn}
+                  checkInId={userCheckInId}
+                  checkInTime={userCheckInTime}
+                  activeCheckIns={localCheckInCount}
+                  maxCapacity={venue.max_capacity || undefined}
+                  onCheckInChange={handleCheckInChange}
+                  size="medium"
+                  showModalForCheckout={true}
+                />
+              </View>
+            )}
           </View>
 
           {/* Right Side - Engagement Elements */}
           <View style={styles.rightContent}>
             <VenueCustomerCount
-              count={checkInCount}
+              count={localCheckInCount}
               maxCapacity={venue.max_capacity || 100}
               size="small"
               variant={customerCountVariant}
             />
             
             <VenueEngagementChip
-              currentCheckIns={checkInCount}
+              currentCheckIns={localCheckInCount}
               maxCapacity={venue.max_capacity || 100}
               size="small"
               variant={engagementChipVariant}
@@ -130,7 +178,6 @@ const styles = StyleSheet.create({
     left: 12,
     right: 12,
     borderRadius: 16,
-    borderWidth: 1,
     paddingHorizontal: 16,
     paddingVertical: 16,
     shadowColor: '#000',
@@ -206,6 +253,9 @@ const styles = StyleSheet.create({
   reviewCount: {
     fontSize: 12,
     fontFamily: 'Inter-Regular',
+  },
+  checkInButtonInline: {
+    marginTop: 8,
   },
 });
 

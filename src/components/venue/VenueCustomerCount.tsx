@@ -100,10 +100,6 @@ const VenueCustomerCount: React.FC<VenueCustomerCountProps> = ({
 
   const backgroundStyle = getBackgroundStyle();
 
-  if (count === 0) {
-    return null; // Don't show anything if no customers
-  }
-
   return (
     <View style={[
       styles.container,

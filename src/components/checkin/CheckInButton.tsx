@@ -169,9 +169,9 @@ const CheckInButton: React.FC<CheckInButtonProps> = ({
   const getButtonStyle = () => {
     if (isCheckedIn) {
       return {
-        backgroundColor: '#4CAF50' + '20',
-        borderColor: '#4CAF50',
-        color: '#4CAF50'
+        backgroundColor: '#FF6B6B' + '20', // Red tint for leaving
+        borderColor: '#FF6B6B',
+        color: '#FF6B6B'
       };
     } else {
       return {
@@ -206,7 +206,7 @@ const CheckInButton: React.FC<CheckInButtonProps> = ({
         ) : (
           <View style={styles.buttonContent}>
             <Icon
-              name={isCheckedIn ? 'checkmark-circle' : 'location-outline'}
+              name={isCheckedIn ? 'log-out-outline' : 'location-outline'}
               size={config.iconSize}
               color={buttonStyle.color}
             />
@@ -217,7 +217,7 @@ const CheckInButton: React.FC<CheckInButtonProps> = ({
                 fontSize: config.textSize,
               }
             ]}>
-              {isCheckedIn ? 'Checked In' : 'Check In'}
+              {isCheckedIn ? 'Leave' : 'Arrived'}
             </Text>
           </View>
         )}

@@ -14,20 +14,31 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { Venue, HomeStackParamList } from '../../types';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useLocationContext } from '../../contexts/LocationContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { useVenues, useCheckInStats } from '../../hooks';
 import { useLocation } from '../../hooks/useLocation';
 import { LocationService } from '../../services/locationService';
+import { CheckInService } from '../../services/api/checkins';
 import { populateVenuesDatabase } from '../../utils/populateVenues';
 import { TestVenueCard } from '../../components/venue';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<HomeStackParamList, 'HomeList'>;
 
+interface CheckInInfo {
+  checkInId: string;
+  venueId: string;
+  checkInTime: string;
+  venueName: string;
+}
+
 const HomeScreen: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [sortByDistance, setSortByDistance] = useState(false);
+  const [userCheckIns, setUserCheckIns] = useState<Map<string, CheckInInfo>>(new Map());
   const { theme } = useTheme();
   const { locationEnabled } = useLocationContext();
+  const { user } = useAuth();
   const navigation = useNavigation<HomeScreenNavigationProp>();
 
   // Use custom hooks for data management
@@ -48,7 +59,37 @@ const HomeScreen: React.FC = () => {
   
   // Get venue IDs for check-in stats
   const venueIds = venues.map(v => v.id);
-  const { stats: checkInStats } = useCheckInStats({ venueIds, enabled: venueIds.length > 0 });
+  const { stats: checkInStats, refetch: refetchCheckInStats } = useCheckInStats({ venueIds, enabled: venueIds.length > 0 });
+
+  // Fetch user's current check-in on mount and when user changes
+  useEffect(() => {
+    const fetchUserCheckIn = async () => {
+      if (!user) {
+        setUserCheckIns(new Map());
+        return;
+      }
+
+      try {
+        const currentCheckIn = await CheckInService.getUserCurrentCheckInWithVenue(user.id);
+        if (currentCheckIn) {
+          const checkInInfo: CheckInInfo = {
+            checkInId: currentCheckIn.checkIn.id,
+            venueId: currentCheckIn.checkIn.venue_id,
+            checkInTime: currentCheckIn.checkIn.checked_in_at,
+            venueName: currentCheckIn.venueName
+          };
+          setUserCheckIns(new Map([[currentCheckIn.checkIn.venue_id, checkInInfo]]));
+        } else {
+          setUserCheckIns(new Map());
+        }
+      } catch (error) {
+        console.error('Error fetching user check-in:', error);
+        setUserCheckIns(new Map());
+      }
+    };
+
+    fetchUserCheckIn();
+  }, [user]);
 
   // Handle database population if no venues found
   useEffect(() => {
@@ -193,6 +234,7 @@ const HomeScreen: React.FC = () => {
           <View style={styles.venueList}>
             {sortedVenues.map((venue) => {
               const venueCheckInStats = checkInStats.get(venue.id);
+              const userCheckInInfo = userCheckIns.get(venue.id);
               
               // Calculate distance if location is available
               let distance: string | undefined;
@@ -215,6 +257,34 @@ const HomeScreen: React.FC = () => {
                   customerCountVariant="traffic"
                   engagementChipVariant="traffic"
                   distance={sortByDistance ? distance : undefined}
+                  onCheckInChange={user ? async (isCheckedIn, newCount) => {
+                    // Handle check-in state change
+                    if (isCheckedIn) {
+                      // User checked in to this venue - fetch the actual check-in data
+                      try {
+                        const currentCheckIn = await CheckInService.getUserCurrentCheckInWithVenue(user.id);
+                        if (currentCheckIn && currentCheckIn.checkIn.venue_id === venue.id) {
+                          const checkInInfo: CheckInInfo = {
+                            checkInId: currentCheckIn.checkIn.id,
+                            venueId: currentCheckIn.checkIn.venue_id,
+                            checkInTime: currentCheckIn.checkIn.checked_in_at,
+                            venueName: currentCheckIn.venueName
+                          };
+                          setUserCheckIns(new Map([[venue.id, checkInInfo]]));
+                        }
+                      } catch (error) {
+                        console.error('Error fetching check-in after check-in:', error);
+                      }
+                    } else {
+                      // User checked out
+                      setUserCheckIns(new Map());
+                    }
+                    // Refetch check-in stats to get accurate counts
+                    refetchCheckInStats();
+                  } : undefined}
+                  userCheckInId={userCheckInInfo?.checkInId}
+                  userCheckInTime={userCheckInInfo?.checkInTime}
+                  isUserCheckedIn={!!userCheckInInfo}
                 />
               );
             })}
