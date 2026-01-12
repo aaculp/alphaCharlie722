@@ -143,8 +143,8 @@ const HomeScreen: React.FC = () => {
     });
   }, [venues.length, loading, error, locationEnabled, location, sortByDistance]);
 
-  // Get venue IDs for check-in stats
-  const venueIds = venues.map(v => v.id);
+  // Get venue IDs for check-in stats (memoized to prevent infinite loop)
+  const venueIds = useMemo(() => venues.map(v => v.id), [venues]);
   const { stats: checkInStats, refetch: refetchCheckInStats } = useCheckInStats({ venueIds, enabled: venueIds.length > 0 });
 
   // Fetch user's current check-in on mount and when user changes
