@@ -64,7 +64,13 @@ const TestVenueCard: React.FC<TestVenueCardProps> = ({
 
   return (
     <TouchableOpacity
-      style={styles.cardContainer}
+      style={[
+        styles.cardContainer,
+        {
+          borderColor: engagementColor.borderColor,
+          borderWidth: 2,
+        }
+      ]}
       onPress={onPress}
       activeOpacity={0.9}
     >
