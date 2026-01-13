@@ -94,7 +94,7 @@ const CARD_OPTIONS = {
   popular: {
     title: 'Popular',
     icon: 'star-outline',
-    color: '#FF6B6B',
+    color: '#5B9BFF',
     sections: [
       {
         title: 'Food',
@@ -187,11 +187,12 @@ const VenueCardDialog: React.FC<VenueCardDialogProps> = ({
   const cardData = CARD_OPTIONS[cardType];
 
   // Initialize selected options with user's previous selections when dialog opens
+  // Only reset when dialog becomes visible (not when userSelections changes while open)
   React.useEffect(() => {
     if (visible) {
       setSelectedOptions([...userSelections]);
     }
-  }, [visible, userSelections]);
+  }, [visible]); // Removed userSelections from dependencies to prevent reset while dialog is open
 
   const handleOptionToggle = (option: string) => {
     setSelectedOptions(prev => {

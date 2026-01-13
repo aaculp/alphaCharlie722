@@ -525,7 +525,7 @@ export const ModernVenueCards: React.FC<{ venue: Venue }> = ({ venue }) => {
               styles.modernCard, 
               { 
                 backgroundColor: theme.colors.surface,
-                borderColor: '#FF6B6B' + '60',
+                borderColor: '#5B9BFF' + '60',
                 borderWidth: 2,
               }
             ]}>
@@ -534,9 +534,9 @@ export const ModernVenueCards: React.FC<{ venue: Venue }> = ({ venue }) => {
                 style={styles.modernCardHeader}
                 activeOpacity={0.7}
               >
-                <Text style={[styles.modernCardTitle, { color: '#FF6B6B' }]}>Popular</Text>
-                <View style={[styles.modernCardIcon, { backgroundColor: '#FF6B6B' + '20' }]}>
-                  <Icon name="star-outline" size={20} color="#FF6B6B" />
+                <Text style={[styles.modernCardTitle, { color: '#5B9BFF' }]}>Popular</Text>
+                <View style={[styles.modernCardIcon, { backgroundColor: '#5B9BFF' + '20' }]}>
+                  <Icon name="star-outline" size={20} color="#5B9BFF" />
                 </View>
               </TouchableOpacity>
               <View style={styles.modernCardContent}>
@@ -547,22 +547,22 @@ export const ModernVenueCards: React.FC<{ venue: Venue }> = ({ venue }) => {
                     <View key={index} style={[
                       styles.modernChip,
                       {
-                        backgroundColor: '#FF6B6B' + '40',
-                        borderColor: '#FF6B6B' + '60',
+                        backgroundColor: '#5B9BFF' + '40',
+                        borderColor: '#5B9BFF' + '60',
                         borderWidth: isUserContrib ? 2 : 1,
                       }
                     ]}>
                       <Text style={[styles.modernChipText, {
-                        color: '#FF6B6B',
+                        color: '#5B9BFF',
                         fontFamily: isUserContrib ? 'Inter-SemiBold' : 'Inter-Medium',
                       }]}>
                         {item}
                       </Text>
                       {isUserContrib && (
-                        <Icon name="person" size={10} color="#FF6B6B" style={styles.userChipIcon} />
+                        <Icon name="person" size={10} color="#5B9BFF" style={styles.userChipIcon} />
                       )}
                       {contribution && contribution.count > 0 && (
-                        <Text style={[styles.chipCount, { color: '#FF6B6B' }]}>
+                        <Text style={[styles.chipCount, { color: '#5B9BFF' }]}>
                           {contribution.count}
                         </Text>
                       )}

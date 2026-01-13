@@ -35,10 +35,11 @@ const TagItem: React.FC<TagItemProps> = ({ tag, onLike, isLiking }) => {
   };
 
   const getTagColor = () => {
-    if (tag.like_count >= 20) return '#FF4500'; // Hot orange
+    // Always use red color scheme for pulse cards
+    if (tag.like_count >= 20) return '#FF4500'; // Hot orange-red
     if (tag.like_count >= 10) return '#FF6B6B'; // Red
-    if (tag.like_count >= 5) return '#FFD700'; // Gold
-    return theme.colors.primary; // Default
+    if (tag.like_count >= 5) return '#FF8A8A'; // Light red
+    return '#FF6B6B'; // Default red
   };
 
   const formatDate = (dateString: string) => {
@@ -224,22 +225,26 @@ const UserFeedback: React.FC<UserFeedbackProps> = ({ venue }) => {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.surface }]}>
+    <View style={[styles.container, { 
+      backgroundColor: theme.colors.surface,
+      borderColor: '#FF6B6B',
+      borderWidth: 2,
+    }]}>
       <View style={styles.header}>
         <View style={styles.titleContainer}>
-          <Icon name="pulse-outline" size={24} color={theme.colors.primary} />
-          <Text style={[styles.title, { color: theme.colors.text }]}>Pulse</Text>
+          <Icon name="pulse-outline" size={24} color="#FF6B6B" />
+          <Text style={[styles.title, { color: '#FF6B6B' }]}>Pulse</Text>
         </View>
         
         {user && (
           <TouchableOpacity
-            style={[styles.addButton, { backgroundColor: theme.colors.primary + '20', borderColor: theme.colors.primary + '40' }]}
+            style={[styles.addButton, { backgroundColor: '#FF6B6B' + '20', borderColor: '#FF6B6B' + '40' }]}
             onPress={() => setShowCreateForm(!showCreateForm)}
           >
             <Icon 
               name={showCreateForm ? 'close' : 'add'} 
               size={20} 
-              color={theme.colors.primary} 
+              color="#FF6B6B" 
             />
           </TouchableOpacity>
         )}
