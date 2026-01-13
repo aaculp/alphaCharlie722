@@ -402,230 +402,240 @@ export const ModernVenueCards: React.FC<{ venue: Venue }> = ({ venue }) => {
     return combined.slice(0, 3);
   };
 
+  const waitTimesData = getCombinedData('wait_times', waitTimes);
+  const moodData = getCombinedData('mood', [...atmosphereTags, ...moodTags]);
+  const popularData = getCombinedData('popular', popularItems);
+  const amenitiesData = getCombinedData('amenities', venue.amenities || []);
+
+  // Default options to show when there's no data (first 2-3 from each category)
+  const defaultWaitTimes = ['Walk-in friendly', 'Short wait', 'Moderate wait'];
+  const defaultMood = ['Relaxed', 'Vibey', 'Lively'];
+  const defaultPopular = ['Signature cocktails', 'Burger', 'Happy hour deals'];
+  const defaultAmenities = ['Outdoor seating', 'Wi-Fi', 'Street parking'];
+
   return (
     <>
       <View style={styles.modernCardsContainer}>
         {/* First Row - 2x2 Grid */}
         <View style={styles.modernCardsRow}>
           {/* Wait Times Square */}
-          {(waitTimes.length > 0 || getContributionsByType('wait_times').length > 0) && (
-            <View style={[
-              styles.modernCard, 
-              { 
-                backgroundColor: theme.colors.surface,
-                borderColor: '#FF69B4' + '60',
-                borderWidth: 2,
-              }
-            ]}>
-              <TouchableOpacity
-                onPress={() => handleIconPress('wait_times')}
-                style={styles.modernCardHeader}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.modernCardTitle, { color: '#FF69B4' }]}>Wait Times</Text>
-                <View style={[styles.modernCardIcon, { backgroundColor: '#FF69B4' + '20' }]}>
-                  <Icon name="time-outline" size={20} color="#FF69B4" />
-                </View>
-              </TouchableOpacity>
-              <View style={styles.modernCardContent}>
-                {getCombinedData('wait_times', waitTimes).map((time, index) => {
-                  const contribution = getContributionsByType('wait_times').find(c => c.option_text === time);
-                  const isUserContrib = isUserContribution('wait_times', time);
-                  return (
-                    <View key={index} style={[
-                      styles.modernChip,
-                      {
-                        backgroundColor: '#FF69B4' + '40',
-                        borderColor: '#FF69B4' + '60',
-                        borderWidth: isUserContrib ? 2 : 1, // Thicker border for user contributions
-                      }
-                    ]}>
-                      <Text style={[styles.modernChipText, {
-                        color: '#FF69B4',
-                        fontFamily: isUserContrib ? 'Inter-SemiBold' : 'Inter-Medium', // Bold for user contributions
-                      }]}>
-                        {time}
-                      </Text>
-                      {isUserContrib && (
-                        <Icon name="person" size={10} color="#FF69B4" style={styles.userChipIcon} />
-                      )}
-                      {contribution && contribution.count > 0 && (
-                        <Text style={[styles.chipCount, { color: '#FF69B4' }]}>
-                          {contribution.count}
-                        </Text>
-                      )}
-
-                    </View>
-                  );
-                })}
+          <View style={[
+            styles.modernCard, 
+            { 
+              backgroundColor: theme.colors.surface,
+              borderColor: '#FF69B4' + '60',
+              borderWidth: 2,
+            }
+          ]}>
+            <TouchableOpacity
+              onPress={() => handleIconPress('wait_times')}
+              style={styles.modernCardHeader}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.modernCardTitle, { color: '#FF69B4' }]}>Wait Times</Text>
+              <View style={[styles.modernCardIcon, { backgroundColor: '#FF69B4' + '20' }]}>
+                <Icon name="time-outline" size={20} color="#FF69B4" />
               </View>
+            </TouchableOpacity>
+            <View style={styles.modernCardContent}>
+              {(waitTimesData.length > 0 ? waitTimesData : defaultWaitTimes).map((time, index) => {
+                const contribution = getContributionsByType('wait_times').find(c => c.option_text === time);
+                const isUserContrib = isUserContribution('wait_times', time);
+                const isDefault = waitTimesData.length === 0;
+                return (
+                  <View key={index} style={[
+                    styles.modernChip,
+                    {
+                      backgroundColor: '#FF69B4' + (isDefault ? '20' : '40'),
+                      borderColor: '#FF69B4' + (isDefault ? '40' : '60'),
+                      borderWidth: isUserContrib ? 2 : 1,
+                      opacity: isDefault ? 0.6 : 1,
+                    }
+                  ]}>
+                    <Text style={[styles.modernChipText, {
+                      color: '#FF69B4',
+                      fontFamily: isUserContrib ? 'Inter-SemiBold' : 'Inter-Medium',
+                    }]}>
+                      {time}
+                    </Text>
+                    {isUserContrib && (
+                      <Icon name="person" size={10} color="#FF69B4" style={styles.userChipIcon} />
+                    )}
+                    {contribution && contribution.count > 0 && (
+                      <Text style={[styles.chipCount, { color: '#FF69B4' }]}>
+                        {contribution.count}
+                      </Text>
+                    )}
+                  </View>
+                );
+              })}
             </View>
-          )}
+          </View>
 
           {/* Combined Mood & Atmosphere Square */}
-          {(atmosphereTags.length > 0 || moodTags.length > 0 || getContributionsByType('mood').length > 0) && (
-            <View style={[
-              styles.modernCard, 
-              { 
-                backgroundColor: theme.colors.surface,
-                borderColor: '#6B73FF' + '60',
-                borderWidth: 2,
-              }
-            ]}>
-              <TouchableOpacity
-                onPress={() => handleIconPress('mood')}
-                style={styles.modernCardHeader}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.modernCardTitle, { color: '#6B73FF' }]}>Mood</Text>
-                <View style={[styles.modernCardIcon, { backgroundColor: '#6B73FF' + '20' }]}>
-                  <Icon name="happy-outline" size={20} color="#6B73FF" />
-                </View>
-              </TouchableOpacity>
-              <View style={styles.modernCardContent}>
-                {getCombinedData('mood', [...atmosphereTags, ...moodTags]).map((mood, index) => {
-                  const contribution = getContributionsByType('mood').find(c => c.option_text === mood);
-                  const isUserContrib = isUserContribution('mood', mood);
-                  return (
-                    <View key={`mood-${index}`} style={[
-                      styles.modernChip,
-                      {
-                        backgroundColor: '#6B73FF' + '40',
-                        borderColor: '#6B73FF' + '60',
-                        borderWidth: isUserContrib ? 2 : 1,
-                      }
-                    ]}>
-                      <Text style={[styles.modernChipText, {
-                        color: '#6B73FF',
-                        fontFamily: isUserContrib ? 'Inter-SemiBold' : 'Inter-Medium',
-                      }]}>
-                        {mood}
-                      </Text>
-                      {isUserContrib && (
-                        <Icon name="person" size={10} color="#6B73FF" style={styles.userChipIcon} />
-                      )}
-                      {contribution && contribution.count > 0 && (
-                        <Text style={[styles.chipCount, { color: '#6B73FF' }]}>
-                          {contribution.count}
-                        </Text>
-                      )}
-                    </View>
-                  );
-                })}
+          <View style={[
+            styles.modernCard, 
+            { 
+              backgroundColor: theme.colors.surface,
+              borderColor: '#6B73FF' + '60',
+              borderWidth: 2,
+            }
+          ]}>
+            <TouchableOpacity
+              onPress={() => handleIconPress('mood')}
+              style={styles.modernCardHeader}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.modernCardTitle, { color: '#6B73FF' }]}>Mood</Text>
+              <View style={[styles.modernCardIcon, { backgroundColor: '#6B73FF' + '20' }]}>
+                <Icon name="happy-outline" size={20} color="#6B73FF" />
               </View>
+            </TouchableOpacity>
+            <View style={styles.modernCardContent}>
+              {(moodData.length > 0 ? moodData : defaultMood).map((mood, index) => {
+                const contribution = getContributionsByType('mood').find(c => c.option_text === mood);
+                const isUserContrib = isUserContribution('mood', mood);
+                const isDefault = moodData.length === 0;
+                return (
+                  <View key={`mood-${index}`} style={[
+                    styles.modernChip,
+                    {
+                      backgroundColor: '#6B73FF' + (isDefault ? '20' : '40'),
+                      borderColor: '#6B73FF' + (isDefault ? '40' : '60'),
+                      borderWidth: isUserContrib ? 2 : 1,
+                      opacity: isDefault ? 0.6 : 1,
+                    }
+                  ]}>
+                    <Text style={[styles.modernChipText, {
+                      color: '#6B73FF',
+                      fontFamily: isUserContrib ? 'Inter-SemiBold' : 'Inter-Medium',
+                    }]}>
+                      {mood}
+                    </Text>
+                    {isUserContrib && (
+                      <Icon name="person" size={10} color="#6B73FF" style={styles.userChipIcon} />
+                    )}
+                    {contribution && contribution.count > 0 && (
+                      <Text style={[styles.chipCount, { color: '#6B73FF' }]}>
+                        {contribution.count}
+                      </Text>
+                    )}
+                  </View>
+                );
+              })}
             </View>
-          )}
+          </View>
         </View>
 
         {/* Second Row - 2x2 Grid */}
         <View style={styles.modernCardsRow}>
           {/* Popular Items Square */}
-          {(popularItems.length > 0 || getContributionsByType('popular').length > 0) && (
-            <View style={[
-              styles.modernCard, 
-              { 
-                backgroundColor: theme.colors.surface,
-                borderColor: '#5B9BFF' + '60',
-                borderWidth: 2,
-              }
-            ]}>
-              <TouchableOpacity
-                onPress={() => handleIconPress('popular')}
-                style={styles.modernCardHeader}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.modernCardTitle, { color: '#5B9BFF' }]}>Popular</Text>
-                <View style={[styles.modernCardIcon, { backgroundColor: '#5B9BFF' + '20' }]}>
-                  <Icon name="star-outline" size={20} color="#5B9BFF" />
-                </View>
-              </TouchableOpacity>
-              <View style={styles.modernCardContent}>
-                {getCombinedData('popular', popularItems).map((item, index) => {
-                  const contribution = getContributionsByType('popular').find(c => c.option_text === item);
-                  const isUserContrib = isUserContribution('popular', item);
-                  return (
-                    <View key={index} style={[
-                      styles.modernChip,
-                      {
-                        backgroundColor: '#5B9BFF' + '40',
-                        borderColor: '#5B9BFF' + '60',
-                        borderWidth: isUserContrib ? 2 : 1,
-                      }
-                    ]}>
-                      <Text style={[styles.modernChipText, {
-                        color: '#5B9BFF',
-                        fontFamily: isUserContrib ? 'Inter-SemiBold' : 'Inter-Medium',
-                      }]}>
-                        {item}
-                      </Text>
-                      {isUserContrib && (
-                        <Icon name="person" size={10} color="#5B9BFF" style={styles.userChipIcon} />
-                      )}
-                      {contribution && contribution.count > 0 && (
-                        <Text style={[styles.chipCount, { color: '#5B9BFF' }]}>
-                          {contribution.count}
-                        </Text>
-                      )}
-                    </View>
-                  );
-                })}
+          <View style={[
+            styles.modernCard, 
+            { 
+              backgroundColor: theme.colors.surface,
+              borderColor: '#5B9BFF' + '60',
+              borderWidth: 2,
+            }
+          ]}>
+            <TouchableOpacity
+              onPress={() => handleIconPress('popular')}
+              style={styles.modernCardHeader}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.modernCardTitle, { color: '#5B9BFF' }]}>Popular</Text>
+              <View style={[styles.modernCardIcon, { backgroundColor: '#5B9BFF' + '20' }]}>
+                <Icon name="star-outline" size={20} color="#5B9BFF" />
               </View>
+            </TouchableOpacity>
+            <View style={styles.modernCardContent}>
+              {(popularData.length > 0 ? popularData : defaultPopular).map((item, index) => {
+                const contribution = getContributionsByType('popular').find(c => c.option_text === item);
+                const isUserContrib = isUserContribution('popular', item);
+                const isDefault = popularData.length === 0;
+                return (
+                  <View key={index} style={[
+                    styles.modernChip,
+                    {
+                      backgroundColor: '#5B9BFF' + (isDefault ? '20' : '40'),
+                      borderColor: '#5B9BFF' + (isDefault ? '40' : '60'),
+                      borderWidth: isUserContrib ? 2 : 1,
+                      opacity: isDefault ? 0.6 : 1,
+                    }
+                  ]}>
+                    <Text style={[styles.modernChipText, {
+                      color: '#5B9BFF',
+                      fontFamily: isUserContrib ? 'Inter-SemiBold' : 'Inter-Medium',
+                    }]}>
+                      {item}
+                    </Text>
+                    {isUserContrib && (
+                      <Icon name="person" size={10} color="#5B9BFF" style={styles.userChipIcon} />
+                    )}
+                    {contribution && contribution.count > 0 && (
+                      <Text style={[styles.chipCount, { color: '#5B9BFF' }]}>
+                        {contribution.count}
+                      </Text>
+                    )}
+                  </View>
+                );
+              })}
             </View>
-          )}
+          </View>
 
           {/* Amenities Square */}
-          {((venue.amenities && venue.amenities.length > 0) || getContributionsByType('amenities').length > 0) && (
-            <View style={[
-              styles.modernCard, 
-              { 
-                backgroundColor: theme.colors.surface,
-                borderColor: '#52C41A' + '60',
-                borderWidth: 2,
-              }
-            ]}>
-              <TouchableOpacity
-                onPress={() => handleIconPress('amenities')}
-                style={styles.modernCardHeader}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.modernCardTitle, { color: '#52C41A' }]}>Amenities</Text>
-                <View style={[styles.modernCardIcon, { backgroundColor: '#52C41A' + '20' }]}>
-                  <Icon name="checkmark-circle-outline" size={20} color="#52C41A" />
-                </View>
-              </TouchableOpacity>
-              <View style={styles.modernCardContent}>
-                {getCombinedData('amenities', venue.amenities || []).map((amenity, index) => {
-                  const contribution = getContributionsByType('amenities').find(c => c.option_text === amenity);
-                  const isUserContrib = isUserContribution('amenities', amenity);
-                  return (
-                    <View key={index} style={[
-                      styles.modernChip,
-                      {
-                        backgroundColor: '#52C41A' + '40',
-                        borderColor: '#52C41A' + '60',
-                        borderWidth: isUserContrib ? 2 : 1,
-                      }
-                    ]}>
-                      <Text style={[styles.modernChipText, {
-                        color: '#52C41A',
-                        fontFamily: isUserContrib ? 'Inter-SemiBold' : 'Inter-Medium',
-                      }]}>
-                        {amenity}
-                      </Text>
-                      {isUserContrib && (
-                        <Icon name="person" size={10} color="#52C41A" style={styles.userChipIcon} />
-                      )}
-                      {contribution && contribution.count > 0 && (
-                        <Text style={[styles.chipCount, { color: '#52C41A' }]}>
-                          {contribution.count}
-                        </Text>
-                      )}
-                    </View>
-                  );
-                })}
+          <View style={[
+            styles.modernCard, 
+            { 
+              backgroundColor: theme.colors.surface,
+              borderColor: '#52C41A' + '60',
+              borderWidth: 2,
+            }
+          ]}>
+            <TouchableOpacity
+              onPress={() => handleIconPress('amenities')}
+              style={styles.modernCardHeader}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.modernCardTitle, { color: '#52C41A' }]}>Amenities</Text>
+              <View style={[styles.modernCardIcon, { backgroundColor: '#52C41A' + '20' }]}>
+                <Icon name="checkmark-circle-outline" size={20} color="#52C41A" />
               </View>
+            </TouchableOpacity>
+            <View style={styles.modernCardContent}>
+              {(amenitiesData.length > 0 ? amenitiesData : defaultAmenities).map((amenity, index) => {
+                const contribution = getContributionsByType('amenities').find(c => c.option_text === amenity);
+                const isUserContrib = isUserContribution('amenities', amenity);
+                const isDefault = amenitiesData.length === 0;
+                return (
+                  <View key={index} style={[
+                    styles.modernChip,
+                    {
+                      backgroundColor: '#52C41A' + (isDefault ? '20' : '40'),
+                      borderColor: '#52C41A' + (isDefault ? '40' : '60'),
+                      borderWidth: isUserContrib ? 2 : 1,
+                      opacity: isDefault ? 0.6 : 1,
+                    }
+                  ]}>
+                    <Text style={[styles.modernChipText, {
+                      color: '#52C41A',
+                      fontFamily: isUserContrib ? 'Inter-SemiBold' : 'Inter-Medium',
+                    }]}>
+                      {amenity}
+                    </Text>
+                    {isUserContrib && (
+                      <Icon name="person" size={10} color="#52C41A" style={styles.userChipIcon} />
+                    )}
+                    {contribution && contribution.count > 0 && (
+                      <Text style={[styles.chipCount, { color: '#52C41A' }]}>
+                        {contribution.count}
+                      </Text>
+                    )}
+                  </View>
+                );
+              })}
             </View>
-          )}
+          </View>
         </View>
       </View>
 
@@ -993,5 +1003,13 @@ const styles = StyleSheet.create({
   userChipIcon: {
     marginLeft: 4,
     opacity: 0.8,
+  },
+  emptyCardText: {
+    fontSize: 12,
+    fontFamily: 'Inter-Regular',
+    fontStyle: 'italic',
+    textAlign: 'center',
+    alignSelf: 'center',
+    marginTop: 8,
   },
 });

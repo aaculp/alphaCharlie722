@@ -13,11 +13,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, RouteProp } from '@react-navigation/native';
 import type { SearchStackParamList, HomeStackParamList, Venue } from '../../types';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { VenueService } from '../../services/api/venues';
-import { useCheckInStats } from '../../hooks';
+import { useCheckInStats, useCollections, useFriends } from '../../hooks';
 import { ModernVenueCards } from '../../components/venue/VenueInfoComponents';
 import { VenueCustomerCount } from '../../components/venue';
 import { UserFeedback } from '../../components/checkin';
+import { QuickShareButton, CollectionManager, MutualFavoritesIndicator } from '../../components/social';
 import { getActivityLevel } from '../../utils/formatting';
 import Icon from 'react-native-vector-icons/Ionicons';
 
@@ -155,6 +157,7 @@ const VenueDetailScreen: React.FC = () => {
   const route = useRoute<VenueDetailRouteProp>();
   const { venueId } = route.params;
   const { theme } = useTheme();
+  const { user } = useAuth();
   const scrollViewRef = useRef<ScrollView>(null);
   const [venue, setVenue] = useState<Venue | null>(null);
   const [loading, setLoading] = useState(true);
@@ -166,6 +169,20 @@ const VenueDetailScreen: React.FC = () => {
   });
   
   const checkInStats = stats.get(venueId) || null;
+
+  // Use useCollections hook for collection management
+  const {
+    collections,
+    loading: collectionsLoading,
+    createCollection,
+    addVenue: addVenueToCollection,
+  } = useCollections();
+
+  // Use useFriends hook for friend management
+  const {
+    friends,
+    loading: friendsLoading,
+  } = useFriends();
 
   // Fetch venue details (try Supabase first, fallback to mock data)
   useEffect(() => {
@@ -195,6 +212,30 @@ const VenueDetailScreen: React.FC = () => {
 
     fetchVenueDetails();
   }, [venueId]);
+
+  // Collection handlers
+  const handleAddToCollections = async (collectionIds: string[]) => {
+    // Add venue to selected collections
+    const promises = collectionIds.map(collectionId => 
+      addVenueToCollection(collectionId, venueId)
+    );
+    await Promise.all(promises);
+  };
+
+  const handleCreateCollection = async (name: string, privacyLevel: any) => {
+    const collection = await createCollection({
+      name,
+      privacy_level: privacyLevel,
+      description: '',
+    });
+    return collection?.id || '';
+  };
+
+  // Share handler
+  const handleShare = async (friendIds: string[], message?: string) => {
+    // TODO: Implement venue sharing functionality
+    console.log('Sharing venue with friends:', { friendIds, message, venueId });
+  };
 
   // Scroll to top when screen loads
   useEffect(() => {
@@ -257,8 +298,43 @@ const VenueDetailScreen: React.FC = () => {
         
         <View style={[styles.content, { backgroundColor: theme.colors.surface }]}>
           <View style={styles.header}>
-            <Text style={[styles.venueName, { color: theme.colors.text }]}>{venue.name}</Text>
-            <Text style={[styles.category, { color: theme.colors.textSecondary }]}>{venue.category} • {venue.price_range}</Text>
+            <View style={styles.headerTop}>
+              <View style={styles.headerLeft}>
+                <Text style={[styles.venueName, { color: theme.colors.text }]}>{venue.name}</Text>
+                <Text style={[styles.category, { color: theme.colors.textSecondary }]}>{venue.category} • {venue.price_range}</Text>
+              </View>
+              
+              {/* Social Action Buttons */}
+              {user && (
+                <View style={styles.socialActions}>
+                  <QuickShareButton 
+                    venueId={venue.id}
+                    venueName={venue.name}
+                    friends={friends}
+                    onShare={handleShare}
+                    loading={friendsLoading}
+                  />
+                  <CollectionManager 
+                    venueId={venue.id}
+                    venueName={venue.name}
+                    collections={collections}
+                    onAddToCollections={handleAddToCollections}
+                    onCreateCollection={handleCreateCollection}
+                    loading={collectionsLoading}
+                  />
+                </View>
+              )}
+            </View>
+            
+            {/* Mutual Favorites Indicator */}
+            {user && (
+              <MutualFavoritesIndicator 
+                friends={[]}
+                onFriendPress={(friendId) => {
+                  console.log('Show friend profile:', friendId);
+                }}
+              />
+            )}
             
             {/* Engagement Row - Activity Level and Customer Count */}
             <View style={styles.engagementRow}>
@@ -388,6 +464,20 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: 20,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  headerLeft: {
+    flex: 1,
+  },
+  socialActions: {
+    flexDirection: 'row',
+    gap: 8,
+    marginLeft: 12,
   },
   engagementRow: {
     flexDirection: 'row',
