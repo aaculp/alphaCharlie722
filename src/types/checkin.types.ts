@@ -19,3 +19,41 @@ export interface VenueCheckInStats {
   user_checkin_id?: string;
   user_checkin_time?: string; // ISO string of when user checked in
 }
+
+// Check-in with venue details
+export interface CheckInWithVenue {
+  id: string;
+  venue_id: string;
+  user_id: string;
+  checked_in_at: string;
+  checked_out_at: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  venue: {
+    id: string;
+    name: string;
+    location: string;
+    category: string;
+    image_url: string | null;
+    rating: number;
+    latitude: number | null;
+    longitude: number | null;
+    max_capacity: number | null;
+  };
+}
+
+// Check-in history query options
+export interface CheckInHistoryOptions {
+  userId: string;
+  limit?: number;
+  offset?: number;
+  daysBack?: number; // Default: 30
+}
+
+// Check-in history response
+export interface CheckInHistoryResponse {
+  checkIns: CheckInWithVenue[];
+  hasMore: boolean;
+  total: number;
+}

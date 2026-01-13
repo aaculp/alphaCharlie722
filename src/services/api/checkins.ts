@@ -1,5 +1,5 @@
 import { supabase } from '../../lib/supabase';
-import type { CheckIn, VenueCheckInStats } from '../../types';
+import type { CheckIn, VenueCheckInStats, CheckInWithVenue, CheckInHistoryOptions, CheckInHistoryResponse } from '../../types';
 
 export class CheckInService {
   // Check into a venue
@@ -277,6 +277,140 @@ export class CheckInService {
     } catch (error) {
       console.error('Error getting current check-in with venue:', error);
       return null;
+    }
+  }
+
+  // Get user's check-in history with venue details
+  static async getUserCheckInHistory(options: CheckInHistoryOptions): Promise<CheckInHistoryResponse> {
+    try {
+      const { userId, limit = 50, offset = 0, daysBack = 30 } = options;
+
+      // Calculate the date threshold
+      const dateThreshold = new Date();
+      dateThreshold.setDate(dateThreshold.getDate() - daysBack);
+      const dateThresholdISO = dateThreshold.toISOString();
+
+      // Build the query
+      let query = supabase
+        .from('check_ins')
+        .select(`
+          id,
+          venue_id,
+          user_id,
+          checked_in_at,
+          checked_out_at,
+          is_active,
+          created_at,
+          updated_at,
+          venues!inner(
+            id,
+            name,
+            location,
+            category,
+            image_url,
+            rating,
+            latitude,
+            longitude,
+            max_capacity
+          )
+        `, { count: 'exact' })
+        .eq('user_id', userId)
+        .gte('checked_in_at', dateThresholdISO)
+        .order('checked_in_at', { ascending: false })
+        .range(offset, offset + limit - 1);
+
+      const { data, error, count } = await query;
+
+      if (error) {
+        throw new Error(`Failed to fetch check-in history: ${error.message}`);
+      }
+
+      // Transform the data to match CheckInWithVenue interface
+      const checkIns: CheckInWithVenue[] = (data || []).map((item: any) => ({
+        id: item.id,
+        venue_id: item.venue_id,
+        user_id: item.user_id,
+        checked_in_at: item.checked_in_at,
+        checked_out_at: item.checked_out_at,
+        is_active: item.is_active,
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+        venue: {
+          id: item.venues.id,
+          name: item.venues.name,
+          location: item.venues.location,
+          category: item.venues.category,
+          image_url: item.venues.image_url,
+          rating: item.venues.rating,
+          latitude: item.venues.latitude,
+          longitude: item.venues.longitude,
+          max_capacity: item.venues.max_capacity
+        }
+      }));
+
+      const total = count || 0;
+      const hasMore = offset + limit < total;
+
+      return {
+        checkIns,
+        hasMore,
+        total
+      };
+    } catch (error) {
+      console.error('Error getting user check-in history:', error);
+      throw error;
+    }
+  }
+
+  // Get visit count for a specific venue
+  static async getUserVenueVisitCount(userId: string, venueId: string): Promise<number> {
+    try {
+      const { count, error } = await supabase
+        .from('check_ins')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .eq('venue_id', venueId);
+
+      if (error) {
+        throw new Error(`Failed to get venue visit count: ${error.message}`);
+      }
+
+      return count || 0;
+    } catch (error) {
+      console.error('Error getting venue visit count:', error);
+      throw error;
+    }
+  }
+
+  // Get visit counts for multiple venues (batch)
+  static async getUserVenueVisitCounts(userId: string, venueIds: string[]): Promise<Map<string, number>> {
+    try {
+      const { data, error } = await supabase
+        .from('check_ins')
+        .select('venue_id')
+        .eq('user_id', userId)
+        .in('venue_id', venueIds);
+
+      if (error) {
+        throw new Error(`Failed to get venue visit counts: ${error.message}`);
+      }
+
+      // Count occurrences of each venue_id
+      const counts = new Map<string, number>();
+      
+      // Initialize all venues with 0
+      venueIds.forEach(venueId => counts.set(venueId, 0));
+      
+      // Count check-ins per venue
+      (data || []).forEach(checkIn => {
+        const currentCount = counts.get(checkIn.venue_id) || 0;
+        counts.set(checkIn.venue_id, currentCount + 1);
+      });
+
+      return counts;
+    } catch (error) {
+      console.error('Error getting venue visit counts:', error);
+      throw error;
     }
   }
 }

@@ -22,6 +22,7 @@ import { CheckInService } from '../../services/api/checkins';
 import { populateVenuesDatabase } from '../../utils/populateVenues';
 import { TestVenueCard } from '../../components/venue';
 import { QuickPickChip } from '../../components/quickpicks';
+import { RecentCheckInsSection } from '../../components/checkin';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<HomeStackParamList, 'HomeList'>;
@@ -367,6 +368,18 @@ const HomeScreen: React.FC = () => {
             ))}
           </ScrollView>
         </View>
+
+        {/* Recent Check-Ins Section */}
+        {user && (
+          <RecentCheckInsSection
+            onVenuePress={(venueId, venueName) => {
+              navigation.navigate('VenueDetail', {
+                venueId,
+                venueName,
+              });
+            }}
+          />
+        )}
 
         {filteredVenues.length > 0 ? (
           <View style={styles.venueList}>

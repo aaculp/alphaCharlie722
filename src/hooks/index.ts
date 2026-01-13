@@ -74,3 +74,17 @@ export type { UseCheckInStatsOptions, UseCheckInStatsReturn } from './useCheckIn
  */
 export { useCheckInActions } from './useCheckInActions';
 export type { UseCheckInActionsOptions, UseCheckInActionsReturn } from './useCheckInActions';
+
+/**
+ * useCheckInHistory - Fetches user's check-in history with pagination
+ * 
+ * @example
+ * ```tsx
+ * const { checkIns, loading, refetch, loadMore, hasMore } = useCheckInHistory({
+ *   enabled: true,
+ *   daysBack: 30
+ * });
+ * ```
+ */
+export { useCheckInHistory } from './useCheckInHistory';
+export type { UseCheckInHistoryOptions, UseCheckInHistoryReturn } from './useCheckInHistory';

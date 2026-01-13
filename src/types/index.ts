@@ -36,4 +36,7 @@ export type {
 export type {
   CheckIn,
   VenueCheckInStats,
+  CheckInWithVenue,
+  CheckInHistoryOptions,
+  CheckInHistoryResponse,
 } from './checkin.types';

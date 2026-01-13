@@ -3,6 +3,8 @@
  * 
  * This module exports utilities for formatting data including:
  * - Activity level calculations and formatting
+ * - Time and duration formatting
  */
 
 export * from './activity';
+export * from './time';
