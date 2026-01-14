@@ -104,6 +104,7 @@ const NewVenuesSpotlightCarousel: React.FC<NewVenuesSpotlightCarouselProps> = ({
             text: 'NEW',
           }}
           subtitle={signupText || undefined}
+          showEngagementStats={false}
         />
       </View>
     );

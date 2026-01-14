@@ -110,6 +110,7 @@ const RecentCheckInsSection: React.FC<RecentCheckInsSectionProps> = ({ onVenuePr
                   venue={checkIn.venue}
                   onPress={() => onVenuePress(checkIn.venue_id, checkIn.venue.name)}
                   subtitle={formattedTime}
+                  showEngagementStats={true}
                   checkInCount={stats?.active_checkins || 0}
                   maxCapacity={checkIn.venue.max_capacity || 100}
                 />

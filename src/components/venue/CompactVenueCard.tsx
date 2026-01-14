@@ -31,12 +31,10 @@ interface CompactVenueCardProps {
   // Optional subtitle (e.g., "Opened 2 days ago", "Visited 3 days ago")
   subtitle?: string;
   
-  // Optional engagement stats
+  // Engagement stats (required together for Recently Visited cards)
+  showEngagementStats?: boolean;
   checkInCount?: number;
   maxCapacity?: number;
-  
-  // Optional border color override
-  borderColor?: string;
 }
 
 /**
@@ -49,29 +47,48 @@ interface CompactVenueCardProps {
  * - Compact 140px width design
  * - Optional badge (NEW, FAVORITE, etc.)
  * - Optional subtitle text
- * - Optional engagement stats
- * - Customizable border color
+ * - Optional engagement stats with colored borders (for Recently Visited)
+ * - Automatic border color based on engagement level
+ * 
+ * Usage:
+ * 
+ * // New Venues (no engagement stats, default border)
+ * <CompactVenueCard
+ *   venue={venue}
+ *   onPress={handlePress}
+ *   badge={{ icon: 'sparkles', text: 'NEW' }}
+ *   subtitle="Opened 2 days ago"
+ *   showEngagementStats={false}
+ * />
+ * 
+ * // Recently Visited (with engagement stats and colored border)
+ * <CompactVenueCard
+ *   venue={venue}
+ *   onPress={handlePress}
+ *   subtitle="Visited 3 days ago"
+ *   showEngagementStats={true}
+ *   checkInCount={15}
+ *   maxCapacity={50}
+ * />
  */
 const CompactVenueCard: React.FC<CompactVenueCardProps> = ({
   venue,
   onPress,
   badge,
   subtitle,
-  checkInCount,
-  maxCapacity,
-  borderColor: customBorderColor,
+  showEngagementStats = false,
+  checkInCount = 0,
+  maxCapacity = 100,
 }) => {
   const { theme } = useTheme();
 
-  // Calculate engagement color if stats are provided
-  const engagementColor = useEngagementColor(
-    checkInCount || 0,
-    maxCapacity || 100
-  );
+  // Calculate engagement color if stats should be shown
+  const engagementColor = useEngagementColor(checkInCount, maxCapacity);
 
-  // Use custom border color or engagement color or default
-  const borderColor = customBorderColor || 
-    (checkInCount !== undefined ? engagementColor.borderColor : theme.colors.border);
+  // Use engagement color for border if showing stats, otherwise use default
+  const borderColor = showEngagementStats 
+    ? engagementColor.borderColor 
+    : theme.colors.border;
 
   return (
     <TouchableOpacity
@@ -143,7 +160,7 @@ const CompactVenueCard: React.FC<CompactVenueCardProps> = ({
         </View>
 
         {/* Optional Engagement Stats */}
-        {checkInCount !== undefined && maxCapacity !== undefined && (
+        {showEngagementStats && (
           <View style={styles.statsRow}>
             <VenueCustomerCount
               count={checkInCount}
