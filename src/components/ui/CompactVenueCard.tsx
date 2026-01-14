@@ -9,7 +9,7 @@ import {
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useEngagementColor } from '../../hooks/useEngagementColor';
-import VenueCustomerCount from './VenueCustomerCount';
+import VenueCustomerCountChip from './VenueCustomerCountChip';
 import type { Venue } from '../../types';
 
 // Partial venue type for compact display
@@ -162,7 +162,7 @@ const CompactVenueCard: React.FC<CompactVenueCardProps> = ({
         {/* Optional Engagement Stats */}
         {showEngagementStats && (
           <View style={styles.statsRow}>
-            <VenueCustomerCount
+            <VenueCustomerCountChip
               count={checkInCount}
               maxCapacity={maxCapacity}
               size="small"

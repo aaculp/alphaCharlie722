@@ -20,7 +20,8 @@ import { useLocation } from '../../hooks/useLocation';
 import { LocationService } from '../../services/locationService';
 import { CheckInService } from '../../services/api/checkins';
 import { populateVenuesDatabase } from '../../utils/populateVenues';
-import { TestVenueCard, NewVenuesSpotlightCarousel } from '../../components/venue';
+import { TestVenueCard } from '../../components/venue';
+import { VenuesCarouselSection } from '../../components/ui';
 import { QuickPickChip } from '../../components/quickpicks';
 import { RecentCheckInsSection } from '../../components/checkin';
 import { FriendVenueCarousel, SharedCollectionCarousel, FriendActivityFeed } from '../../components/social';
@@ -384,7 +385,7 @@ const HomeScreen: React.FC = () => {
         </View>
 
         {/* New Venues Spotlight Section */}
-        <NewVenuesSpotlightCarousel
+        <VenuesCarouselSection
           venues={newVenues}
           onVenuePress={(venueId) => {
             const venue = newVenues.find(v => v.id === venueId);
@@ -396,7 +397,9 @@ const HomeScreen: React.FC = () => {
             }
           }}
           loading={newVenuesLoading}
-          userLocation={location}
+          title="New Venues"
+          icon="sparkles"
+          showNewBadge={true}
         />
 
         {/* Recent Check-Ins Section */}

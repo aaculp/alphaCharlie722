@@ -5,7 +5,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useEngagementColor } from '../../hooks/useEngagementColor';
 
 /**
- * VenueCustomerCount - Displays customer count with person icon and customizable background colors
+ * VenueCustomerCountChip - Displays customer count with person icon and customizable background colors
  * 
  * Available variants:
  * - 'themed': Uses glassmorphism theme colors (default)
@@ -15,14 +15,14 @@ import { useEngagementColor } from '../../hooks/useEngagementColor';
  * - 'warning': Uses theme warning color (orange)
  * - 'error': Uses theme error color (red)
  */
-interface VenueCustomerCountProps {
+interface VenueCustomerCountChipProps {
   count: number;
   maxCapacity?: number; // Added to support traffic light colors
   size?: 'small' | 'medium' | 'large';
   variant?: 'themed' | 'traffic' | 'primary' | 'success' | 'warning' | 'error';
 }
 
-const VenueCustomerCount: React.FC<VenueCustomerCountProps> = ({
+const VenueCustomerCountChip: React.FC<VenueCustomerCountChipProps> = ({
   count,
   maxCapacity = 100, // Default capacity for traffic light calculation
   size = 'medium',
@@ -143,4 +143,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default VenueCustomerCount;
+export default VenueCustomerCountChip;

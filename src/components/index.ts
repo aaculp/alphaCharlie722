@@ -12,9 +12,7 @@ export { default as UserSignUpForm } from './UserSignUpForm';
 // Re-export all venue components from the venue domain folder
 export { 
   TestVenueCard,
-  VenueCustomerCount,
   VenueCardDialog,
-  VenueEngagementChip,
   VenueSignUpForm,
   WaitTimesCard,
   PopularItemsCard,
@@ -45,3 +43,11 @@ export {
 export {
   OTWLogo
 } from './shared';
+
+// Re-export all UI components from the ui domain folder
+export {
+  VenueCustomerCountChip,
+  VenueEngagementChip,
+  CompactVenueCard,
+  VenuesCarouselSection
+} from './ui';

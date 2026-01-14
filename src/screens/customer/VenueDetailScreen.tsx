@@ -17,7 +17,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { VenueService } from '../../services/api/venues';
 import { useCheckInStats, useCollections, useFriends } from '../../hooks';
 import { ModernVenueCards } from '../../components/venue/VenueInfoComponents';
-import { VenueCustomerCount } from '../../components/venue';
+import { VenueCustomerCountChip } from '../../components/ui';
 import { UserFeedback } from '../../components/checkin';
 import { QuickShareButton, CollectionManager, MutualFavoritesIndicator } from '../../components/social';
 import { getActivityLevel } from '../../utils/formatting';
@@ -362,7 +362,7 @@ const VenueDetailScreen: React.FC = () => {
               
               {/* Customer Count */}
               {checkInStats && (
-                <VenueCustomerCount 
+                <VenueCustomerCountChip 
                   count={checkInStats.active_checkins}
                   size="medium"
                 />

@@ -12,28 +12,37 @@ import { CarouselSkeleton } from '../social/SkeletonLoaders';
 import { calculateDaysSinceSignup, formatSignupText } from '../../utils/formatting/venue';
 import CompactVenueCard from './CompactVenueCard';
 
-interface NewVenuesSpotlightCarouselProps {
+interface VenuesCarouselSectionProps {
   venues: Venue[];
   onVenuePress: (venueId: string) => void;
   loading?: boolean;
   error?: Error | null;
-  userLocation?: { latitude: number; longitude: number } | null;
+  title?: string;
+  icon?: string;
+  showNewBadge?: boolean;
 }
 
 /**
- * NewVenuesSpotlightCarousel Component
+ * VenuesCarouselSection Component
  * 
- * Displays a horizontal scrolling carousel of newly signed up venues.
- * Shows "NEW" badge and days since signup for each venue.
+ * A reusable horizontal scrolling carousel for displaying venues.
+ * Can be used for New Venues, Featured Venues, or any venue list.
  * 
- * Requirements: 1.1, 1.5, 7.1, 7.2
+ * Features:
+ * - Horizontal scrolling with snap behavior
+ * - Optional "NEW" badge for new venues
+ * - Loading skeleton states
+ * - Empty state handling
+ * - Customizable title and icon
  */
-const NewVenuesSpotlightCarousel: React.FC<NewVenuesSpotlightCarouselProps> = ({
+const VenuesCarouselSection: React.FC<VenuesCarouselSectionProps> = ({
   venues,
   onVenuePress,
   loading = false,
   error = null,
-  userLocation,
+  title = 'New Venues',
+  icon = 'sparkles',
+  showNewBadge = true,
 }) => {
   const { theme } = useTheme();
 
@@ -54,7 +63,7 @@ const NewVenuesSpotlightCarousel: React.FC<NewVenuesSpotlightCarouselProps> = ({
             ]}
           >
             <Icon
-              name="sparkles"
+              name={icon}
               size={20}
               color={theme.colors.primary}
             />
@@ -75,7 +84,7 @@ const NewVenuesSpotlightCarousel: React.FC<NewVenuesSpotlightCarouselProps> = ({
 
   // Hide section if no venues
   if (venues.length === 0) {
-    console.log('NewVenuesSpotlightCarousel: Hidden due to no available venues', {
+    console.log('VenuesCarouselSection: Hidden due to no available venues', {
       timestamp: new Date().toISOString(),
       venuesCount: venues.length,
       loading,
@@ -99,10 +108,10 @@ const NewVenuesSpotlightCarousel: React.FC<NewVenuesSpotlightCarouselProps> = ({
         <CompactVenueCard
           venue={venue}
           onPress={() => onVenuePress(venue.id)}
-          badge={{
+          badge={showNewBadge ? {
             icon: 'sparkles',
             text: 'NEW',
-          }}
+          } : undefined}
           subtitle={signupText || undefined}
           showEngagementStats={true}
           checkInCount={0}
@@ -115,8 +124,8 @@ const NewVenuesSpotlightCarousel: React.FC<NewVenuesSpotlightCarouselProps> = ({
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header} accessibilityLabel="New Venues Spotlight">
-        {/* Sparkles Icon */}
+      <View style={styles.header} accessibilityLabel={`${title} section`}>
+        {/* Icon */}
         <View
           style={[
             styles.iconContainer,
@@ -124,7 +133,7 @@ const NewVenuesSpotlightCarousel: React.FC<NewVenuesSpotlightCarouselProps> = ({
           ]}
         >
           <Icon
-            name="sparkles"
+            name={icon}
             size={20}
             color={theme.colors.primary}
           />
@@ -138,7 +147,7 @@ const NewVenuesSpotlightCarousel: React.FC<NewVenuesSpotlightCarouselProps> = ({
               { color: theme.colors.text }
             ]}
           >
-            New Venues
+            {title}
           </Text>
         </View>
       </View>
@@ -153,7 +162,7 @@ const NewVenuesSpotlightCarousel: React.FC<NewVenuesSpotlightCarouselProps> = ({
         contentContainerStyle={styles.carouselContent}
         snapToInterval={140 + 12} // Card width + margin
         decelerationRate="fast"
-        accessibilityLabel="New venues carousel"
+        accessibilityLabel={`${title} carousel`}
       />
     </View>
   );
@@ -197,4 +206,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default NewVenuesSpotlightCarousel;
+export default VenuesCarouselSection;

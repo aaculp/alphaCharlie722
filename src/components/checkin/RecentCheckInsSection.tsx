@@ -12,7 +12,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useCheckInHistory } from '../../hooks/useCheckInHistory';
 import { CheckInService } from '../../services/api/checkins';
 import { formatCheckInTime } from '../../utils/formatting/time';
-import { CompactVenueCard } from '../venue';
+import { CompactVenueCard } from '../ui';
 import type { CheckInWithVenue, VenueCheckInStats } from '../../types';
 
 interface RecentCheckInsSectionProps {

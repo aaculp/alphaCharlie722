@@ -1,0 +1,10 @@
+/**
+ * UI Components
+ * 
+ * Reusable UI components used across the application.
+ */
+
+export { default as VenueCustomerCountChip } from './VenueCustomerCountChip';
+export { default as VenueEngagementChip } from './VenueEngagementChip';
+export { default as CompactVenueCard } from './CompactVenueCard';
+export { default as VenuesCarouselSection } from './VenuesCarouselSection';

@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '../../contexts/ThemeContext';
-import { VenueCustomerCount, VenueEngagementChip } from './index';
+import { VenueCustomerCountChip, VenueEngagementChip } from '../ui';
 import { CheckInButton } from '../checkin';
 import { useEngagementColor } from '../../hooks/useEngagementColor';
 import type { Venue } from '../../types';
@@ -137,7 +137,7 @@ const TestVenueCard: React.FC<TestVenueCardProps> = ({
 
           {/* Right Side - Engagement Elements */}
           <View style={styles.rightContent}>
-            <VenueCustomerCount
+            <VenueCustomerCountChip
               count={localCheckInCount}
               maxCapacity={venue.max_capacity || 100}
               size="small"
