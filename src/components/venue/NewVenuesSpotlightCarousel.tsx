@@ -104,7 +104,9 @@ const NewVenuesSpotlightCarousel: React.FC<NewVenuesSpotlightCarouselProps> = ({
             text: 'NEW',
           }}
           subtitle={signupText || undefined}
-          showEngagementStats={false}
+          showEngagementStats={true}
+          checkInCount={0}
+          maxCapacity={venue.max_capacity || 100}
         />
       </View>
     );
