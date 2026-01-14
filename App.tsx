@@ -11,6 +11,7 @@ import { ThemeProvider, useTheme } from './src/contexts/ThemeContext';
 import { GridLayoutProvider } from './src/contexts/GridLayoutContext';
 import { NavigationStyleProvider } from './src/contexts/NavigationStyleContext';
 import { LocationProvider } from './src/contexts/LocationContext';
+import { NotificationProvider } from './src/contexts/NotificationContext';
 import AppNavigator from './src/navigation/AppNavigator';
 
 function AppContent() {
@@ -52,7 +53,9 @@ function App() {
           <NavigationStyleProvider>
             <LocationProvider>
               <AuthProvider>
-                <AppContent />
+                <NotificationProvider>
+                  <AppContent />
+                </NotificationProvider>
               </AuthProvider>
             </LocationProvider>
           </NavigationStyleProvider>

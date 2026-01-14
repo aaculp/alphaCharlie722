@@ -176,4 +176,67 @@ export class VenueService {
 
     return data || [];
   }
+
+  // Get new venues for spotlight section (venues signed up within last 30 days)
+  static async getNewVenues(limit: number = 10) {
+    console.log('🆕 Fetching new venues...', { limit, timestamp: new Date().toISOString() });
+    
+    // Calculate the date 30 days ago in JavaScript
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const thirtyDaysAgoISO = thirtyDaysAgo.toISOString();
+    
+    console.log('📅 Date filter:', { thirtyDaysAgoISO });
+
+    const { data, error } = await supabase
+      .from('venues')
+      .select(`
+        *,
+        venue_business_accounts!inner(
+          created_at,
+          account_status,
+          verification_status
+        )
+      `)
+      .gte('venue_business_accounts.created_at', thirtyDaysAgoISO)
+      .eq('venue_business_accounts.account_status', 'active')
+      .eq('venue_business_accounts.verification_status', 'verified')
+      .limit(limit * 2); // Fetch more to account for sorting
+
+    console.log('📊 Raw query result:', { 
+      dataCount: data?.length || 0, 
+      hasError: !!error,
+      errorMessage: error?.message,
+      firstVenue: data?.[0] ? { 
+        id: data[0].id, 
+        name: data[0].name,
+        business_account: data[0].venue_business_accounts 
+      } : null
+    });
+
+    if (error) {
+      throw new Error(`Failed to fetch new venues: ${error.message}`);
+    }
+
+    // Transform the data to include signup_date at the top level
+    const venues = (data || []).map(venue => ({
+      ...venue,
+      signup_date: venue.venue_business_accounts?.created_at || null,
+      venue_business_accounts: undefined, // Remove nested object
+    }));
+
+    console.log('✅ Transformed venues:', { 
+      count: venues.length,
+      venues: venues.map(v => ({ id: v.id, name: v.name, signup_date: v.signup_date }))
+    });
+
+    // Sort by signup_date descending (newest first) and limit
+    return venues
+      .sort((a, b) => {
+        const dateA = a.signup_date ? new Date(a.signup_date).getTime() : 0;
+        const dateB = b.signup_date ? new Date(b.signup_date).getTime() : 0;
+        return dateB - dateA; // Descending order
+      })
+      .slice(0, limit);
+  }
 }

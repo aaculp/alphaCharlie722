@@ -15,14 +15,15 @@ import type { Venue, HomeStackParamList } from '../../types';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useLocationContext } from '../../contexts/LocationContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { useVenues, useCheckInStats } from '../../hooks';
+import { useVenues, useCheckInStats, useNewVenues } from '../../hooks';
 import { useLocation } from '../../hooks/useLocation';
 import { LocationService } from '../../services/locationService';
 import { CheckInService } from '../../services/api/checkins';
 import { populateVenuesDatabase } from '../../utils/populateVenues';
-import { TestVenueCard } from '../../components/venue';
+import { TestVenueCard, NewVenuesSpotlightCarousel } from '../../components/venue';
 import { QuickPickChip } from '../../components/quickpicks';
 import { RecentCheckInsSection } from '../../components/checkin';
+import { FriendVenueCarousel, SharedCollectionCarousel, FriendActivityFeed } from '../../components/social';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<HomeStackParamList, 'HomeList'>;
@@ -131,6 +132,7 @@ const HomeScreen: React.FC = () => {
   // Use custom hooks for data management
   const { venues, loading, error, refetch } = useVenues({ featured: true, limit: 10 });
   const { location, loading: locationLoading, error: locationError, refetch: refetchLocation } = useLocation();
+  const { venues: newVenues, loading: newVenuesLoading, refetch: refetchNewVenues } = useNewVenues();
 
   // Debug logging
   useEffect(() => {
@@ -143,6 +145,16 @@ const HomeScreen: React.FC = () => {
       sortByDistance
     });
   }, [venues.length, loading, error, locationEnabled, location, sortByDistance]);
+
+  // Debug logging for new venues (using useMemo to avoid hook order issues)
+  useMemo(() => {
+    console.log('🆕 HomeScreen newVenues state:', {
+      newVenuesCount: newVenues.length,
+      newVenuesLoading,
+      newVenues: newVenues.map(v => ({ id: v.id, name: v.name, signup_date: (v as any).signup_date })),
+    });
+    return null;
+  }, [newVenues, newVenuesLoading]);
 
   // Get venue IDs for check-in stats (memoized to prevent infinite loop)
   const venueIds = useMemo(() => venues.map(v => v.id), [venues]);
@@ -193,10 +205,11 @@ const HomeScreen: React.FC = () => {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await refetch();
-    if (sortByDistance && locationEnabled) {
-      await refetchLocation();
-    }
+    await Promise.all([
+      refetch(),
+      refetchNewVenues(),
+      sortByDistance && locationEnabled ? refetchLocation() : Promise.resolve()
+    ]);
     setRefreshing(false);
   };
 
@@ -333,6 +346,7 @@ const HomeScreen: React.FC = () => {
       )}
        */}
       <ScrollView
+        testID="home-scroll-view"
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -379,6 +393,52 @@ const HomeScreen: React.FC = () => {
               });
             }}
           />
+        )}
+
+        {/* New Venues Spotlight Section */}
+        <NewVenuesSpotlightCarousel
+          venues={newVenues}
+          onVenuePress={(venueId) => {
+            const venue = newVenues.find(v => v.id === venueId);
+            if (venue) {
+              navigation.navigate('VenueDetail', {
+                venueId: venue.id,
+                venueName: venue.name,
+              });
+            }
+          }}
+          loading={newVenuesLoading}
+          userLocation={location}
+        />
+
+        {/* Friends' Favorites Section */}
+        {user && (
+          <View style={styles.socialSection}>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Friends' Favorites</Text>
+            <Text style={[styles.comingSoonText, { color: theme.colors.textSecondary }]}>
+              See what venues your friends love - coming soon!
+            </Text>
+          </View>
+        )}
+
+        {/* Shared Collections Section */}
+        {user && (
+          <View style={styles.socialSection}>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Shared Collections</Text>
+            <Text style={[styles.comingSoonText, { color: theme.colors.textSecondary }]}>
+              Discover curated venue collections from friends - coming soon!
+            </Text>
+          </View>
+        )}
+
+        {/* Friend Activity Feed Section */}
+        {user && (
+          <View style={styles.socialSection}>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Friend Activity</Text>
+            <Text style={[styles.comingSoonText, { color: theme.colors.textSecondary }]}>
+              Stay updated with your friends' check-ins and favorites - coming soon!
+            </Text>
+          </View>
         )}
 
         {filteredVenues.length > 0 ? (
@@ -552,6 +612,22 @@ const styles = StyleSheet.create({
   emptySubtext: {
     fontSize: 14,
     fontFamily: 'Inter-Regular',
+  },
+  socialSection: {
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    fontFamily: 'Poppins-SemiBold',
+    paddingHorizontal: 15,
+    marginBottom: 12,
+  },
+  comingSoonText: {
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+    paddingHorizontal: 15,
+    fontStyle: 'italic',
   },
 });
 

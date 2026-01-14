@@ -88,3 +88,111 @@ export type { UseCheckInActionsOptions, UseCheckInActionsReturn } from './useChe
  */
 export { useCheckInHistory } from './useCheckInHistory';
 export type { UseCheckInHistoryOptions, UseCheckInHistoryReturn } from './useCheckInHistory';
+
+// Social Hooks
+
+/**
+ * useFriends - Manages friends and friend requests
+ * 
+ * @example
+ * ```tsx
+ * const {
+ *   friends,
+ *   closeFriends,
+ *   friendRequests,
+ *   loading,
+ *   sendFriendRequest,
+ *   acceptRequest,
+ *   removeFriend,
+ *   addCloseFriend,
+ * } = useFriends();
+ * ```
+ */
+export { useFriends } from './useFriends';
+export type { UseFriendsOptions, UseFriendsReturn } from './useFriends';
+
+/**
+ * useCollections - Manages user collections of venues
+ * 
+ * @example
+ * ```tsx
+ * const {
+ *   collections,
+ *   loading,
+ *   createCollection,
+ *   addVenue,
+ *   deleteCollection,
+ * } = useCollections();
+ * ```
+ */
+export { useCollections } from './useCollections';
+export type { UseCollectionsOptions, UseCollectionsReturn } from './useCollections';
+
+/**
+ * useSharedVenues - Manages venue sharing between users
+ * 
+ * @example
+ * ```tsx
+ * const {
+ *   receivedShares,
+ *   sentShares,
+ *   loading,
+ *   shareVenue,
+ *   markAsViewed,
+ * } = useSharedVenues();
+ * ```
+ */
+export { useSharedVenues } from './useSharedVenues';
+export type { UseSharedVenuesOptions, UseSharedVenuesReturn } from './useSharedVenues';
+
+/**
+ * useFriendActivity - Fetches and manages friend activity feed
+ * 
+ * @example
+ * ```tsx
+ * const {
+ *   activities,
+ *   loading,
+ *   hasMore,
+ *   loadMore,
+ *   refetch,
+ * } = useFriendActivity({
+ *   limit: 20,
+ *   filter: 'checkins',
+ * });
+ * ```
+ */
+export { useFriendActivity } from './useFriendActivity';
+export type { UseFriendActivityOptions, UseFriendActivityReturn } from './useFriendActivity';
+
+/**
+ * useSocialNotifications - Manages social notifications
+ * 
+ * @example
+ * ```tsx
+ * const {
+ *   notifications,
+ *   unreadCount,
+ *   loading,
+ *   markAsRead,
+ *   markAllAsRead,
+ * } = useSocialNotifications({
+ *   pollInterval: 30000,
+ * });
+ * ```
+ */
+export { useSocialNotifications } from './useSocialNotifications';
+export type { UseSocialNotificationsOptions, UseSocialNotificationsReturn } from './useSocialNotifications';
+
+/**
+ * useNewVenues - Fetches new venues in the spotlight period (last 30 days)
+ * 
+ * @example
+ * ```tsx
+ * const { venues, loading, error, refetch } = useNewVenues({
+ *   limit: 10
+ * });
+ * ```
+ */
+export { useNewVenues } from './useNewVenues';
+export type { UseNewVenuesOptions, UseNewVenuesReturn } from './useNewVenues';

@@ -126,25 +126,40 @@ jest.mock('react-native-vector-icons/MaterialCommunityIcons', () => 'Icon');
 // Mock react-native-url-polyfill
 jest.mock('react-native-url-polyfill/auto', () => {});
 
-// Mock Supabase
-jest.mock('@supabase/supabase-js', () => ({
-  createClient: jest.fn(() => ({
-    auth: {
-      signInWithPassword: jest.fn(),
-      signUp: jest.fn(),
-      signOut: jest.fn(),
-      getSession: jest.fn(),
-      onAuthStateChange: jest.fn(() => ({
-        data: { subscription: { unsubscribe: jest.fn() } },
-      })),
-    },
-    from: jest.fn(() => ({
-      select: jest.fn().mockReturnThis(),
-      insert: jest.fn().mockReturnThis(),
-      update: jest.fn().mockReturnThis(),
-      delete: jest.fn().mockReturnThis(),
-      eq: jest.fn().mockReturnThis(),
-      single: jest.fn(),
-    })),
-  })),
+// Mock react-native-haptic-feedback
+jest.mock('react-native-haptic-feedback', () => ({
+  __esModule: true,
+  default: {
+    trigger: jest.fn(),
+  },
+  trigger: jest.fn(),
 }));
+
+// Mock @react-native-community/geolocation
+jest.mock('@react-native-community/geolocation', () => ({
+  __esModule: true,
+  default: {
+    getCurrentPosition: jest.fn((success) =>
+      success({
+        coords: {
+          latitude: 40.7128,
+          longitude: -74.006,
+          accuracy: 10,
+          altitude: null,
+          altitudeAccuracy: null,
+          heading: null,
+          speed: null,
+        },
+        timestamp: Date.now(),
+      })
+    ),
+    watchPosition: jest.fn(() => 1),
+    clearWatch: jest.fn(),
+    stopObserving: jest.fn(),
+    setRNConfiguration: jest.fn(),
+    requestAuthorization: jest.fn(() => Promise.resolve('granted')),
+  },
+}));
+
+// Mock Supabase - use the comprehensive mock from src/lib/__mocks__/supabase.ts
+jest.mock('./src/lib/supabase');

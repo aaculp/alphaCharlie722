@@ -506,6 +506,529 @@ export interface Database {
           updated_at?: string;
         };
       };
+      // Social Friend System Tables
+      friendships: {
+        Row: {
+          id: string;
+          user_id_1: string;
+          user_id_2: string;
+          is_close_friend_1: boolean;
+          is_close_friend_2: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id_1: string;
+          user_id_2: string;
+          is_close_friend_1?: boolean;
+          is_close_friend_2?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id_1?: string;
+          user_id_2?: string;
+          is_close_friend_1?: boolean;
+          is_close_friend_2?: boolean;
+          created_at?: string;
+        };
+      };
+      friend_requests: {
+        Row: {
+          id: string;
+          from_user_id: string;
+          to_user_id: string;
+          status: 'pending' | 'accepted' | 'declined';
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          from_user_id: string;
+          to_user_id: string;
+          status?: 'pending' | 'accepted' | 'declined';
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          from_user_id?: string;
+          to_user_id?: string;
+          status?: 'pending' | 'accepted' | 'declined';
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      follows: {
+        Row: {
+          id: string;
+          follower_id: string;
+          following_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          follower_id: string;
+          following_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          follower_id?: string;
+          following_id?: string;
+          created_at?: string;
+        };
+      };
+      follow_requests: {
+        Row: {
+          id: string;
+          follower_id: string;
+          following_id: string;
+          status: 'pending' | 'approved' | 'denied';
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          follower_id: string;
+          following_id: string;
+          status?: 'pending' | 'approved' | 'denied';
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          follower_id?: string;
+          following_id?: string;
+          status?: 'pending' | 'approved' | 'denied';
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      privacy_settings: {
+        Row: {
+          user_id: string;
+          profile_visibility: 'public' | 'friends' | 'private';
+          checkin_visibility: 'public' | 'friends' | 'close_friends' | 'private';
+          favorite_visibility: 'public' | 'friends' | 'close_friends' | 'private';
+          default_collection_visibility: 'public' | 'friends' | 'close_friends' | 'private';
+          allow_follow_requests: boolean;
+          show_activity_status: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          profile_visibility?: 'public' | 'friends' | 'private';
+          checkin_visibility?: 'public' | 'friends' | 'close_friends' | 'private';
+          favorite_visibility?: 'public' | 'friends' | 'close_friends' | 'private';
+          default_collection_visibility?: 'public' | 'friends' | 'close_friends' | 'private';
+          allow_follow_requests?: boolean;
+          show_activity_status?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          profile_visibility?: 'public' | 'friends' | 'private';
+          checkin_visibility?: 'public' | 'friends' | 'close_friends' | 'private';
+          favorite_visibility?: 'public' | 'friends' | 'close_friends' | 'private';
+          default_collection_visibility?: 'public' | 'friends' | 'close_friends' | 'private';
+          allow_follow_requests?: boolean;
+          show_activity_status?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      blocked_users: {
+        Row: {
+          id: string;
+          blocker_id: string;
+          blocked_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          blocker_id: string;
+          blocked_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          blocker_id?: string;
+          blocked_id?: string;
+          created_at?: string;
+        };
+      };
+      user_reports: {
+        Row: {
+          id: string;
+          reporter_id: string;
+          reported_id: string;
+          reason: string;
+          status: 'pending' | 'reviewed' | 'resolved';
+          admin_notes: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          reporter_id: string;
+          reported_id: string;
+          reason: string;
+          status?: 'pending' | 'reviewed' | 'resolved';
+          admin_notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          reporter_id?: string;
+          reported_id?: string;
+          reason?: string;
+          status?: 'pending' | 'reviewed' | 'resolved';
+          admin_notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      collections: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          description: string | null;
+          privacy_level: 'public' | 'friends' | 'close_friends' | 'private';
+          cover_image_url: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          name: string;
+          description?: string | null;
+          privacy_level?: 'public' | 'friends' | 'close_friends' | 'private';
+          cover_image_url?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          name?: string;
+          description?: string | null;
+          privacy_level?: 'public' | 'friends' | 'close_friends' | 'private';
+          cover_image_url?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      collection_venues: {
+        Row: {
+          id: string;
+          collection_id: string;
+          venue_id: string;
+          order: number;
+          added_at: string;
+        };
+        Insert: {
+          id?: string;
+          collection_id: string;
+          venue_id: string;
+          order?: number;
+          added_at?: string;
+        };
+        Update: {
+          id?: string;
+          collection_id?: string;
+          venue_id?: string;
+          order?: number;
+          added_at?: string;
+        };
+      };
+      collection_follows: {
+        Row: {
+          id: string;
+          user_id: string;
+          collection_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          collection_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          collection_id?: string;
+          created_at?: string;
+        };
+      };
+      group_outings: {
+        Row: {
+          id: string;
+          creator_id: string;
+          venue_id: string;
+          title: string;
+          description: string | null;
+          scheduled_date: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          creator_id: string;
+          venue_id: string;
+          title: string;
+          description?: string | null;
+          scheduled_date: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          creator_id?: string;
+          venue_id?: string;
+          title?: string;
+          description?: string | null;
+          scheduled_date?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      group_outing_invites: {
+        Row: {
+          id: string;
+          group_outing_id: string;
+          user_id: string;
+          response: 'interested' | 'going' | 'cant_go' | 'no_response';
+          responded_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          group_outing_id: string;
+          user_id: string;
+          response?: 'interested' | 'going' | 'cant_go' | 'no_response';
+          responded_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          group_outing_id?: string;
+          user_id?: string;
+          response?: 'interested' | 'going' | 'cant_go' | 'no_response';
+          responded_at?: string | null;
+          created_at?: string;
+        };
+      };
+      venue_shares: {
+        Row: {
+          id: string;
+          from_user_id: string;
+          to_user_id: string;
+          venue_id: string;
+          message: string | null;
+          viewed: boolean;
+          viewed_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          from_user_id: string;
+          to_user_id: string;
+          venue_id: string;
+          message?: string | null;
+          viewed?: boolean;
+          viewed_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          from_user_id?: string;
+          to_user_id?: string;
+          venue_id?: string;
+          message?: string | null;
+          viewed?: boolean;
+          viewed_at?: string | null;
+          created_at?: string;
+        };
+      };
+      activity_feed: {
+        Row: {
+          id: string;
+          user_id: string;
+          activity_type: 'checkin' | 'favorite' | 'collection_created' | 'collection_updated' | 'group_outing';
+          venue_id: string | null;
+          collection_id: string | null;
+          group_outing_id: string | null;
+          privacy_level: 'public' | 'friends' | 'close_friends' | 'private';
+          metadata: Record<string, any>;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          activity_type: 'checkin' | 'favorite' | 'collection_created' | 'collection_updated' | 'group_outing';
+          venue_id?: string | null;
+          collection_id?: string | null;
+          group_outing_id?: string | null;
+          privacy_level: 'public' | 'friends' | 'close_friends' | 'private';
+          metadata?: Record<string, any>;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          activity_type?: 'checkin' | 'favorite' | 'collection_created' | 'collection_updated' | 'group_outing';
+          venue_id?: string | null;
+          collection_id?: string | null;
+          group_outing_id?: string | null;
+          privacy_level?: 'public' | 'friends' | 'close_friends' | 'private';
+          metadata?: Record<string, any>;
+          created_at?: string;
+        };
+      };
+      activity_likes: {
+        Row: {
+          id: string;
+          activity_id: string;
+          user_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          activity_id: string;
+          user_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          activity_id?: string;
+          user_id?: string;
+          created_at?: string;
+        };
+      };
+      activity_comments: {
+        Row: {
+          id: string;
+          activity_id: string;
+          user_id: string;
+          comment_text: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          activity_id: string;
+          user_id: string;
+          comment_text: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          activity_id?: string;
+          user_id?: string;
+          comment_text?: string;
+          created_at?: string;
+        };
+      };
+      social_notifications: {
+        Row: {
+          id: string;
+          user_id: string;
+          type: string;
+          actor_id: string | null;
+          reference_id: string | null;
+          title: string;
+          body: string;
+          data: Record<string, any>;
+          read: boolean;
+          read_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          type: string;
+          actor_id?: string | null;
+          reference_id?: string | null;
+          title: string;
+          body: string;
+          data?: Record<string, any>;
+          read?: boolean;
+          read_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          type?: string;
+          actor_id?: string | null;
+          reference_id?: string | null;
+          title?: string;
+          body?: string;
+          data?: Record<string, any>;
+          read?: boolean;
+          read_at?: string | null;
+          created_at?: string;
+        };
+      };
+      notification_preferences: {
+        Row: {
+          user_id: string;
+          friend_requests: boolean;
+          friend_accepted: boolean;
+          follow_requests: boolean;
+          new_followers: boolean;
+          venue_shares: boolean;
+          group_outing_invites: boolean;
+          group_outing_reminders: boolean;
+          collection_follows: boolean;
+          collection_updates: boolean;
+          activity_likes: boolean;
+          activity_comments: boolean;
+          friend_checkins_nearby: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          friend_requests?: boolean;
+          friend_accepted?: boolean;
+          follow_requests?: boolean;
+          new_followers?: boolean;
+          venue_shares?: boolean;
+          group_outing_invites?: boolean;
+          group_outing_reminders?: boolean;
+          collection_follows?: boolean;
+          collection_updates?: boolean;
+          activity_likes?: boolean;
+          activity_comments?: boolean;
+          friend_checkins_nearby?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          friend_requests?: boolean;
+          friend_accepted?: boolean;
+          follow_requests?: boolean;
+          new_followers?: boolean;
+          venue_shares?: boolean;
+          group_outing_invites?: boolean;
+          group_outing_reminders?: boolean;
+          collection_follows?: boolean;
+          collection_updates?: boolean;
+          activity_likes?: boolean;
+          activity_comments?: boolean;
+          friend_checkins_nearby?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
     };
     Views: {
       venue_contribution_counts: {

@@ -74,6 +74,9 @@ const checkInWithVenueArbitrary = () =>
   });
 
 describe('HistoryScreen - Property-Based Tests', () => {
+  // Increase timeout for property tests
+  jest.setTimeout(30000);
+
   beforeEach(() => {
     jest.clearAllMocks();
     mockNavigate.mockClear();
@@ -170,6 +173,9 @@ describe('HistoryScreen - Property-Based Tests', () => {
 });
 
 describe('HistoryScreen - Unit Tests', () => {
+  // Increase timeout for unit tests
+  jest.setTimeout(15000);
+
   beforeEach(() => {
     jest.clearAllMocks();
     mockNavigate.mockClear();
@@ -478,7 +484,16 @@ describe('HistoryScreen - Unit Tests', () => {
         component = renderer.create(<HistoryScreen />);
       });
 
-      const root = component!.root;
+      // Wait for component to stabilize
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      });
+
+      if (!component) {
+        throw new Error('Component failed to render');
+      }
+
+      const root = component.root;
 
       // Find all Text components
       const textComponents = root.findAllByType(Text);

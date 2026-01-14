@@ -9,6 +9,7 @@ export { default as VenueCustomerCount } from './VenueCustomerCount';
 export { default as VenueCardDialog } from './VenueCardDialog';
 export { default as VenueEngagementChip } from './VenueEngagementChip';
 export { default as VenueSignUpForm } from './VenueSignUpForm';
+export { default as NewVenuesSpotlightCarousel } from './NewVenuesSpotlightCarousel';
 
 // Re-export named exports from VenueInfoComponents
 export {

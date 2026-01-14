@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
 import {
   View,
+  Text,
   TouchableOpacity,
   StyleSheet,
   Dimensions,
@@ -9,6 +10,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useNotifications } from '../../contexts/NotificationContext';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -33,6 +35,7 @@ interface TabItemProps {
   activeIndex: SharedValue<number>;
   tabWidth: number;
   theme: any;
+  unreadCount?: number;
 }
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -40,7 +43,7 @@ const TAB_BAR_WIDTH = screenWidth - 40; // 20px margin on each side
 const INDICATOR_SIZE = 50;
 
 // Separate component for each tab item to fix Rules of Hooks
-const TabItem = memo(({ route, index, isFocused, options, onPress, activeIndex, tabWidth, theme }: TabItemProps) => {
+const TabItem = memo(({ route, index, isFocused, options, onPress, activeIndex, tabWidth, theme, unreadCount }: TabItemProps) => {
   const getTabIcon = (routeName: string, focused: boolean) => {
     let iconName: string;
     switch (routeName) {
@@ -58,6 +61,8 @@ const TabItem = memo(({ route, index, isFocused, options, onPress, activeIndex, 
     }
     return iconName;
   };
+
+  const showBadge = route.name === 'Settings' && typeof unreadCount === 'number' && unreadCount > 0;
 
   // Tab animation
   const tabStyle = useAnimatedStyle(() => {
@@ -104,6 +109,13 @@ const TabItem = memo(({ route, index, isFocused, options, onPress, activeIndex, 
             size={24}
             color={isFocused ? 'white' : theme.colors.textSecondary}
           />
+          {showBadge && (
+            <View style={[styles.badge, { backgroundColor: theme.colors.primary }]}>
+              <Text style={styles.badgeText}>
+                {unreadCount! > 99 ? '99+' : String(unreadCount)}
+              </Text>
+            </View>
+          )}
         </Animated.View>
       </TouchableOpacity>
     </Animated.View>
@@ -117,6 +129,7 @@ const NewFloatingTabBar: React.FC<NewFloatingTabBarProps> = ({
 }) => {
   const { theme, isDark } = useTheme();
   const insets = useSafeAreaInsets();
+  const { unreadCount } = useNotifications();
   
   // Calculate tab width and positions
   const tabCount = state.routes.length;
@@ -174,6 +187,7 @@ const NewFloatingTabBar: React.FC<NewFloatingTabBarProps> = ({
         activeIndex={activeIndex}
         tabWidth={tabWidth}
         theme={theme}
+        unreadCount={unreadCount}
       />
     );
   };
@@ -283,6 +297,26 @@ const styles = StyleSheet.create({
     height: 24,
     alignItems: 'center',
     justifyContent: 'center',
+    position: 'relative',
+  },
+  badge: {
+    position: 'absolute',
+    top: -6,
+    right: -10,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+    borderWidth: 2,
+    borderColor: 'white',
+  },
+  badgeText: {
+    color: 'white',
+    fontSize: 10,
+    fontFamily: 'Inter-Bold',
+    lineHeight: 12,
   },
 });
 

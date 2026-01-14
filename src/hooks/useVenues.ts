@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { VenueService } from '../services/api/venues';
 import type { Venue } from '../types';
 
@@ -54,6 +54,7 @@ export function useVenues(options: UseVenuesOptions = {}): UseVenuesReturn {
   const [venues, setVenues] = useState<Venue[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
+  const isFetchingRef = useRef<boolean>(false);
 
   const fetchVenues = useCallback(async () => {
     if (!enabled) {
@@ -62,7 +63,14 @@ export function useVenues(options: UseVenuesOptions = {}): UseVenuesReturn {
       return;
     }
 
+    // Prevent duplicate concurrent fetches
+    if (isFetchingRef.current) {
+      console.log('⏭️ useVenues: Skipping fetch - already in progress');
+      return;
+    }
+
     try {
+      isFetchingRef.current = true;
       console.log('🔄 useVenues: Starting fetch...', { 
         featured, 
         limit,
@@ -97,6 +105,7 @@ export function useVenues(options: UseVenuesOptions = {}): UseVenuesReturn {
     } finally {
       console.log('🏁 useVenues: Fetch complete, setting loading to false');
       setLoading(false);
+      isFetchingRef.current = false;
     }
   }, [featured, search, category, location, limit, offset, enabled]);
 

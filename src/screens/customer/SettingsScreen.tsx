@@ -15,6 +15,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useGridLayout, GridLayoutType } from '../../contexts/GridLayoutContext';
 import { useNavigationStyle, NavigationStyleType } from '../../contexts/NavigationStyleContext';
 import { useLocationContext } from '../../contexts/LocationContext';
+import { useFriends } from '../../hooks';
 import { populateVenuesDatabase } from '../../utils/populateVenues';
 import Icon from 'react-native-vector-icons/Ionicons';
 
@@ -23,11 +24,13 @@ const SettingsScreen: React.FC = () => {
   const [experimentalFeaturesEnabled, setExperimentalFeaturesEnabled] = useState(false);
   const [gridLayoutExpanded, setGridLayoutExpanded] = useState(false);
   const [navigationStyleExpanded, setNavigationStyleExpanded] = useState(false);
+  const [privacyExpanded, setPrivacyExpanded] = useState(false);
   const { signOut, user } = useAuth();
   const { theme, themeMode, setThemeMode } = useTheme();
   const { gridLayout, setGridLayout } = useGridLayout();
   const { navigationStyle, setNavigationStyle } = useNavigationStyle();
   const { locationEnabled, setLocationEnabled } = useLocationContext();
+  const { friends, loading: friendsLoading } = useFriends();
   const navigation = useNavigation<any>();
 
   const handleThemeChange = (mode: 'light' | 'dark' | 'system') => {
@@ -286,6 +289,145 @@ const SettingsScreen: React.FC = () => {
               />
             }
             showArrow={false}
+          />
+        </View>
+
+        {/* Friends Section */}
+        <SectionHeader title="Social" />
+        <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
+          <SettingItem
+            icon="people"
+            title="Friends"
+            subtitle={friendsLoading ? 'Loading...' : `${friends.length} friends`}
+            onPress={() => {
+              Alert.alert(
+                'Friends',
+                'Friends list feature coming soon! You can manage your friend connections here.',
+                [{ text: 'OK' }]
+              );
+            }}
+          />
+          
+          {/* Privacy Settings Accordion */}
+          <TouchableOpacity 
+            style={[styles.settingItem, { borderBottomColor: theme.colors.border }]}
+            onPress={() => setPrivacyExpanded(!privacyExpanded)}
+          >
+            <View style={styles.settingLeft}>
+              <Icon name="shield-checkmark" size={24} color={theme.colors.primary} style={styles.settingIcon} />
+              <View style={styles.settingText}>
+                <Text style={[styles.settingTitle, { color: theme.colors.text }]}>Privacy Settings</Text>
+                <Text style={[styles.settingSubtitle, { color: theme.colors.textSecondary }]}>
+                  Control who can see your activity
+                </Text>
+              </View>
+            </View>
+            <View style={styles.settingRight}>
+              <Icon 
+                name={privacyExpanded ? 'chevron-up' : 'chevron-down'} 
+                size={20} 
+                color={theme.colors.textSecondary} 
+              />
+            </View>
+          </TouchableOpacity>
+          
+          {/* Privacy Settings Options */}
+          {privacyExpanded && (
+            <View style={styles.accordionContent}>
+              <View style={[styles.privacyOption, { borderBottomColor: theme.colors.border }]}>
+                <View style={styles.privacyOptionLeft}>
+                  <Text style={[styles.privacyOptionTitle, { color: theme.colors.text }]}>Check-in Visibility</Text>
+                  <Text style={[styles.privacyOptionSubtitle, { color: theme.colors.textSecondary }]}>
+                    Who can see when you check in
+                  </Text>
+                </View>
+                <TouchableOpacity 
+                  style={[styles.privacyButton, { backgroundColor: theme.colors.primary + '20' }]}
+                  onPress={() => {
+                    Alert.alert(
+                      'Check-in Visibility',
+                      'Choose who can see your check-ins',
+                      [
+                        { text: 'Public' },
+                        { text: 'Friends' },
+                        { text: 'Close Friends' },
+                        { text: 'Private' },
+                        { text: 'Cancel', style: 'cancel' },
+                      ]
+                    );
+                  }}
+                >
+                  <Text style={[styles.privacyButtonText, { color: theme.colors.primary }]}>Friends</Text>
+                </TouchableOpacity>
+              </View>
+              
+              <View style={[styles.privacyOption, { borderBottomColor: theme.colors.border }]}>
+                <View style={styles.privacyOptionLeft}>
+                  <Text style={[styles.privacyOptionTitle, { color: theme.colors.text }]}>Favorites Visibility</Text>
+                  <Text style={[styles.privacyOptionSubtitle, { color: theme.colors.textSecondary }]}>
+                    Who can see your favorite venues
+                  </Text>
+                </View>
+                <TouchableOpacity 
+                  style={[styles.privacyButton, { backgroundColor: theme.colors.primary + '20' }]}
+                  onPress={() => {
+                    Alert.alert(
+                      'Favorites Visibility',
+                      'Choose who can see your favorites',
+                      [
+                        { text: 'Public' },
+                        { text: 'Friends' },
+                        { text: 'Close Friends' },
+                        { text: 'Private' },
+                        { text: 'Cancel', style: 'cancel' },
+                      ]
+                    );
+                  }}
+                >
+                  <Text style={[styles.privacyButtonText, { color: theme.colors.primary }]}>Friends</Text>
+                </TouchableOpacity>
+              </View>
+              
+              <View style={[styles.privacyOption, { borderBottomColor: theme.colors.border }]}>
+                <View style={styles.privacyOptionLeft}>
+                  <Text style={[styles.privacyOptionTitle, { color: theme.colors.text }]}>Collections Visibility</Text>
+                  <Text style={[styles.privacyOptionSubtitle, { color: theme.colors.textSecondary }]}>
+                    Default privacy for new collections
+                  </Text>
+                </View>
+                <TouchableOpacity 
+                  style={[styles.privacyButton, { backgroundColor: theme.colors.primary + '20' }]}
+                  onPress={() => {
+                    Alert.alert(
+                      'Collections Visibility',
+                      'Choose default privacy for collections',
+                      [
+                        { text: 'Public' },
+                        { text: 'Friends' },
+                        { text: 'Close Friends' },
+                        { text: 'Private' },
+                        { text: 'Cancel', style: 'cancel' },
+                      ]
+                    );
+                  }}
+                >
+                  <Text style={[styles.privacyButtonText, { color: theme.colors.primary }]}>Friends</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+          
+          <SettingItem
+            icon="ban"
+            title="Blocked Users"
+            subtitle="Manage blocked users"
+            onPress={() => {
+              Alert.alert(
+                'Blocked Users',
+                'Blocked users list feature coming soon! You can manage blocked users here.',
+                [{ text: 'OK' }]
+              );
+            }}
           />
         </View>
 
@@ -674,6 +816,38 @@ const styles = StyleSheet.create({
   gridLayoutDescription: {
     fontSize: 13,
     fontFamily: 'Inter-Regular',
+  },
+  privacyOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  privacyOptionLeft: {
+    flex: 1,
+    marginRight: 12,
+  },
+  privacyOptionTitle: {
+    fontSize: 15,
+    fontWeight: '500',
+    marginBottom: 2,
+    fontFamily: 'Inter-Medium',
+  },
+  privacyOptionSubtitle: {
+    fontSize: 13,
+    fontFamily: 'Inter-Regular',
+  },
+  privacyButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 16,
+  },
+  privacyButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    fontFamily: 'Inter-SemiBold',
   },
 });
 

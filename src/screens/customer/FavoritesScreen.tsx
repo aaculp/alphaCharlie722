@@ -15,6 +15,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { FavoriteService } from '../../services/api/favorites';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { FriendVenueCarousel } from '../../components/social';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 type FavoritesScreenNavigationProp = NativeStackNavigationProp<any>;
@@ -139,6 +140,17 @@ const FavoritesScreen: React.FC = () => {
         style={styles.favoritesList}
         contentContainerStyle={favorites.length === 0 ? styles.emptyListContainer : styles.listContent}
         showsVerticalScrollIndicator={false}
+        ListHeaderComponent={
+          user && favorites.length > 0 ? (
+            <View style={styles.sharedFavoritesSection}>
+              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Shared with Friends</Text>
+              <Text style={[styles.comingSoonText, { color: theme.colors.textSecondary }]}>
+                See venues you and your friends both love - coming soon!
+              </Text>
+              <Text style={[styles.myFavoritesTitle, { color: theme.colors.text }]}>My Favorites</Text>
+            </View>
+          ) : null
+        }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Icon name="heart-outline" size={64} color={theme.colors.textSecondary} />
@@ -270,6 +282,32 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingBottom: 20,
+  },
+  sharedFavoritesSection: {
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    fontFamily: 'Poppins-SemiBold',
+    paddingHorizontal: 15,
+    marginTop: 10,
+    marginBottom: 12,
+  },
+  myFavoritesTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    fontFamily: 'Poppins-SemiBold',
+    paddingHorizontal: 15,
+    marginTop: 20,
+    marginBottom: 10,
+  },
+  comingSoonText: {
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+    paddingHorizontal: 15,
+    marginBottom: 16,
+    fontStyle: 'italic',
   },
 });
 

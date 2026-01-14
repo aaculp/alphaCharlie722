@@ -1,6 +1,7 @@
 import React, { useEffect, memo } from 'react';
 import {
   View,
+  Text,
   TouchableOpacity,
   StyleSheet,
   Dimensions,
@@ -9,6 +10,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useNotifications } from '../../contexts/NotificationContext';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -38,10 +40,11 @@ interface TabItemProps {
   slidePosition: SharedValue<number>;
   tabWidth: number;
   theme: any;
+  unreadCount?: number;
 }
 
 // Separate component for each tab item to fix Rules of Hooks
-const TabItem = memo(({ route, index, isFocused, options, onPress, slidePosition, tabWidth, theme }: TabItemProps) => {
+const TabItem = memo(({ route, index, isFocused, options, onPress, slidePosition, tabWidth, theme, unreadCount }: TabItemProps) => {
   const getTabIcon = (routeName: string, focused: boolean) => {
     let iconName: string;
     switch (routeName) {
@@ -72,6 +75,8 @@ const TabItem = memo(({ route, index, isFocused, options, onPress, slidePosition
         return routeName;
     }
   };
+
+  const showBadge = route.name === 'Settings' && unreadCount && unreadCount > 0;
 
   // Individual tab animation with improved responsiveness
   const tabAnimatedStyle = useAnimatedStyle(() => {
@@ -215,6 +220,13 @@ const TabItem = memo(({ route, index, isFocused, options, onPress, slidePosition
                   : theme.colors.textSecondary
               }
             />
+            {showBadge && (
+              <View style={[styles.badge, { backgroundColor: theme.colors.primary }]}>
+                <Text style={styles.badgeText}>
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </Text>
+              </View>
+            )}
           </Animated.View>
           <Animated.Text
             style={[
@@ -242,6 +254,7 @@ const AnimatedTabBar: React.FC<AnimatedTabBarProps> = ({
   const { theme, isDark } = useTheme();
   const insets = useSafeAreaInsets();
   const { width } = Dimensions.get('window');
+  const { unreadCount } = useNotifications();
   
   // Reanimated 3 shared values
   const slidePosition = useSharedValue(0);
@@ -348,6 +361,7 @@ const AnimatedTabBar: React.FC<AnimatedTabBarProps> = ({
                 slidePosition={slidePosition}
                 tabWidth={tabWidth}
                 theme={theme}
+                unreadCount={unreadCount}
               />
             );
           })}
@@ -413,6 +427,25 @@ const styles = StyleSheet.create({
     height: 24,
     marginBottom: 3,
     position: 'relative',
+  },
+  badge: {
+    position: 'absolute',
+    top: -6,
+    right: -10,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+    borderWidth: 2,
+    borderColor: 'white',
+  },
+  badgeText: {
+    color: 'white',
+    fontSize: 10,
+    fontFamily: 'Inter-Bold',
+    lineHeight: 12,
   },
   tabLabel: {
     fontSize: 11,

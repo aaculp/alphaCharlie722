@@ -40,3 +40,63 @@ export type {
   CheckInHistoryOptions,
   CheckInHistoryResponse,
 } from './checkin.types';
+
+// Social types
+export type {
+  // Privacy
+  PrivacyLevel,
+  PrivacySettings,
+  NotificationPreferences,
+  
+  // Friendship
+  Friendship,
+  FriendRequest,
+  FriendshipStatus,
+  
+  // Follow (Post-MVP)
+  Follow,
+  FollowRequest,
+  FollowStatus,
+  
+  // Social Profile
+  SocialProfile,
+  SocialStats,
+  SocialProfileUpdate,
+  
+  // Collections
+  Collection,
+  CollectionCreate,
+  CollectionUpdate,
+  CollectionVenue,
+  VenueOrder,
+  CollectionFollow,
+  
+  // Activity Feed
+  ActivityFeedEntry,
+  ActivityFeedOptions,
+  ActivityFeedResponse,
+  ActivityLike,
+  ActivityComment,
+  
+  // Venue Sharing
+  VenueShare,
+  
+  // Group Outings (Post-MVP)
+  GroupOuting,
+  GroupOutingCreate,
+  GroupOutingUpdate,
+  GroupOutingInvite,
+  OutingResponse,
+  
+  // Notifications
+  SocialNotification,
+  NotificationType,
+  
+  // Blocking & Reporting
+  BlockedUser,
+  UserReport,
+  
+  // Pagination
+  PaginationOptions,
+  PaginatedResponse,
+} from './social.types';

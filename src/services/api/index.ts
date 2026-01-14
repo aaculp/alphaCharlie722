@@ -10,3 +10,6 @@ export { CheckInService } from './checkins';
 export { AuthService } from './auth';
 export { FavoriteService } from './favorites';
 export { UserFeedbackService } from './feedback';
+export { FriendsService } from './friends';
+export { NotificationService } from './notifications';
+
