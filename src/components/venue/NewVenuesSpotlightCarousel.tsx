@@ -4,19 +4,13 @@ import {
   Text,
   StyleSheet,
   FlatList,
-  TouchableOpacity,
-  Image,
-  Dimensions,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '../../contexts/ThemeContext';
 import type { Venue } from '../../types/venue.types';
 import { CarouselSkeleton } from '../social/SkeletonLoaders';
 import { calculateDaysSinceSignup, formatSignupText } from '../../utils/formatting/venue';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const CARD_WIDTH = SCREEN_WIDTH * 0.7;
-const CARD_MARGIN = 12;
+import CompactVenueCard from './CompactVenueCard';
 
 interface NewVenuesSpotlightCarouselProps {
   venues: Venue[];
@@ -85,7 +79,7 @@ const NewVenuesSpotlightCarousel: React.FC<NewVenuesSpotlightCarouselProps> = ({
       timestamp: new Date().toISOString(),
       venuesCount: venues.length,
       loading,
-      error: error ? error.message : null,
+      errorMessage: error ? String(error) : null,
     });
     return null;
   }
@@ -100,169 +94,18 @@ const NewVenuesSpotlightCarousel: React.FC<NewVenuesSpotlightCarouselProps> = ({
       ? formatSignupText(daysSinceSignup)
       : null;
 
-    // Calculate distance if user location is available
-    let distance: string | null = null;
-    if (userLocation && venue.latitude && venue.longitude) {
-      const distanceKm = calculateDistance(
-        userLocation.latitude,
-        userLocation.longitude,
-        venue.latitude,
-        venue.longitude
-      );
-      distance = distanceKm < 1 
-        ? `${Math.round(distanceKm * 1000)}m`
-        : `${distanceKm.toFixed(1)}km`;
-    }
-
-    // Handle venue press with validation
-    const handleVenuePress = () => {
-      if (!venue?.id) {
-        console.warn('Cannot navigate: venue ID is missing', venue);
-        return;
-      }
-      onVenuePress(venue.id);
-    };
-
-    // Use defaults for missing data
-    const venueName = venue?.name || 'Unnamed Venue';
-    const venueCategory = venue?.category || 'General';
-    const venueLocation = venue?.location || 'Location not specified';
-    const venueImageUrl = venue?.image_url || 'https://via.placeholder.com/300x150';
-
     return (
-      <TouchableOpacity
-        style={[
-          styles.venueCard,
-          {
-            backgroundColor: theme.colors.surface,
-            borderColor: theme.colors.border,
-            width: CARD_WIDTH,
-          }
-        ]}
-        onPress={handleVenuePress}
-        activeOpacity={0.7}
-        accessibilityLabel={`${venueName}, new venue`}
-      >
-        {/* Venue Image */}
-        <Image
-          source={{ uri: venueImageUrl }}
-          style={styles.venueImage}
+      <View style={styles.cardWrapper}>
+        <CompactVenueCard
+          venue={venue}
+          onPress={() => onVenuePress(venue.id)}
+          badge={{
+            icon: 'sparkles',
+            text: 'NEW',
+          }}
+          subtitle={signupText || undefined}
         />
-
-        {/* NEW Badge */}
-        <View
-          style={[
-            styles.newBadge,
-            {
-              backgroundColor: theme.colors.primary,
-            }
-          ]}
-        >
-          <Icon name="sparkles" size={12} color="white" />
-          <Text style={styles.newBadgeText}>NEW</Text>
-        </View>
-
-        {/* Venue Info */}
-        <View style={styles.venueInfo}>
-          {/* Days Since Signup */}
-          {signupText && (
-            <Text
-              style={[
-                styles.signupText,
-                { color: theme.colors.primary }
-              ]}
-            >
-              {signupText}
-            </Text>
-          )}
-
-          {/* Venue Name */}
-          <Text
-            style={[
-              styles.venueName,
-              { color: theme.colors.text }
-            ]}
-            numberOfLines={1}
-          >
-            {venueName}
-          </Text>
-
-          {/* Category and Rating */}
-          <View style={styles.venueMetadata}>
-            <View style={styles.categoryBadge}>
-              <Text
-                style={[
-                  styles.categoryText,
-                  { color: theme.colors.primary }
-                ]}
-              >
-                {venueCategory}
-              </Text>
-            </View>
-
-            {venue?.rating && venue.rating > 0 ? (
-              <View style={styles.ratingContainer}>
-                <Icon name="star" size={12} color="#FFB800" />
-                <Text
-                  style={[
-                    styles.ratingText,
-                    { color: theme.colors.textSecondary }
-                  ]}
-                >
-                  {venue.rating.toFixed(1)}
-                </Text>
-              </View>
-            ) : (
-              <Text
-                style={[
-                  styles.noRatingText,
-                  { color: theme.colors.textSecondary }
-                ]}
-              >
-                New - No ratings yet
-              </Text>
-            )}
-          </View>
-
-          {/* Location and Distance */}
-          <View style={styles.locationRow}>
-            <Icon
-              name="location-outline"
-              size={12}
-              color={theme.colors.textSecondary}
-            />
-            <Text
-              style={[
-                styles.locationText,
-                { color: theme.colors.textSecondary }
-              ]}
-              numberOfLines={1}
-            >
-              {venueLocation}
-            </Text>
-            {distance && (
-              <>
-                <Text
-                  style={[
-                    styles.locationSeparator,
-                    { color: theme.colors.textSecondary }
-                  ]}
-                >
-                  •
-                </Text>
-                <Text
-                  style={[
-                    styles.distanceText,
-                    { color: theme.colors.textSecondary }
-                  ]}
-                >
-                  {distance}
-                </Text>
-              </>
-            )}
-          </View>
-        </View>
-      </TouchableOpacity>
+      </View>
     );
   };
 
@@ -305,45 +148,13 @@ const NewVenuesSpotlightCarousel: React.FC<NewVenuesSpotlightCarouselProps> = ({
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.carouselContent}
-        snapToInterval={CARD_WIDTH + CARD_MARGIN}
+        snapToInterval={140 + 12} // Card width + margin
         decelerationRate="fast"
-        snapToAlignment="start"
+        accessibilityLabel="New venues carousel"
       />
     </View>
   );
 };
-
-/**
- * Calculate distance between two coordinates using Haversine formula
- * 
- * @param lat1 - Latitude of first point
- * @param lon1 - Longitude of first point
- * @param lat2 - Latitude of second point
- * @param lon2 - Longitude of second point
- * @returns Distance in kilometers
- */
-function calculateDistance(
-  lat1: number,
-  lon1: number,
-  lat2: number,
-  lon2: number
-): number {
-  const R = 6371; // Earth's radius in kilometers
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRad(lat1)) *
-      Math.cos(toRad(lat2)) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-}
-
-function toRad(degrees: number): number {
-  return degrees * (Math.PI / 180);
-}
 
 const styles = StyleSheet.create({
   container: {
@@ -352,16 +163,16 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 15,
+    marginBottom: 12,
+    gap: 10,
   },
   iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
   },
   headerText: {
     flex: 1,
@@ -371,98 +182,15 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-SemiBold',
   },
   skeletonTitle: {
-    height: 18,
-    width: '40%',
+    width: 120,
+    height: 20,
     borderRadius: 4,
   },
   carouselContent: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 15,
   },
-  venueCard: {
-    borderRadius: 12,
-    borderWidth: 1,
-    marginRight: CARD_MARGIN,
-    overflow: 'hidden',
-    minHeight: 44, // Minimum touch target height
-  },
-  venueImage: {
-    width: '100%',
-    height: 150,
-    resizeMode: 'cover',
-  },
-  newBadge: {
-    position: 'absolute',
-    top: 12,
-    left: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    gap: 4,
-  },
-  newBadgeText: {
-    color: 'white',
-    fontSize: 11,
-    fontFamily: 'Inter-SemiBold',
-  },
-  venueInfo: {
-    padding: 12,
-  },
-  signupText: {
-    fontSize: 12,
-    fontFamily: 'Inter-SemiBold',
-    marginBottom: 4,
-  },
-  venueName: {
-    fontSize: 16,
-    fontFamily: 'Poppins-SemiBold',
-    marginBottom: 6,
-  },
-  venueMetadata: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
-    gap: 8,
-  },
-  categoryBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-  },
-  categoryText: {
-    fontSize: 11,
-    fontFamily: 'Inter-SemiBold',
-  },
-  ratingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  ratingText: {
-    fontSize: 12,
-    fontFamily: 'Inter-Medium',
-  },
-  noRatingText: {
-    fontSize: 12,
-    fontFamily: 'Inter-Regular',
-  },
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  locationText: {
-    fontSize: 12,
-    fontFamily: 'Inter-Regular',
-    flex: 1,
-  },
-  locationSeparator: {
-    fontSize: 12,
-  },
-  distanceText: {
-    fontSize: 12,
-    fontFamily: 'Inter-Medium',
+  cardWrapper: {
+    marginRight: 12,
   },
 });
 

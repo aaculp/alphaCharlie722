@@ -383,18 +383,6 @@ const HomeScreen: React.FC = () => {
           </ScrollView>
         </View>
 
-        {/* Recent Check-Ins Section */}
-        {user && (
-          <RecentCheckInsSection
-            onVenuePress={(venueId, venueName) => {
-              navigation.navigate('VenueDetail', {
-                venueId,
-                venueName,
-              });
-            }}
-          />
-        )}
-
         {/* New Venues Spotlight Section */}
         <NewVenuesSpotlightCarousel
           venues={newVenues}
@@ -410,6 +398,18 @@ const HomeScreen: React.FC = () => {
           loading={newVenuesLoading}
           userLocation={location}
         />
+
+        {/* Recent Check-Ins Section */}
+        {user && (
+          <RecentCheckInsSection
+            onVenuePress={(venueId, venueName) => {
+              navigation.navigate('VenueDetail', {
+                venueId,
+                venueName,
+              });
+            }}
+          />
+        )}
 
         {/* Friends' Favorites Section */}
         {user && (

@@ -4,18 +4,15 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
-  Image,
   ActivityIndicator,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCheckInHistory } from '../../hooks/useCheckInHistory';
-import { useEngagementColor } from '../../hooks/useEngagementColor';
 import { CheckInService } from '../../services/api/checkins';
 import { formatCheckInTime } from '../../utils/formatting/time';
-import { VenueCustomerCount, VenueEngagementChip } from '../venue';
+import { CompactVenueCard } from '../venue';
 import type { CheckInWithVenue, VenueCheckInStats } from '../../types';
 
 interface RecentCheckInsSectionProps {
@@ -105,99 +102,23 @@ const RecentCheckInsSection: React.FC<RecentCheckInsSectionProps> = ({ onVenuePr
         >
           {recentCheckIns.map((checkIn) => {
             const stats = checkInStats.get(checkIn.venue_id);
+            const formattedTime = formatCheckInTime(checkIn.checked_in_at);
+            
             return (
-              <RecentCheckInCard
-                key={checkIn.id}
-                checkIn={checkIn}
-                checkInCount={stats?.active_checkins || 0}
-                maxCapacity={checkIn.venue.max_capacity || 100}
-                onPress={() => onVenuePress(checkIn.venue_id, checkIn.venue.name)}
-              />
+              <View key={checkIn.id} style={styles.cardWrapper}>
+                <CompactVenueCard
+                  venue={checkIn.venue}
+                  onPress={() => onVenuePress(checkIn.venue_id, checkIn.venue.name)}
+                  subtitle={formattedTime}
+                  checkInCount={stats?.active_checkins || 0}
+                  maxCapacity={checkIn.venue.max_capacity || 100}
+                />
+              </View>
             );
           })}
         </ScrollView>
       )}
     </View>
-  );
-};
-
-interface RecentCheckInCardProps {
-  checkIn: CheckInWithVenue;
-  checkInCount: number;
-  maxCapacity: number;
-  onPress: () => void;
-}
-
-const RecentCheckInCard: React.FC<RecentCheckInCardProps> = ({
-  checkIn,
-  checkInCount,
-  maxCapacity,
-  onPress
-}) => {
-  const { theme } = useTheme();
-  const formattedTime = formatCheckInTime(checkIn.checked_in_at);
-
-  // Get engagement color for border
-  const engagementColor = useEngagementColor(checkInCount, maxCapacity);
-
-  return (
-    <TouchableOpacity
-      style={[
-        styles.card,
-        {
-          backgroundColor: theme.colors.surface,
-          borderColor: engagementColor.borderColor,
-          borderWidth: 2,
-        }
-      ]}
-      onPress={onPress}
-      activeOpacity={0.7}
-    >
-      <Image
-        source={{
-          uri: checkIn.venue.image_url || 'https://via.placeholder.com/120x120'
-        }}
-        style={styles.image}
-      />
-
-      <View style={styles.cardContent}>
-        <Text
-          style={[styles.venueName, { color: theme.colors.text }]}
-          numberOfLines={1}
-        >
-          {checkIn.venue.name}
-        </Text>
-
-        <View style={styles.categoryBadge}>
-          <Text
-            style={[styles.categoryText, { color: theme.colors.textSecondary }]}
-            numberOfLines={1}
-          >
-            {checkIn.venue.category}
-          </Text>
-        </View>
-
-        <View style={styles.timeRow}>
-          <Icon name="time-outline" size={12} color={theme.colors.textSecondary} />
-          <Text
-            style={[styles.timeText, { color: theme.colors.textSecondary }]}
-            numberOfLines={1}
-          >
-            {formattedTime}
-          </Text>
-        </View>
-
-        {/* Engagement Stats Row */}
-        <View style={styles.statsRow}>
-          <VenueCustomerCount
-            count={checkInCount}
-            maxCapacity={maxCapacity}
-            size="small"
-            variant="traffic"
-          />
-        </View>
-      </View>
-    </TouchableOpacity>
   );
 };
 
@@ -222,48 +143,9 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 15,
-    gap: 12,
   },
-  card: {
-    width: 140,
-    borderRadius: 12,
-    borderWidth: 1,
-    overflow: 'hidden',
-  },
-  image: {
-    width: '100%',
-    height: 100,
-  },
-  cardContent: {
-    padding: 10,
-  },
-  venueName: {
-    fontSize: 14,
-    fontFamily: 'Poppins-SemiBold',
-    marginBottom: 4,
-  },
-  categoryBadge: {
-    marginBottom: 6,
-  },
-  categoryText: {
-    fontSize: 11,
-    fontFamily: 'Inter-Regular',
-  },
-  timeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginBottom: 8,
-  },
-  timeText: {
-    fontSize: 11,
-    fontFamily: 'Inter-Regular',
-  },
-  statsRow: {
-    flexDirection: 'column',
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-    gap: 6,
+  cardWrapper: {
+    marginRight: 12,
   },
 });
 
