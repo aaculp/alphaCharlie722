@@ -3,7 +3,13 @@ export type RootTabParamList = {
   Home: undefined;
   Search: undefined;
   Profile: undefined;
+};
+
+// Profile stack navigation types
+export type ProfileStackParamList = {
+  ProfileMain: undefined;
   Settings: undefined;
+  Favorites: undefined;
 };
 
 // Settings stack navigation types

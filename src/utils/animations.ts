@@ -197,6 +197,7 @@ export const pulse = (
 
 /**
  * Shake animation (for errors)
+ * Reduced to 2 shakes for a quicker, less distracting effect
  * @param animatedValue - Animated value to animate
  */
 export const shake = (animatedValue: Animated.Value): Animated.CompositeAnimation => {
@@ -208,11 +209,6 @@ export const shake = (animatedValue: Animated.Value): Animated.CompositeAnimatio
     }),
     Animated.timing(animatedValue, {
       toValue: -10,
-      duration: 50,
-      useNativeDriver: true,
-    }),
-    Animated.timing(animatedValue, {
-      toValue: 10,
       duration: 50,
       useNativeDriver: true,
     }),

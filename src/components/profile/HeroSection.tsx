@@ -64,14 +64,14 @@ const HERO_HEIGHT = calculateHeroHeight();
  * @param profileImageUri - URI of the profile photo (null for placeholder)
  * @param username - Username to display in overlay
  * @param onCameraPress - Callback when camera button is pressed
- * @param onSharePress - Callback when share button is pressed
+ * @param onSettingsPress - Callback when settings button is pressed
  * @param isUploading - Optional loading state for photo upload
  */
 export const HeroSection: React.FC<HeroSectionProps> = ({
   profileImageUri,
   username,
   onCameraPress,
-  onSharePress,
+  onSettingsPress,
   isUploading = false,
 }) => {
   const { theme } = useTheme();
@@ -109,20 +109,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
         {/* Action buttons at bottom-right */}
         <View style={styles.buttonsContainer}>
-          {/* Share Button */}
-          <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: 'rgba(0, 0, 0, 0.5)' }]}
-            onPress={onSharePress}
-            accessible={true}
-            accessibilityRole="button"
-            accessibilityLabel="Share profile"
-            accessibilityHint="Double tap to share your profile"
-            testID="share-button"
-          >
-            <Icon name="share-social-outline" size={24} color="#FFFFFF" />
-          </TouchableOpacity>
-
-          {/* Camera Button */}
+          {/* Camera Button (Left) */}
           <TouchableOpacity
             style={[styles.actionButton, { backgroundColor: 'rgba(0, 0, 0, 0.5)' }]}
             onPress={onCameraPress}
@@ -134,6 +121,19 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             disabled={isUploading}
           >
             <Icon name="camera-outline" size={24} color="#FFFFFF" />
+          </TouchableOpacity>
+
+          {/* Settings Button (Right) */}
+          <TouchableOpacity
+            style={[styles.actionButton, { backgroundColor: 'rgba(0, 0, 0, 0.5)' }]}
+            onPress={onSettingsPress}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel="Open settings"
+            accessibilityHint="Double tap to open settings menu"
+            testID="settings-button"
+          >
+            <Icon name="settings-outline" size={24} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
       </View>

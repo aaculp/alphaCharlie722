@@ -146,13 +146,13 @@ describe('ProfileScreen - Property-Based Tests', () => {
     expect(cameraWidth).toBeGreaterThanOrEqual(44);
     expect(cameraHeight).toBeGreaterThanOrEqual(44);
 
-    // Check share button - should be at least 44pt
-    const shareButton = await findByTestId('share-button');
-    const shareStyle = shareButton.props.style;
-    const shareWidth = shareStyle.width || shareStyle.minWidth || 0;
-    const shareHeight = shareStyle.height || shareStyle.minHeight || 0;
-    expect(shareWidth).toBeGreaterThanOrEqual(44);
-    expect(shareHeight).toBeGreaterThanOrEqual(44);
+    // Check settings button - should be at least 44pt
+    const settingsButton = await findByTestId('settings-button');
+    const settingsStyle = settingsButton.props.style;
+    const settingsWidth = settingsStyle.width || settingsStyle.minWidth || 0;
+    const settingsHeight = settingsStyle.height || settingsStyle.minHeight || 0;
+    expect(settingsWidth).toBeGreaterThanOrEqual(44);
+    expect(settingsHeight).toBeGreaterThanOrEqual(44);
   });
 
   /**
@@ -199,9 +199,9 @@ describe('ProfileScreen - Property-Based Tests', () => {
           expect(cameraButton.props.accessibilityLabel).toBeDefined();
           expect(typeof cameraButton.props.accessibilityLabel).toBe('string');
 
-          const shareButton = await findByTestId('share-button');
-          expect(shareButton.props.accessibilityLabel).toBeDefined();
-          expect(typeof shareButton.props.accessibilityLabel).toBe('string');
+          const settingsButton = await findByTestId('settings-button');
+          expect(settingsButton.props.accessibilityLabel).toBeDefined();
+          expect(typeof settingsButton.props.accessibilityLabel).toBe('string');
         }
       ),
       { numRuns: 50 }

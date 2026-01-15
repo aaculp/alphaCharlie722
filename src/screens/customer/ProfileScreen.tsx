@@ -9,6 +9,8 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import type { NavigationProp } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Animated, {
   useSharedValue,
@@ -22,6 +24,7 @@ import { ProfileService } from '../../services/api/profile';
 import { RESPONSIVE_SPACING } from '../../utils/responsive';
 import type { UserProfile, TabType, SettingType } from '../../types/profile.types';
 import type { SocialProfile } from '../../types/social.types';
+import type { ProfileStackParamList } from '../../types';
 
 // Import profile components
 import { HeroSection } from '../../components/profile/HeroSection';
@@ -62,6 +65,7 @@ interface ProfileScreenState {
 const ProfileScreen: React.FC = () => {
   const { theme } = useTheme();
   const { user: authUser } = useAuth();
+  const navigation = useNavigation<NavigationProp<ProfileStackParamList>>();
   
   // Animation value for tab transitions (Requirement 3.7)
   const contentOpacity = useSharedValue(1);
@@ -158,9 +162,9 @@ const ProfileScreen: React.FC = () => {
     }
   };
 
-  const handleShareProfile = () => {
-    // TODO: Implement share functionality
-    Alert.alert('Share Profile', 'Share functionality coming soon!');
+  const handleSettingsPress = () => {
+    // Navigate to Settings in the Profile stack
+    navigation.navigate('Settings');
   };
 
   const handleInviteFriend = () => {
@@ -338,7 +342,7 @@ const ProfileScreen: React.FC = () => {
           profileImageUri={state.profileImageUri}
           username={state.user?.username || authUser?.email?.split('@')[0] || 'User'}
           onCameraPress={handleImagePicker}
-          onSharePress={handleShareProfile}
+          onSettingsPress={handleSettingsPress}
           isUploading={state.isUploadingPhoto}
         />
 

@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   TouchableOpacity,
 } from 'react-native';
+import Animated, { useSharedValue, useAnimatedProps } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -20,7 +21,7 @@ import { useLocation } from '../../hooks/useLocation';
 import { LocationService } from '../../services/locationService';
 import { CheckInService } from '../../services/api/checkins';
 import { populateVenuesDatabase } from '../../utils/populateVenues';
-import { TestVenueCard } from '../../components/venue';
+import { WideVenueCard } from '../../components/ui';
 import { VenuesCarouselSection } from '../../components/ui';
 import { QuickPickChip } from '../../components/quickpicks';
 import { RecentCheckInsSection } from '../../components/checkin';
@@ -125,10 +126,19 @@ const HomeScreen: React.FC = () => {
   const [sortByDistance, setSortByDistance] = useState(false);
   const [userCheckIns, setUserCheckIns] = useState<Map<string, CheckInInfo>>(new Map());
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [checkInHistoryKey, setCheckInHistoryKey] = useState(0); // Key to force RecentCheckInsSection refetch
   const { theme } = useTheme();
   const { locationEnabled } = useLocationContext();
   const { user } = useAuth();
   const navigation = useNavigation<HomeScreenNavigationProp>();
+
+  // Shared value to control ScrollView scrolling (for gesture conflict resolution)
+  const scrollEnabled = useSharedValue(true);
+
+  // Animated props for ScrollView
+  const animatedScrollProps = useAnimatedProps(() => ({
+    scrollEnabled: scrollEnabled.value,
+  }));
 
   // Use custom hooks for data management
   const { venues, loading, error, refetch } = useVenues({ featured: true, limit: 10 });
@@ -346,11 +356,12 @@ const HomeScreen: React.FC = () => {
         </View>
       )}
        */}
-      <ScrollView
+      <Animated.ScrollView
         testID="home-scroll-view"
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        animatedProps={animatedScrollProps}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
@@ -405,6 +416,7 @@ const HomeScreen: React.FC = () => {
         {/* Recent Check-Ins Section */}
         {user && (
           <RecentCheckInsSection
+            key={checkInHistoryKey}
             onVenuePress={(venueId, venueName) => {
               navigation.navigate('VenueDetail', {
                 venueId,
@@ -463,7 +475,7 @@ const HomeScreen: React.FC = () => {
               }
 
               return (
-                <TestVenueCard
+                <WideVenueCard
                   key={venue.id}
                   venue={venue}
                   checkInCount={venueCheckInStats?.active_checkins || 0}
@@ -471,8 +483,9 @@ const HomeScreen: React.FC = () => {
                   customerCountVariant="traffic"
                   engagementChipVariant="traffic"
                   distance={sortByDistance ? distance : undefined}
+                  enableSwipe={true}
                   onCheckInChange={user ? async (isCheckedIn, newCount) => {
-                    // Handle check-in state change
+                    // Handle check-in state change (Requirement 11.3, 11.5)
                     if (isCheckedIn) {
                       // User checked in to this venue - fetch the actual check-in data
                       try {
@@ -489,16 +502,43 @@ const HomeScreen: React.FC = () => {
                       } catch (error) {
                         console.error('Error fetching check-in after check-in:', error);
                       }
+                      // Requirement 11.2: Trigger check-in history refetch after check-in
+                      setCheckInHistoryKey(prev => prev + 1);
                     } else {
                       // User checked out
                       setUserCheckIns(new Map());
+                      // Requirement 11.2: Trigger check-in history refetch after check-out
+                      setCheckInHistoryKey(prev => prev + 1);
                     }
-                    // Refetch check-in stats to get accurate counts
+                    // Requirement 11.1: Refetch check-in stats to get accurate counts
                     refetchCheckInStats();
+                  } : undefined}
+                  onSwipeCheckIn={user ? async () => {
+                    // Requirement 11.4: Swipe check-in respects same business logic as button
+                    try {
+                      await CheckInService.checkIn(venue.id, user.id);
+                      // Success - state will be updated via onCheckInChange callback
+                    } catch (error) {
+                      console.error('Error during swipe check-in:', error);
+                      throw error; // Re-throw to trigger error handling in WideVenueCard
+                    }
+                  } : undefined}
+                  onSwipeCheckOut={user ? async () => {
+                    // Requirement 11.4: Swipe check-out respects same business logic as button
+                    if (userCheckInInfo?.checkInId) {
+                      try {
+                        await CheckInService.checkOut(userCheckInInfo.checkInId, user.id);
+                        // Success - state will be updated via onCheckInChange callback
+                      } catch (error) {
+                        console.error('Error during swipe check-out:', error);
+                        throw error; // Re-throw to trigger error handling in WideVenueCard
+                      }
+                    }
                   } : undefined}
                   userCheckInId={userCheckInInfo?.checkInId}
                   userCheckInTime={userCheckInInfo?.checkInTime}
                   isUserCheckedIn={!!userCheckInInfo}
+                  scrollEnabled={scrollEnabled}
                 />
               );
             })}
@@ -509,7 +549,7 @@ const HomeScreen: React.FC = () => {
             <Text style={[styles.emptySubtext, { color: theme.colors.textSecondary }]}>Pull to refresh</Text>
           </View>
         )}
-      </ScrollView>
+      </Animated.ScrollView>
     </SafeAreaView>
   );
 };

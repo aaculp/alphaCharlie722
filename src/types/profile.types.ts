@@ -115,7 +115,7 @@ export interface HeroSectionProps {
   profileImageUri: string | null;
   username: string;
   onCameraPress: () => void;
-  onSharePress: () => void;
+  onSettingsPress: () => void;
   isUploading?: boolean;
 }
 

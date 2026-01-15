@@ -49,5 +49,6 @@ export {
   VenueCustomerCountChip,
   VenueEngagementChip,
   CompactVenueCard,
-  VenuesCarouselSection
+  VenuesCarouselSection,
+  WideVenueCard
 } from './ui';

@@ -196,3 +196,71 @@ export type { UseSocialNotificationsOptions, UseSocialNotificationsReturn } from
  */
 export { useNewVenues } from './useNewVenues';
 export type { UseNewVenuesOptions, UseNewVenuesReturn } from './useNewVenues';
+
+/**
+ * useHapticFeedback - Provides haptic feedback for swipe interactions
+ * 
+ * @example
+ * ```tsx
+ * const { triggerSuccess, triggerError, triggerWarning, triggerSelection } = useHapticFeedback();
+ * triggerSuccess(); // On successful check-in
+ * triggerError();   // On failed action
+ * ```
+ */
+export { useHapticFeedback } from './useHapticFeedback';
+export type { UseHapticFeedbackReturn } from './useHapticFeedback';
+
+/**
+ * useSwipeGesture - Encapsulates swipe gesture logic for venue cards
+ * 
+ * @example
+ * ```tsx
+ * const { panGesture, translateX, leftActionOpacity, rightActionOpacity, animatedCardStyle } = useSwipeGesture({
+ *   isCheckedIn: false,
+ *   onCheckIn: async () => { ... },
+ *   onCheckOut: async () => { ... },
+ *   onError: (error) => { ... }
+ * });
+ * ```
+ */
+export { useSwipeGesture } from './useSwipeGesture';
+export type { UseSwipeGestureOptions, UseSwipeGestureReturn } from './useSwipeGesture';
+
+/**
+ * usePhotoSelection - Handles photo selection from library or camera
+ * 
+ * @example
+ * ```tsx
+ * const { selectedPhotoUri, isSelecting, showPhotoOptions } = usePhotoSelection({
+ *   onPhotoSelected: (uri) => console.log('Photo selected:', uri),
+ *   onError: (error) => Alert.alert('Error', error)
+ * });
+ * ```
+ */
+export { usePhotoSelection } from './usePhotoSelection';
+export type { UsePhotoSelectionOptions, UsePhotoSelectionReturn } from './usePhotoSelection';
+
+/**
+ * useProfilePhotoUpload - Handles profile photo selection and upload
+ * 
+ * @example
+ * ```tsx
+ * const { isUploading, selectAndUploadPhoto } = useProfilePhotoUpload({
+ *   userId: user.id,
+ *   onUploadSuccess: (url) => console.log('Uploaded:', url),
+ *   onUploadError: (error) => Alert.alert('Error', error)
+ * });
+ * ```
+ */
+export { useProfilePhotoUpload } from './useProfilePhotoUpload';
+export type { UseProfilePhotoUploadOptions, UseProfilePhotoUploadReturn } from './useProfilePhotoUpload';
+
+/**
+ * useAboutMe - Manages About Me section state and operations
+ * 
+ * @example
+ * ```tsx
+ * const { aboutText, isEditing, isSaving, toggleEdit, saveAboutText } = useAboutMe('Initial text');
+ * ```
+ */
+export { useAboutMe } from './useAboutMe';

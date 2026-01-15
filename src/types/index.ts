@@ -27,6 +27,7 @@ export type {
 // Navigation types
 export type {
   RootTabParamList,
+  ProfileStackParamList,
   SettingsStackParamList,
   HomeStackParamList,
   SearchStackParamList,
@@ -100,3 +101,34 @@ export type {
   PaginationOptions,
   PaginatedResponse,
 } from './social.types';
+
+// Profile types
+export type {
+  // Enums
+  SettingType,
+  TabType,
+  
+  // Data Models
+  UserProfile,
+  PhotoUploadRequest,
+  PhotoUploadResponse,
+  UserStatistics,
+  
+  // State Management
+  ProfileScreenState,
+  
+  // Component Props
+  HeroSectionProps,
+  AboutMeSectionProps,
+  TabNavigationProps,
+  FollowersCardProps,
+  StatisticsCardProps,
+  SettingsMenuProps,
+  SettingItemProps,
+  
+  // API Request/Response
+  UpdateAboutTextRequest,
+  UpdateAboutTextResponse,
+  FetchUserProfileRequest,
+  FetchUserProfileResponse,
+} from './profile.types';

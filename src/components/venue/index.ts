@@ -4,7 +4,8 @@
  * This module exports all venue-related components.
  */
 
-export { default as TestVenueCard } from './TestVenueCard';
+// Re-export WideVenueCard from ui folder for backward compatibility
+export { WideVenueCard as TestVenueCard } from '../ui';
 export { default as VenueCardDialog } from './VenueCardDialog';
 export { default as VenueSignUpForm } from './VenueSignUpForm';
 

@@ -9,6 +9,7 @@ import { NewFloatingTabBar, AnimatedTabBar } from '../components/navigation';
 import { FriendRequestModal } from '../components/social';
 import type {
   RootTabParamList,
+  ProfileStackParamList,
   SettingsStackParamList,
   HomeStackParamList,
   SearchStackParamList,
@@ -23,6 +24,7 @@ import { VenueDashboardScreen } from '../screens/venue';
 const Tab = createBottomTabNavigator<RootTabParamList>();
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
 const SearchStack = createNativeStackNavigator<SearchStackParamList>();
+const ProfileStack = createNativeStackNavigator<ProfileStackParamList>();
 const SettingsStack = createNativeStackNavigator<SettingsStackParamList>();
 
 // Home Stack Navigator
@@ -72,6 +74,35 @@ function SearchStackNavigator() {
         component={VenueDetailScreen}
       />
     </SearchStack.Navigator>
+  );
+}
+
+// Profile Stack Navigator
+function ProfileStackNavigator() {
+  const { theme } = useTheme();
+
+  return (
+    <ProfileStack.Navigator
+      screenOptions={{
+        headerShown: false,
+        contentStyle: {
+          backgroundColor: theme.colors.background,
+        },
+      }}
+    >
+      <ProfileStack.Screen
+        name="ProfileMain"
+        component={ProfileScreen}
+      />
+      <ProfileStack.Screen
+        name="Settings"
+        component={SettingsStackNavigator}
+      />
+      <ProfileStack.Screen
+        name="Favorites"
+        component={FavoritesScreen}
+      />
+    </ProfileStack.Navigator>
   );
 }
 
@@ -157,8 +188,6 @@ function MainTabNavigator() {
         return 'Search';
       case 'Profile':
         return 'Profile';
-      case 'Settings':
-        return 'Settings';
       default:
         return routeName;
     }
@@ -200,13 +229,8 @@ function MainTabNavigator() {
           />
           <Tab.Screen
             name="Profile"
-            component={ProfileScreen}
+            component={ProfileStackNavigator}
             options={{ title: 'Profile' }}
-          />
-          <Tab.Screen
-            name="Settings"
-            component={SettingsStackNavigator}
-            options={{ title: 'Settings' }}
           />
         </Tab.Navigator>
 
@@ -253,13 +277,8 @@ function MainTabNavigator() {
           />
           <Tab.Screen
             name="Profile"
-            component={ProfileScreen}
+            component={ProfileStackNavigator}
             options={{ title: getTabLabel('Profile') }}
-          />
-          <Tab.Screen
-            name="Settings"
-            component={SettingsStackNavigator}
-            options={{ title: getTabLabel('Settings') }}
           />
         </Tab.Navigator>
 

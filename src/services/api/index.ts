@@ -12,4 +12,5 @@ export { FavoriteService } from './favorites';
 export { UserFeedbackService } from './feedback';
 export { FriendsService } from './friends';
 export { NotificationService } from './notifications';
+export { ProfileService } from './profile';
 

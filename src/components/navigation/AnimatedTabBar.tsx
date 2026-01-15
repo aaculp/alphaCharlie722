@@ -57,9 +57,6 @@ const TabItem = memo(({ route, index, isFocused, options, onPress, slidePosition
       case 'Profile':
         iconName = focused ? 'person' : 'person-outline';
         break;
-      case 'Settings':
-        iconName = focused ? 'settings' : 'settings-outline';
-        break;
       default:
         iconName = 'help-outline';
     }
@@ -74,14 +71,12 @@ const TabItem = memo(({ route, index, isFocused, options, onPress, slidePosition
         return 'Search';
       case 'Profile':
         return 'Profile';
-      case 'Settings':
-        return 'Settings';
       default:
         return routeName;
     }
   };
 
-  const showBadge = route.name === 'Settings' && unreadCount && unreadCount > 0;
+  const showBadge = false; // Removed Settings badge since Settings is no longer in tab bar
 
   // Individual tab animation with improved responsiveness
   const tabAnimatedStyle = useAnimatedStyle(() => {

@@ -6,6 +6,7 @@ import React from 'react';
 import { StatusBar, StyleSheet, useColorScheme } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AuthProvider } from './src/contexts/AuthContext';
 import { ThemeProvider, useTheme } from './src/contexts/ThemeContext';
 import { GridLayoutProvider } from './src/contexts/GridLayoutContext';
@@ -47,21 +48,23 @@ function AppContent() {
 
 function App() {
   return (
-    <SafeAreaProvider>
-      <ThemeProvider>
-        <GridLayoutProvider>
-          <NavigationStyleProvider>
-            <LocationProvider>
-              <AuthProvider>
-                <NotificationProvider>
-                  <AppContent />
-                </NotificationProvider>
-              </AuthProvider>
-            </LocationProvider>
-          </NavigationStyleProvider>
-        </GridLayoutProvider>
-      </ThemeProvider>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <ThemeProvider>
+          <GridLayoutProvider>
+            <NavigationStyleProvider>
+              <LocationProvider>
+                <AuthProvider>
+                  <NotificationProvider>
+                    <AppContent />
+                  </NotificationProvider>
+                </AuthProvider>
+              </LocationProvider>
+            </NavigationStyleProvider>
+          </GridLayoutProvider>
+        </ThemeProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
 
