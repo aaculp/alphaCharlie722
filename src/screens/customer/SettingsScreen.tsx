@@ -254,7 +254,7 @@ const SettingsScreen: React.FC = () => {
             icon="person-circle"
             title="Edit Profile"
             subtitle="Update your personal information"
-            onPress={() => console.log('Edit profile pressed')}
+            onPress={() => navigation.navigate('Profile')}
           />
           <SettingItem
             icon="heart"

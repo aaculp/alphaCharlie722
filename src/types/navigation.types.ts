@@ -2,6 +2,7 @@
 export type RootTabParamList = {
   Home: undefined;
   Search: undefined;
+  Profile: undefined;
   Settings: undefined;
 };
 
@@ -9,6 +10,7 @@ export type RootTabParamList = {
 export type SettingsStackParamList = {
   SettingsList: undefined;
   Favorites: undefined;
+  Profile: undefined;
 };
 
 // Home stack navigation types

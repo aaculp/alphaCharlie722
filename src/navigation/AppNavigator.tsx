@@ -16,7 +16,7 @@ import type {
 import type { SocialNotification } from '../types/social.types';
 
 // Import screens
-import { HomeScreen, SearchScreen, VenueDetailScreen, SettingsScreen, FavoritesScreen } from '../screens/customer';
+import { HomeScreen, SearchScreen, VenueDetailScreen, SettingsScreen, FavoritesScreen, ProfileScreen } from '../screens/customer';
 import { SplashScreen, AuthScreen } from '../screens/auth';
 import { VenueDashboardScreen } from '../screens/venue';
 
@@ -96,6 +96,10 @@ function SettingsStackNavigator() {
         name="Favorites"
         component={FavoritesScreen}
       />
+      <SettingsStack.Screen
+        name="Profile"
+        component={ProfileScreen}
+      />
     </SettingsStack.Navigator>
   );
 }
@@ -151,6 +155,8 @@ function MainTabNavigator() {
         return 'Feed';
       case 'Search':
         return 'Search';
+      case 'Profile':
+        return 'Profile';
       case 'Settings':
         return 'Settings';
       default:
@@ -191,6 +197,11 @@ function MainTabNavigator() {
             name="Search"
             component={SearchStackNavigator}
             options={{ title: 'Search' }}
+          />
+          <Tab.Screen
+            name="Profile"
+            component={ProfileScreen}
+            options={{ title: 'Profile' }}
           />
           <Tab.Screen
             name="Settings"
@@ -239,6 +250,11 @@ function MainTabNavigator() {
             name="Search"
             component={SearchStackNavigator}
             options={{ title: getTabLabel('Search') }}
+          />
+          <Tab.Screen
+            name="Profile"
+            component={ProfileScreen}
+            options={{ title: getTabLabel('Profile') }}
           />
           <Tab.Screen
             name="Settings"

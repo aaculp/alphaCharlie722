@@ -36,6 +36,7 @@ jest.mock('react-native-reanimated', () => {
     },
     useSharedValue: (value) => ({ value }),
     useAnimatedStyle: (callback) => callback(),
+    useAnimatedProps: (callback) => callback(),
     withTiming: (value) => value,
     withSpring: (value) => value,
     withDecay: (value) => value,
@@ -103,7 +104,12 @@ jest.mock('react-native-gesture-handler', () => {
     GestureDetector: View,
     Gesture: {
       Tap: () => ({}),
-      Pan: () => ({}),
+      Pan: () => ({
+        enabled: jest.fn().mockReturnThis(),
+        onStart: jest.fn().mockReturnThis(),
+        onUpdate: jest.fn().mockReturnThis(),
+        onEnd: jest.fn().mockReturnThis(),
+      }),
       Pinch: () => ({}),
       Rotation: () => ({}),
       Fling: () => ({}),
@@ -133,6 +139,12 @@ jest.mock('react-native-haptic-feedback', () => ({
     trigger: jest.fn(),
   },
   trigger: jest.fn(),
+}));
+
+// Mock react-native-image-picker
+jest.mock('react-native-image-picker', () => ({
+  launchImageLibrary: jest.fn(),
+  launchCamera: jest.fn(),
 }));
 
 // Mock @react-native-community/geolocation

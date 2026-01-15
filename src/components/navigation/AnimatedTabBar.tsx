@@ -54,6 +54,9 @@ const TabItem = memo(({ route, index, isFocused, options, onPress, slidePosition
       case 'Search':
         iconName = focused ? 'search' : 'search-outline';
         break;
+      case 'Profile':
+        iconName = focused ? 'person' : 'person-outline';
+        break;
       case 'Settings':
         iconName = focused ? 'settings' : 'settings-outline';
         break;
@@ -69,6 +72,8 @@ const TabItem = memo(({ route, index, isFocused, options, onPress, slidePosition
         return 'Feed';
       case 'Search':
         return 'Search';
+      case 'Profile':
+        return 'Profile';
       case 'Settings':
         return 'Settings';
       default:
