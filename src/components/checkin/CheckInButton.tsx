@@ -53,18 +53,24 @@ const CheckInButton: React.FC<CheckInButtonProps> = ({
       iconSize: 14,
       textSize: 11,
       borderRadius: 12,
+      minHeight: 44, // Requirement 10.5: Minimum touch target
+      minWidth: 44,  // Requirement 10.5: Minimum touch target
     },
     medium: {
-      padding: { paddingHorizontal: 12, paddingVertical: 6 },
+      padding: { paddingHorizontal: 8, paddingVertical: 4 },
       iconSize: 16,
       textSize: 12,
       borderRadius: 16,
+      minHeight: 44, // Requirement 10.5: Minimum touch target
+      minWidth: 44,  // Requirement 10.5: Minimum touch target
     },
     large: {
       padding: { paddingHorizontal: 16, paddingVertical: 8 },
       iconSize: 18,
       textSize: 14,
       borderRadius: 20,
+      minHeight: 44, // Requirement 10.5: Minimum touch target
+      minWidth: 44,  // Requirement 10.5: Minimum touch target
     },
   };
 
@@ -195,11 +201,20 @@ const CheckInButton: React.FC<CheckInButtonProps> = ({
             borderColor: buttonStyle.borderColor,
             borderRadius: config.borderRadius,
             opacity: (loading || showModal) ? 0.6 : 1,
+            minHeight: config.minHeight, // Requirement 10.5: Minimum touch target
+            minWidth: config.minWidth,   // Requirement 10.5: Minimum touch target
+            justifyContent: 'center',
+            alignItems: 'center',
           }
         ]}
         onPress={handleCheckInToggle}
         disabled={loading || showModal}
         activeOpacity={0.7}
+        // Requirement 10.5: Accessibility for touch targets
+        accessible={true}
+        accessibilityRole="button"
+        accessibilityLabel={isCheckedIn ? `Check out from ${venueName}` : `Check in to ${venueName}`}
+        accessibilityState={{ disabled: loading || showModal }}
       >
         {loading ? (
           <ActivityIndicator size="small" color={buttonStyle.color} />
