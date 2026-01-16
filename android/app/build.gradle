@@ -1,6 +1,7 @@
 apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
+apply plugin: "com.google.gms.google-services"
 
 project.ext.vectoricons = [
     iconFontNames: [ 'Ionicons.ttf' ]
@@ -122,4 +123,14 @@ dependencies {
     } else {
         implementation jscFlavor
     }
+
+    // Import the Firebase BoM
+    implementation platform("com.google.firebase:firebase-bom:34.8.0")
+
+    // Firebase Cloud Messaging
+    // When using the BoM, don't specify versions in Firebase dependencies
+    implementation("com.google.firebase:firebase-messaging")
+
+    // Optional: Firebase Analytics (useful for tracking notification engagement)
+    // implementation("com.google.firebase:firebase-analytics")
 }

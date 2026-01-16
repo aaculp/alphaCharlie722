@@ -1,6 +1,10 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 import { useSocialNotifications } from '../hooks/useSocialNotifications';
+import { FCMService } from '../services/FCMService';
+import { FCMTokenService } from '../services/FCMTokenService';
+import { NotificationHandler } from '../services/NotificationHandler';
+import { PushPermissionService } from '../services/PushPermissionService';
 import type { SocialNotification } from '../types/social.types';
 
 interface NotificationContextType {
@@ -13,6 +17,8 @@ interface NotificationContextType {
   refetch: () => Promise<void>;
   handleNotificationPress: (notification: SocialNotification) => void;
   setNotificationPressHandler: (handler: (notification: SocialNotification) => void) => void;
+  pushEnabled: boolean;
+  showPushDisabledMessage: () => void;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -26,16 +32,19 @@ interface NotificationProviderProps {
  * 
  * Provides notification state and handlers throughout the app.
  * Manages notification listeners, unread count, and notification tap handling.
+ * Uses push notifications for real-time updates instead of polling.
  * 
- * Requirements: 9.1, 9.2, 9.3, 9.9
+ * Requirements: 9.1, 9.2, 9.3, 9.9, 11.1, 11.2, 11.3, 11.9
  */
 export const NotificationProvider: React.FC<NotificationProviderProps> = ({ children }) => {
   const { user } = useAuth();
   const [notificationPressHandler, setNotificationPressHandler] = useState<
     ((notification: SocialNotification) => void) | null
   >(null);
+  const [pushEnabled, setPushEnabled] = useState<boolean>(false);
 
-  // Use the social notifications hook with polling enabled (30 seconds)
+  // Use the social notifications hook WITHOUT polling
+  // Push notifications provide real-time updates instead
   const {
     notifications,
     unreadCount,
@@ -46,8 +55,69 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     refetch,
   } = useSocialNotifications({
     autoLoad: !!user,
-    pollInterval: 30000, // Poll every 30 seconds for new notifications
+    // pollInterval removed - push notifications replace polling
   });
+
+  // Initialize push notifications on mount
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    const initializePush = async () => {
+      try {
+        console.log('🔔 Initializing push notifications...');
+
+        // Initialize FCM
+        await FCMService.initialize();
+
+        // Check if push is enabled
+        const isEnabled = await PushPermissionService.isEnabled();
+        setPushEnabled(isEnabled);
+
+        if (isEnabled) {
+          console.log('✅ Push notifications enabled');
+        } else {
+          console.log('⚠️ Push notifications disabled - using manual refresh only');
+        }
+      } catch (error) {
+        console.error('❌ Error initializing push notifications:', error);
+        setPushEnabled(false);
+      }
+    };
+
+    initializePush();
+  }, [user]);
+
+  // Register device token on login
+  useEffect(() => {
+    if (!user || !pushEnabled) {
+      return;
+    }
+
+    const registerToken = async () => {
+      try {
+        console.log('📝 Registering device token for user:', user.id);
+
+        // Generate and store FCM token
+        await FCMTokenService.generateAndStoreToken(user.id);
+
+        // Set up token refresh listener
+        FCMTokenService.setupTokenRefreshListener(user.id);
+
+        console.log('✅ Device token registered');
+      } catch (error) {
+        console.error('❌ Error registering device token:', error);
+      }
+    };
+
+    registerToken();
+
+    // Cleanup on unmount or logout
+    return () => {
+      FCMTokenService.removeTokenRefreshListener();
+    };
+  }, [user, pushEnabled]);
 
   // Log notification updates for debugging
   useEffect(() => {
@@ -56,9 +126,36 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         count: notifications.length,
         unread: unreadCount,
         userId: user.id,
+        pushEnabled,
       });
     }
-  }, [notifications, unreadCount, user]);
+  }, [notifications, unreadCount, user, pushEnabled]);
+
+  // Register foreground notification handler
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    console.log('🔔 Registering foreground notification handler');
+
+    // Register handler for notifications received while app is in foreground
+    FCMService.onForegroundMessage((message) => {
+      console.log('📬 Foreground notification received:', message);
+      
+      // Handle the notification
+      NotificationHandler.handleForegroundNotification(message);
+      
+      // Refetch notifications to update the list
+      refetch();
+    });
+
+    // Cleanup on unmount
+    return () => {
+      console.log('🔕 Removing foreground notification handler');
+      FCMService.removeForegroundMessageListener();
+    };
+  }, [user, refetch]);
 
   // Handle notification press
   const handleNotificationPress = useCallback(
@@ -83,6 +180,11 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     setNotificationPressHandler(() => handler);
   }, []);
 
+  // Show message about enabling push for real-time updates
+  const showPushDisabledMessage = useCallback(() => {
+    PushPermissionService.showFallbackNotificationInfo();
+  }, []);
+
   const value: NotificationContextType = {
     notifications,
     unreadCount,
@@ -93,6 +195,8 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     refetch,
     handleNotificationPress,
     setNotificationPressHandler: setHandler,
+    pushEnabled,
+    showPushDisabledMessage,
   };
 
   return (

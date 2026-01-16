@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -15,8 +15,9 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useGridLayout, GridLayoutType } from '../../contexts/GridLayoutContext';
 import { useNavigationStyle, NavigationStyleType } from '../../contexts/NavigationStyleContext';
 import { useLocationContext } from '../../contexts/LocationContext';
-import { useFriends } from '../../hooks';
+import { useFriends, useNotificationPreferences } from '../../hooks';
 import { populateVenuesDatabase } from '../../utils/populateVenues';
+import { PushPermissionService, PermissionStatus } from '../../services/PushPermissionService';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 const SettingsScreen: React.FC = () => {
@@ -25,13 +26,129 @@ const SettingsScreen: React.FC = () => {
   const [gridLayoutExpanded, setGridLayoutExpanded] = useState(false);
   const [navigationStyleExpanded, setNavigationStyleExpanded] = useState(false);
   const [privacyExpanded, setPrivacyExpanded] = useState(false);
+  const [notificationTypesExpanded, setNotificationTypesExpanded] = useState(false);
+  const [pushPermissionStatus, setPushPermissionStatus] = useState<PermissionStatus>('not_determined');
+  const [pushEnabled, setPushEnabled] = useState(false);
+  
   const { signOut, user } = useAuth();
   const { theme, themeMode, setThemeMode } = useTheme();
   const { gridLayout, setGridLayout } = useGridLayout();
   const { navigationStyle, setNavigationStyle } = useNavigationStyle();
   const { locationEnabled, setLocationEnabled } = useLocationContext();
   const { friends, loading: friendsLoading } = useFriends();
+  const { preferences, loading: prefsLoading, updatePreference } = useNotificationPreferences();
   const navigation = useNavigation<any>();
+
+  // Load push permission status on mount
+  useEffect(() => {
+    loadPushPermissionStatus();
+  }, []);
+
+  // Update push enabled state when preferences load
+  useEffect(() => {
+    if (preferences) {
+      // Check if any push notification type is enabled
+      const anyEnabled = 
+        preferences.friend_requests ||
+        preferences.friend_accepted ||
+        preferences.venue_shares;
+      setPushEnabled(anyEnabled);
+    }
+  }, [preferences]);
+
+  const loadPushPermissionStatus = async () => {
+    try {
+      const status = await PushPermissionService.checkPermissionStatus();
+      setPushPermissionStatus(status);
+    } catch (error) {
+      console.error('Error loading push permission status:', error);
+    }
+  };
+
+  const handlePushToggle = async (value: boolean) => {
+    try {
+      // If enabling, check permission first
+      if (value) {
+        const isEnabled = await PushPermissionService.isEnabled();
+        
+        if (!isEnabled) {
+          // Check if permanently denied first
+          const isPermanentlyDenied = await PushPermissionService.isPermanentlyDenied();
+          
+          if (isPermanentlyDenied) {
+            // Show platform-specific instructions for permanently denied
+            await PushPermissionService.handleNeverAskAgain();
+            return;
+          }
+          
+          // Request permission
+          const result = await PushPermissionService.requestPermission();
+          setPushPermissionStatus(result.status);
+          
+          if (result.isPermanentlyDenied) {
+            // Show alert with instructions
+            PushPermissionService.showPermissionDeniedAlert();
+            return;
+          }
+          
+          if (result.status !== 'authorized' && result.status !== 'provisional') {
+            Alert.alert(
+              'Permission Required',
+              'Push notifications require permission to work. Please enable them in settings.',
+              [{ text: 'OK' }]
+            );
+            return;
+          }
+        }
+      }
+
+      // Update all notification preferences
+      if (preferences) {
+        await Promise.all([
+          updatePreference('friend_requests', value),
+          updatePreference('friend_accepted', value),
+          updatePreference('venue_shares', value),
+        ]);
+      }
+
+      setPushEnabled(value);
+      
+      if (value) {
+        Alert.alert(
+          'Success',
+          'Push notifications enabled. You\'ll receive real-time updates for social interactions.',
+          [{ text: 'OK' }]
+        );
+      } else {
+        // Show fallback info when disabling
+        PushPermissionService.showFallbackNotificationInfo();
+      }
+    } catch (error) {
+      console.error('Error toggling push notifications:', error);
+      Alert.alert(
+        'Error',
+        'Failed to update push notification settings. Please try again.',
+        [{ text: 'OK' }]
+      );
+    }
+  };
+
+  const getPermissionStatusText = (): string => {
+    switch (pushPermissionStatus) {
+      case 'authorized':
+        return 'Enabled';
+      case 'provisional':
+        return 'Provisional';
+      case 'denied':
+        return 'Denied';
+      case 'not_determined':
+        return 'Not Set';
+      case 'unavailable':
+        return 'Unavailable';
+      default:
+        return 'Unknown';
+    }
+  };
 
   const handleThemeChange = (mode: 'light' | 'dark' | 'system') => {
     setThemeMode(mode);
@@ -264,7 +381,147 @@ const SettingsScreen: React.FC = () => {
           />
           <SettingItem
             icon="notifications"
-            title="Notifications"
+            title="Push Notifications"
+            subtitle={`${getPermissionStatusText()} • Real-time social updates`}
+            rightComponent={
+              <Switch
+                value={pushEnabled}
+                onValueChange={handlePushToggle}
+                disabled={prefsLoading}
+                trackColor={{ false: '#767577', true: theme.colors.primary + '80' }}
+                thumbColor={pushEnabled ? theme.colors.primary : '#f4f3f4'}
+              />
+            }
+            showArrow={false}
+          />
+          
+          {/* Notification Types Accordion */}
+          <TouchableOpacity 
+            style={[styles.settingItem, { borderBottomColor: theme.colors.border }]}
+            onPress={() => setNotificationTypesExpanded(!notificationTypesExpanded)}
+          >
+            <View style={styles.settingLeft}>
+              <Icon name="options" size={24} color={theme.colors.primary} style={styles.settingIcon} />
+              <View style={styles.settingText}>
+                <Text style={[styles.settingTitle, { color: theme.colors.text }]}>Notification Types</Text>
+                <Text style={[styles.settingSubtitle, { color: theme.colors.textSecondary }]}>
+                  Choose which notifications you receive
+                </Text>
+              </View>
+            </View>
+            <View style={styles.settingRight}>
+              <Icon 
+                name={notificationTypesExpanded ? 'chevron-up' : 'chevron-down'} 
+                size={20} 
+                color={theme.colors.textSecondary} 
+              />
+            </View>
+          </TouchableOpacity>
+          
+          {/* Notification Type Toggles */}
+          {notificationTypesExpanded && preferences && (
+            <View style={styles.accordionContent}>
+              <View style={[styles.notificationTypeOption, { borderBottomColor: theme.colors.border }]}>
+                <View style={styles.notificationTypeLeft}>
+                  <Text style={[styles.notificationTypeTitle, { color: theme.colors.text }]}>Friend Requests</Text>
+                  <Text style={[styles.notificationTypeSubtitle, { color: theme.colors.textSecondary }]}>
+                    When someone sends you a friend request
+                  </Text>
+                </View>
+                <Switch
+                  value={preferences.friend_requests}
+                  onValueChange={(value) => updatePreference('friend_requests', value)}
+                  disabled={prefsLoading}
+                  trackColor={{ false: '#767577', true: theme.colors.primary + '80' }}
+                  thumbColor={preferences.friend_requests ? theme.colors.primary : '#f4f3f4'}
+                />
+              </View>
+              
+              <View style={[styles.notificationTypeOption, { borderBottomColor: theme.colors.border }]}>
+                <View style={styles.notificationTypeLeft}>
+                  <Text style={[styles.notificationTypeTitle, { color: theme.colors.text }]}>Friend Accepted</Text>
+                  <Text style={[styles.notificationTypeSubtitle, { color: theme.colors.textSecondary }]}>
+                    When someone accepts your friend request
+                  </Text>
+                </View>
+                <Switch
+                  value={preferences.friend_accepted}
+                  onValueChange={(value) => updatePreference('friend_accepted', value)}
+                  disabled={prefsLoading}
+                  trackColor={{ false: '#767577', true: theme.colors.primary + '80' }}
+                  thumbColor={preferences.friend_accepted ? theme.colors.primary : '#f4f3f4'}
+                />
+              </View>
+              
+              <View style={[styles.notificationTypeOption, { borderBottomColor: theme.colors.border }]}>
+                <View style={styles.notificationTypeLeft}>
+                  <Text style={[styles.notificationTypeTitle, { color: theme.colors.text }]}>Venue Shares</Text>
+                  <Text style={[styles.notificationTypeSubtitle, { color: theme.colors.textSecondary }]}>
+                    When a friend shares a venue with you
+                  </Text>
+                </View>
+                <Switch
+                  value={preferences.venue_shares}
+                  onValueChange={(value) => updatePreference('venue_shares', value)}
+                  disabled={prefsLoading}
+                  trackColor={{ false: '#767577', true: theme.colors.primary + '80' }}
+                  thumbColor={preferences.venue_shares ? theme.colors.primary : '#f4f3f4'}
+                />
+              </View>
+              
+              <View style={[styles.notificationTypeOption, { borderBottomColor: theme.colors.border }]}>
+                <View style={styles.notificationTypeLeft}>
+                  <Text style={[styles.notificationTypeTitle, { color: theme.colors.text }]}>Collection Follows</Text>
+                  <Text style={[styles.notificationTypeSubtitle, { color: theme.colors.textSecondary }]}>
+                    When someone follows your collection
+                  </Text>
+                </View>
+                <Switch
+                  value={preferences.collection_follows}
+                  onValueChange={(value) => updatePreference('collection_follows', value)}
+                  disabled={prefsLoading}
+                  trackColor={{ false: '#767577', true: theme.colors.primary + '80' }}
+                  thumbColor={preferences.collection_follows ? theme.colors.primary : '#f4f3f4'}
+                />
+              </View>
+              
+              <View style={[styles.notificationTypeOption, { borderBottomColor: theme.colors.border }]}>
+                <View style={styles.notificationTypeLeft}>
+                  <Text style={[styles.notificationTypeTitle, { color: theme.colors.text }]}>Activity Likes</Text>
+                  <Text style={[styles.notificationTypeSubtitle, { color: theme.colors.textSecondary }]}>
+                    When someone likes your activity
+                  </Text>
+                </View>
+                <Switch
+                  value={preferences.activity_likes}
+                  onValueChange={(value) => updatePreference('activity_likes', value)}
+                  disabled={prefsLoading}
+                  trackColor={{ false: '#767577', true: theme.colors.primary + '80' }}
+                  thumbColor={preferences.activity_likes ? theme.colors.primary : '#f4f3f4'}
+                />
+              </View>
+              
+              <View style={[styles.notificationTypeOption, { borderBottomColor: theme.colors.border }]}>
+                <View style={styles.notificationTypeLeft}>
+                  <Text style={[styles.notificationTypeTitle, { color: theme.colors.text }]}>Activity Comments</Text>
+                  <Text style={[styles.notificationTypeSubtitle, { color: theme.colors.textSecondary }]}>
+                    When someone comments on your activity
+                  </Text>
+                </View>
+                <Switch
+                  value={preferences.activity_comments}
+                  onValueChange={(value) => updatePreference('activity_comments', value)}
+                  disabled={prefsLoading}
+                  trackColor={{ false: '#767577', true: theme.colors.primary + '80' }}
+                  thumbColor={preferences.activity_comments ? theme.colors.primary : '#f4f3f4'}
+                />
+              </View>
+            </View>
+          )}
+          
+          <SettingItem
+            icon="notifications-outline"
+            title="In-App Notifications"
             subtitle="Manage your notification preferences"
             rightComponent={
               <Switch
@@ -598,6 +855,18 @@ const SettingsScreen: React.FC = () => {
         <SectionHeader title="Support & Legal" />
         <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
           <SettingItem
+            icon="flag"
+            title="My Reports"
+            subtitle="View notifications you've reported"
+            onPress={() => {
+              Alert.alert(
+                'My Reports',
+                'View and manage your reported notifications. This feature helps us maintain a safe community.',
+                [{ text: 'OK' }]
+              );
+            }}
+          />
+          <SettingItem
             icon="help-circle"
             title="Help & Support"
             subtitle="Get help or contact support"
@@ -848,6 +1117,28 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     fontFamily: 'Inter-SemiBold',
+  },
+  notificationTypeOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  notificationTypeLeft: {
+    flex: 1,
+    marginRight: 12,
+  },
+  notificationTypeTitle: {
+    fontSize: 15,
+    fontWeight: '500',
+    marginBottom: 2,
+    fontFamily: 'Inter-Medium',
+  },
+  notificationTypeSubtitle: {
+    fontSize: 13,
+    fontFamily: 'Inter-Regular',
   },
 });
 

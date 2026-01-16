@@ -6,3 +6,5 @@ export { default as SettingsScreen } from './SettingsScreen';
 export { default as ProfileScreen } from './ProfileScreen';
 export { default as QuickPicksScreen } from './QuickPicksScreen';
 export { default as HistoryScreen } from './HistoryScreen';
+export { NotificationDebugScreen } from './NotificationDebugScreen';
+export { DebugLogsScreen } from './DebugLogsScreen';

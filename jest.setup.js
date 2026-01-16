@@ -132,6 +132,30 @@ jest.mock('react-native-vector-icons/MaterialCommunityIcons', () => 'Icon');
 // Mock react-native-url-polyfill
 jest.mock('react-native-url-polyfill/auto', () => {});
 
+// Mock @react-native-firebase/messaging
+jest.mock('@react-native-firebase/messaging', () => {
+  const mockMessagingInstance = {
+    requestPermission: jest.fn(),
+    hasPermission: jest.fn(),
+    getToken: jest.fn(),
+    deleteToken: jest.fn(),
+    onTokenRefresh: jest.fn(() => jest.fn()),
+    setBackgroundMessageHandler: jest.fn(),
+    onMessage: jest.fn(() => jest.fn()),
+    getInitialNotification: jest.fn(),
+  };
+  
+  const mockMessaging = jest.fn(() => mockMessagingInstance);
+  mockMessaging.AuthorizationStatus = {
+    AUTHORIZED: 1,
+    DENIED: 0,
+    PROVISIONAL: 2,
+    NOT_DETERMINED: -1,
+  };
+  
+  return mockMessaging;
+});
+
 // Mock react-native-haptic-feedback
 jest.mock('react-native-haptic-feedback', () => ({
   __esModule: true,

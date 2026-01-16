@@ -17,4 +17,5 @@ export { default as MutualFavoritesIndicator } from './MutualFavoritesIndicator'
 export { default as FriendRequestCard } from './FriendRequestCard';
 export { default as FriendRequestModal } from './FriendRequestModal';
 export { default as LoadingButton } from './LoadingButton';
+export { default as NotificationReportModal } from './NotificationReportModal';
 export * from './SkeletonLoaders';

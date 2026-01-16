@@ -3,6 +3,8 @@ import { Session, User } from '@supabase/supabase-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../lib/supabase';
 import { VenueBusinessService } from '../services/venueBusinessService';
+import { FCMTokenService } from '../services/FCMTokenService';
+import { DeviceTokenManager } from '../services/DeviceTokenManager';
 import type { UserType } from '../types';
 
 interface AuthContextType {
@@ -100,6 +102,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           if (!authSession?.user?.id) {
             setUserType(null);
             setVenueBusinessAccount(null);
+            // Remove token refresh listener on sign out
+            FCMTokenService.removeTokenRefreshListener();
+          } else {
+            // User signed in - set up FCM token
+            try {
+              await FCMTokenService.initialize();
+              await FCMTokenService.generateAndStoreToken(authSession.user.id);
+              FCMTokenService.setupTokenRefreshListener(authSession.user.id);
+            } catch (error) {
+              console.error('❌ Error setting up FCM token:', error);
+              // Don't block auth flow if FCM setup fails
+            }
           }
         }
       }
@@ -311,6 +325,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     console.log('🚪 Sign out initiated...');
     setLoading(true);
     try {
+      // Get current FCM token before signing out
+      const currentToken = await FCMTokenService.getCurrentToken();
+      
+      // Deactivate the current device token in the database
+      if (currentToken) {
+        try {
+          await DeviceTokenManager.deactivateToken(currentToken);
+          console.log('✅ Device token deactivated');
+        } catch (error) {
+          console.error('❌ Error deactivating device token:', error);
+          // Don't block sign out if token deactivation fails
+        }
+      }
+      
+      // Remove token refresh listener
+      FCMTokenService.removeTokenRefreshListener();
+      
+      // Delete FCM token from device
+      try {
+        await FCMTokenService.deleteToken();
+      } catch (error) {
+        console.error('❌ Error deleting FCM token:', error);
+        // Don't block sign out if token deletion fails
+      }
+      
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error('❌ Sign out error:', error);

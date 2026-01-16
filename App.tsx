@@ -2,7 +2,7 @@
  * Main App - Full navigation with SafeAreaView fix for white bar
  */
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { StatusBar, StyleSheet, useColorScheme } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
@@ -13,6 +13,7 @@ import { GridLayoutProvider } from './src/contexts/GridLayoutContext';
 import { NavigationStyleProvider } from './src/contexts/NavigationStyleContext';
 import { LocationProvider } from './src/contexts/LocationContext';
 import { NotificationProvider } from './src/contexts/NotificationContext';
+import { TokenCleanupScheduler } from './src/services/TokenCleanupScheduler';
 import AppNavigator from './src/navigation/AppNavigator';
 
 function AppContent() {
@@ -47,6 +48,15 @@ function AppContent() {
 }
 
 function App() {
+  // Start token cleanup scheduler on app launch
+  useEffect(() => {
+    TokenCleanupScheduler.start();
+    
+    return () => {
+      TokenCleanupScheduler.stop();
+    };
+  }, []);
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>

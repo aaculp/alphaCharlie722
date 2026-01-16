@@ -264,3 +264,14 @@ export type { UseProfilePhotoUploadOptions, UseProfilePhotoUploadReturn } from '
  * ```
  */
 export { useAboutMe } from './useAboutMe';
+
+/**
+ * useNotificationPreferences - Manages notification preferences for the current user
+ * 
+ * @example
+ * ```tsx
+ * const { preferences, loading, updatePreference } = useNotificationPreferences();
+ * await updatePreference('friend_requests', true);
+ * ```
+ */
+export { useNotificationPreferences } from './useNotificationPreferences';

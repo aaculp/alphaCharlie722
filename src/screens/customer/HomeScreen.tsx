@@ -304,58 +304,6 @@ const HomeScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-      {/* Near Me Button */}
-      {/* {locationEnabled && (
-        <View style={styles.headerContainer}>
-          <TouchableOpacity
-            style={[
-              styles.nearMeButton,
-              { 
-                backgroundColor: sortByDistance ? theme.colors.primary : theme.colors.surface,
-                borderColor: theme.colors.border
-              }
-            ]}
-            onPress={handleNearMePress}
-            disabled={locationLoading}
-          >
-            <Icon 
-              name={sortByDistance ? "location" : "location-outline"} 
-              size={20} 
-              color={sortByDistance ? '#fff' : theme.colors.primary} 
-            />
-            <Text style={[
-              styles.nearMeText,
-              { color: sortByDistance ? '#fff' : theme.colors.primary }
-            ]}>
-              {locationLoading ? 'Getting location...' : sortByDistance ? 'Near Me' : 'Sort by Distance'}
-            </Text>
-          </TouchableOpacity>
-          {locationError && (
-            <View style={styles.errorContainer}>
-              <Text style={[styles.errorText, { color: theme.colors.error }]}>
-                {locationError.message.includes('permanently denied')
-                  ? 'Location permission is disabled. Please enable it in Settings.'
-                  : locationError.message === 'Location permission denied' 
-                  ? 'Location permission is required.'
-                  : locationError.message}
-              </Text>
-              {(locationError.message.includes('permanently denied') || locationError.message === 'Location permission denied') && (
-                <TouchableOpacity 
-                  style={[styles.settingsButton, { backgroundColor: theme.colors.primary }]}
-                  onPress={() => {
-                    LocationService.openAppSettings();
-                  }}
-                >
-                  <Text style={styles.settingsButtonText}>
-                    Open Settings
-                  </Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          )}
-        </View>
-      )}
-       */}
       <Animated.ScrollView
         testID="home-scroll-view"
         style={styles.scrollView}

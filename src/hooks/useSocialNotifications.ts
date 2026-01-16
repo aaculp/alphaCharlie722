@@ -9,7 +9,7 @@ import type {
 export interface UseSocialNotificationsOptions {
   autoLoad?: boolean;
   pagination?: PaginationOptions;
-  pollInterval?: number; // Auto-refresh interval in milliseconds (0 = disabled)
+  // pollInterval removed - push notifications replace polling (Requirement 11.1)
 }
 
 export interface UseSocialNotificationsReturn {
@@ -25,8 +25,13 @@ export interface UseSocialNotificationsReturn {
 /**
  * Custom hook for managing social notifications
  * 
+ * Uses push notifications for real-time updates instead of polling.
+ * Manual refresh (refetch) is still available for pull-to-refresh.
+ * 
  * @param options - Configuration options
  * @returns Notifications data, unread count, loading state, error state, and notification management functions
+ * 
+ * Requirements: 11.1, 11.2, 11.3, 11.9
  * 
  * @example
  * ```tsx
@@ -36,8 +41,9 @@ export interface UseSocialNotificationsReturn {
  *   loading,
  *   markAsRead,
  *   markAllAsRead,
+ *   refetch, // Manual refresh available
  * } = useSocialNotifications({
- *   pollInterval: 30000, // Poll every 30 seconds
+ *   autoLoad: true,
  * });
  * 
  * // Mark a notification as read
@@ -45,12 +51,15 @@ export interface UseSocialNotificationsReturn {
  * 
  * // Mark all notifications as read
  * await markAllAsRead();
+ * 
+ * // Manual refresh (pull-to-refresh)
+ * await refetch();
  * ```
  */
 export function useSocialNotifications(
   options: UseSocialNotificationsOptions = {}
 ): UseSocialNotificationsReturn {
-  const { autoLoad = true, pagination, pollInterval = 0 } = options;
+  const { autoLoad = true, pagination } = options;
   const { user } = useAuth();
 
   const [notifications, setNotifications] = useState<SocialNotification[]>([]);
@@ -91,20 +100,14 @@ export function useSocialNotifications(
   // Auto-load on mount if enabled
   useEffect(() => {
     if (autoLoad) {
+      console.log('📬 Loading notifications (push mode - no polling)');
       loadNotifications();
     }
   }, [autoLoad, loadNotifications]);
 
-  // Set up polling if pollInterval is provided
-  useEffect(() => {
-    if (pollInterval > 0 && user?.id) {
-      const intervalId = setInterval(() => {
-        loadNotifications();
-      }, pollInterval);
-
-      return () => clearInterval(intervalId);
-    }
-  }, [pollInterval, user?.id, loadNotifications]);
+  // Polling removed - push notifications provide real-time updates
+  // Manual refresh (refetch) is still available for pull-to-refresh
+  // Requirements: 11.1, 11.5, 11.6, 11.7, 11.8
 
   // Mark a notification as read
   const markAsRead = useCallback(
@@ -171,8 +174,10 @@ export function useSocialNotifications(
     }
   }, [user]);
 
-  // Refetch notifications
+  // Refetch notifications (manual refresh for pull-to-refresh)
+  // Requirements: 11.3, 11.9
   const refetch = useCallback(async () => {
+    console.log('🔄 Manual refresh triggered');
     await loadNotifications();
   }, [loadNotifications]);
 

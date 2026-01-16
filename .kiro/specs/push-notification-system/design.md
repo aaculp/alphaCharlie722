@@ -6,6 +6,14 @@ The Push Notification System is the core monetization feature of the OTW platfor
 
 The system is designed to be scalable, reliable, and compliant with platform guidelines while providing venues with powerful tools to drive foot traffic and measure campaign effectiveness.
 
+**Tier-Based Access:**
+- **Free ($0)**: No push notification access
+- **Core ($79/month)**: 20 pushes/month, basic targeting, analytics
+- **Pro ($179/month)**: 60 pushes/month, Flash Offers, advanced targeting
+- **Revenue+ ($299/month)**: Unlimited pushes (fair use), automation, priority support
+
+**Add-On Credits:** Available for purchase (3 for $25, 10 for $120, 25 for $299)
+
 ## Architecture
 
 ### High-Level Architecture
@@ -13,19 +21,19 @@ The system is designed to be scalable, reliable, and compliant with platform gui
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                     Venue Dashboard                          │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
-│  │ Create Push  │  │  Schedule    │  │  Analytics   │     │
-│  │ Notification │  │  Management  │  │  Dashboard   │     │
-│  └──────────────┘  └──────────────┘  └──────────────┘     │
+│  ┌──────────────┐  ┌──────────────┐                        │
+│  │ Create Push  │  │  Analytics   │                        │
+│  │ Notification │  │  Dashboard   │                        │
+│  └──────────────┘  └──────────────┘                        │
 └─────────────────────────────────────────────────────────────┘
                             │
                             ▼
 ┌─────────────────────────────────────────────────────────────┐
 │              Push Notification Service Layer                 │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
-│  │  Targeting   │  │  Scheduling  │  │  Analytics   │     │
-│  │   Engine     │  │   Service    │  │   Tracker    │     │
-│  └──────────────┘  └──────────────┘  └──────────────┘     │
+│  ┌──────────────┐  ┌──────────────┐                        │
+│  │  Targeting   │  │  Analytics   │                        │
+│  │   Engine     │  │   Tracker    │                        │
+│  └──────────────┘  └──────────────┘                        │
 └─────────────────────────────────────────────────────────────┘
                             │
                             ▼
@@ -50,7 +58,7 @@ The system is designed to be scalable, reliable, and compliant with platform gui
    - Venue owner accesses dashboard
    - Fills out notification form (title, message, type)
    - Selects targeting options (all users, favorites, geo-radius)
-   - Chooses send now or schedule for later
+   - Clicks "Send Now" to send immediately
 
 2. **Targeting Engine Processes Request**
    - Queries database for eligible users
@@ -59,8 +67,7 @@ The system is designed to be scalable, reliable, and compliant with platform gui
    - Returns list of device tokens
 
 3. **Notification Delivery**
-   - For immediate send: Sends to FCM immediately
-   - For scheduled: Stores in database, background job processes later
+   - Sends to FCM immediately
    - FCM delivers to devices (iOS via APNs, Android directly)
    - Tracks delivery status
 
@@ -82,10 +89,6 @@ interface PushNotificationService {
   // Create and send notification
   createNotification(request: CreateNotificationRequest): Promise<Notification>;
   sendNotification(notificationId: string): Promise<SendResult>;
-  
-  // Scheduling
-  scheduleNotification(notificationId: string, sendAt: Date): Promise<void>;
-  cancelScheduledNotification(notificationId: string): Promise<void>;
   
   // Testing
   sendTestNotification(notificationId: string, deviceToken: string): Promise<void>;
@@ -181,32 +184,7 @@ interface TargetedUser {
 }
 ```
 
-### 4. Scheduling Service
-
-**Responsibility:** Manage scheduled notifications and background processing
-
-**Interface:**
-```typescript
-interface SchedulingService {
-  // Schedule management
-  scheduleNotification(notification: Notification, sendAt: Date): Promise<void>;
-  cancelScheduledNotification(notificationId: string): Promise<void>;
-  updateScheduledNotification(notificationId: string, sendAt: Date): Promise<void>;
-  
-  // Background processing
-  processDueNotifications(): Promise<ProcessResult>;
-  getUpcomingNotifications(venueId: string): Promise<Notification[]>;
-}
-
-interface ProcessResult {
-  processed: number;
-  succeeded: number;
-  failed: number;
-  errors: Error[];
-}
-```
-
-### 5. Analytics Tracker
+### 4. Analytics Tracker
 
 **Responsibility:** Track notification performance and user engagement
 
@@ -236,7 +214,7 @@ interface NotificationAnalytics {
 }
 ```
 
-### 6. User Preferences Service
+### 5. User Preferences Service
 
 **Responsibility:** Manage user notification preferences and quiet hours
 
@@ -283,8 +261,7 @@ CREATE TABLE push_notifications (
   targeting_mode VARCHAR(20) NOT NULL CHECK (targeting_mode IN ('all', 'favorites', 'geo')),
   geo_radius DECIMAL(5,2), -- in miles
   combine_favorites BOOLEAN DEFAULT false,
-  status VARCHAR(20) NOT NULL CHECK (status IN ('draft', 'scheduled', 'sending', 'sent', 'failed')),
-  scheduled_for TIMESTAMP WITH TIME ZONE,
+  status VARCHAR(20) NOT NULL CHECK (status IN ('draft', 'sending', 'sent', 'failed')),
   sent_at TIMESTAMP WITH TIME ZONE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -292,7 +269,6 @@ CREATE TABLE push_notifications (
 
 CREATE INDEX idx_push_notifications_venue ON push_notifications(venue_id);
 CREATE INDEX idx_push_notifications_status ON push_notifications(status);
-CREATE INDEX idx_push_notifications_scheduled ON push_notifications(scheduled_for) WHERE status = 'scheduled';
 ```
 
 #### device_tokens Table
@@ -376,15 +352,15 @@ CREATE INDEX idx_user_notification_preferences_user ON user_notification_prefere
 CREATE TABLE push_notification_credits (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   venue_id UUID NOT NULL REFERENCES venues(id),
-  date DATE NOT NULL,
-  daily_limit INTEGER NOT NULL,
+  month DATE NOT NULL, -- First day of the month
+  monthly_limit INTEGER NOT NULL,
   used_count INTEGER DEFAULT 0,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  UNIQUE(venue_id, date)
+  UNIQUE(venue_id, month)
 );
 
-CREATE INDEX idx_push_notification_credits_venue_date ON push_notification_credits(venue_id, date);
+CREATE INDEX idx_push_notification_credits_venue_month ON push_notification_credits(venue_id, month);
 ```
 
 
@@ -472,31 +448,7 @@ CREATE INDEX idx_push_notification_credits_venue_date ON push_notification_credi
 *For any* notification send, users who have blocked/muted the venue should be excluded from the target audience.
 **Validates: Requirements 4.10**
 
-### Property 21: Future Schedule Validation
-*For any* scheduled notification, the scheduled time must be in the future relative to the current time.
-**Validates: Requirements 5.3**
-
-### Property 22: Scheduled Notification Storage
-*For any* scheduled notification, it should be stored in the database with status 'scheduled' and the correct send time.
-**Validates: Requirements 5.4**
-
-### Property 23: Scheduled Notification Execution
-*For any* scheduled notification whose send time has arrived, it should be processed and sent within a reasonable time window.
-**Validates: Requirements 5.5**
-
-### Property 24: Schedule Modification
-*For any* scheduled notification, it should be editable (time, content) or cancellable before the send time.
-**Validates: Requirements 5.7, 5.8**
-
-### Property 25: Schedule Confirmation
-*For any* scheduled notification that is sent, a confirmation should be generated and made available to the venue owner.
-**Validates: Requirements 5.9**
-
-### Property 26: Timezone Handling
-*For any* scheduled notification across different timezones, the send time should be correctly converted and executed in the user's local timezone.
-**Validates: Requirements 5.10**
-
-### Property 27: Delivery Retry Logic
+### Property 21: Delivery Retry Logic
 *For any* failed notification delivery, the system should retry up to 3 times before marking as permanently failed.
 **Validates: Requirements 6.4**
 
@@ -632,21 +584,21 @@ CREATE INDEX idx_push_notification_credits_venue_date ON push_notification_credi
 *For any* user with location services disabled, they should be excluded from geo-targeted notifications.
 **Validates: Requirements 12.8, 12.9**
 
-### Property 61: Daily Quota Enforcement
-*For any* venue on the Free tier, they should be limited to 5 notifications per day.
-**Validates: Requirements 13.1**
+### Property 55: Daily Quota Enforcement
+*For any* venue on the Free tier, they should not have access to push notifications.
+**Validates: Requirements 12.1**
 
-### Property 62: Tier-Based Limits
-*For any* venue, the notification limit should match their subscription tier (Free: 5, Core: 20, Pro: 60, Revenue+: unlimited).
-**Validates: Requirements 13.2**
+### Property 56: Tier-Based Limits
+*For any* venue, the notification limit should match their subscription tier (Free: no access, Core: 20/month, Pro: 60/month, Revenue+: unlimited with fair use).
+**Validates: Requirements 12.2**
 
 ### Property 63: Quota Exceeded Prevention
 *For any* venue that has exceeded their daily quota, attempts to send notifications should be prevented with an error.
 **Validates: Requirements 13.4**
 
-### Property 64: Daily Quota Reset
-*For any* venue, their daily notification quota should reset at midnight.
-**Validates: Requirements 13.5**
+### Property 58: Daily Quota Reset
+*For any* venue, their monthly notification quota should reset on the first day of each month.
+**Validates: Requirements 12.5**
 
 ### Property 65: Send Tracking Per Venue
 *For any* notification send, it should be tracked against the venue's daily quota.
@@ -850,19 +802,19 @@ Property tests will verify universal properties across all inputs using a proper
    - Property 12: Empty Content Validation
 
 4. **Scheduling Properties:**
-   - Property 21: Future Schedule Validation
-   - Property 22: Scheduled Notification Storage
-   - Property 26: Timezone Handling
+   - Property 21: Delivery Retry Logic
+   - Property 22: Delivery Status Tracking
+   - Property 23: Delivery Timestamp Recording
 
 5. **Analytics Properties:**
-   - Property 37: Delivery Rate Calculation
-   - Property 38: Open Rate Calculation
-   - Property 39: Check-In Attribution Window
+   - Property 31: Delivery Rate Calculation
+   - Property 32: Open Rate Calculation
+   - Property 33: Check-In Attribution Window
 
 6. **Quota Properties:**
-   - Property 61: Daily Quota Enforcement
-   - Property 62: Tier-Based Limits
-   - Property 64: Daily Quota Reset
+   - Property 55: Daily Quota Enforcement
+   - Property 56: Tier-Based Limits
+   - Property 58: Daily Quota Reset
 
 ### Integration Testing
 
@@ -877,10 +829,10 @@ Integration tests will verify end-to-end flows:
 6. App navigates to venue
 
 **Scheduling Flow:**
-1. Venue schedules notification
-2. Background job processes at scheduled time
+1. Venue creates notification
+2. System targets users immediately
 3. Notification is sent
-4. Venue receives confirmation
+4. Venue views analytics
 
 **Permission Flow:**
 1. App requests permission
@@ -961,12 +913,7 @@ Performance tests will verify system scalability:
 
 ### Background Job Processing
 
-Use a background job processor (e.g., Bull for Node.js, Celery for Python) to:
-- Check for scheduled notifications every minute
-- Process due notifications in batches
-- Retry failed deliveries
-- Clean up expired tokens
-- Generate daily analytics reports
+No background job processing is required for MVP. All notifications are sent immediately when created.
 
 ### Rate Limiting Strategy
 
@@ -1013,13 +960,11 @@ Monitor key metrics:
 - Notification delivery rate (target: > 95%)
 - Notification open rate (target: > 10%)
 - FCM error rate (target: < 5%)
-- Background job processing time (target: < 1 minute)
 - API response time (target: < 500ms)
 
 Alert on:
 - Delivery rate drops below 90%
 - Error rate exceeds 10%
-- Background jobs fail repeatedly
 - FCM service unavailable
 - Database connection issues
 

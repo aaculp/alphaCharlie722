@@ -5,6 +5,7 @@ import type {
   PaginationOptions,
   VenueShare,
 } from '../../types/social.types';
+import { PushNotificationService } from '../PushNotificationService';
 
 /**
  * NotificationService - Handles all social notification operations
@@ -27,18 +28,10 @@ export class NotificationService {
     toUserId: string
   ): Promise<SocialNotification> {
     try {
-      // Check if user has friend request notifications enabled
-      const preferences = await this.getNotificationPreferences(toUserId);
-      if (!preferences.friend_requests) {
-        console.log('Friend request notifications disabled for user:', toUserId);
-        // Still create the notification but don't send push
-        // This allows in-app notification viewing even if push is disabled
-      }
-
       // Get sender's profile for notification content
       const { data: senderProfile, error: profileError } = await supabase
         .from('profiles')
-        .select('name, email')
+        .select('name, email, avatar_url')
         .eq('id', fromUserId)
         .single();
 
@@ -48,7 +41,7 @@ export class NotificationService {
 
       const senderName = senderProfile.name || senderProfile.email;
 
-      // Create the notification
+      // Create the in-app notification
       const { data, error } = await supabase
         .from('social_notifications')
         .insert({
@@ -73,6 +66,32 @@ export class NotificationService {
       }
 
       console.log('✅ Friend request notification created:', data);
+
+      // Send push notification
+      // This is done after in-app notification creation to ensure notification exists
+      // Push delivery failures are handled gracefully and don't affect in-app notification
+      try {
+        await PushNotificationService.sendSocialNotification(
+          toUserId,
+          'friend_request',
+          {
+            title: 'New Friend Request',
+            body: `${senderName} sent you a friend request`,
+            data: {
+              type: 'friend_request',
+              actorId: fromUserId,
+              referenceId: data.id,
+              navigationTarget: 'FriendRequests',
+            },
+            imageUrl: senderProfile.avatar_url || undefined,
+          }
+        );
+        console.log('✅ Push notification sent for friend request');
+      } catch (pushError) {
+        // Log push delivery failure but don't throw - in-app notification was created successfully
+        console.error('⚠️ Failed to send push notification for friend request:', pushError);
+      }
+
       return data;
     } catch (error) {
       console.error('Error sending friend request notification:', error);
@@ -101,7 +120,7 @@ export class NotificationService {
       // Get accepter's profile for notification content
       const { data: accepterProfile, error: profileError } = await supabase
         .from('profiles')
-        .select('name, email')
+        .select('name, email, avatar_url')
         .eq('id', fromUserId)
         .single();
 
@@ -111,7 +130,7 @@ export class NotificationService {
 
       const accepterName = accepterProfile.name || accepterProfile.email;
 
-      // Create the notification
+      // Create the in-app notification
       const { data, error } = await supabase
         .from('social_notifications')
         .insert({
@@ -126,6 +145,7 @@ export class NotificationService {
             from_user_name: accepterName,
           },
           read: false,
+          read_at: null,
         })
         .select()
         .single();
@@ -135,6 +155,35 @@ export class NotificationService {
       }
 
       console.log('✅ Friend accepted notification created:', data);
+
+      // Send push notification
+      // This is done after in-app notification creation to ensure notification exists
+      // Push delivery failures are handled gracefully and don't affect in-app notification
+      try {
+        await PushNotificationService.sendSocialNotification(
+          toUserId,
+          'friend_accepted',
+          {
+            title: 'Friend Request Accepted',
+            body: `${accepterName} accepted your friend request`,
+            data: {
+              type: 'friend_accepted',
+              actorId: fromUserId,
+              referenceId: data.id,
+              navigationTarget: 'Profile',
+              navigationParams: {
+                userId: fromUserId,
+              },
+            },
+            imageUrl: accepterProfile.avatar_url || undefined,
+          }
+        );
+        console.log('✅ Push notification sent for friend accepted');
+      } catch (pushError) {
+        // Log push delivery failure but don't throw - in-app notification was created successfully
+        console.error('⚠️ Failed to send push notification for friend accepted:', pushError);
+      }
+
       return data;
     } catch (error) {
       console.error('Error sending friend accepted notification:', error);
@@ -159,7 +208,7 @@ export class NotificationService {
       // Get sender's profile for notification content
       const { data: senderProfile, error: profileError } = await supabase
         .from('profiles')
-        .select('name, email')
+        .select('name, email, avatar_url')
         .eq('id', share.from_user_id)
         .single();
 
@@ -180,7 +229,7 @@ export class NotificationService {
         throw new Error(`Failed to get venue details: ${venueError.message}`);
       }
 
-      // Create the notification
+      // Create the in-app notification
       const { data, error } = await supabase
         .from('social_notifications')
         .insert({
@@ -209,6 +258,35 @@ export class NotificationService {
       }
 
       console.log('✅ Venue share notification created:', data);
+
+      // Send push notification
+      // This is done after in-app notification creation to ensure notification exists
+      // Push delivery failures are handled gracefully and don't affect in-app notification
+      try {
+        await PushNotificationService.sendSocialNotification(
+          share.to_user_id,
+          'venue_share',
+          {
+            title: 'Venue Shared',
+            body: `${senderName} shared ${venue.name} with you`,
+            data: {
+              type: 'venue_share',
+              actorId: share.from_user_id,
+              referenceId: data.id,
+              navigationTarget: 'VenueDetail',
+              navigationParams: {
+                venueId: share.venue_id,
+              },
+            },
+            imageUrl: senderProfile.avatar_url || undefined,
+          }
+        );
+        console.log('✅ Push notification sent for venue share');
+      } catch (pushError) {
+        // Log push delivery failure but don't throw - in-app notification was created successfully
+        console.error('⚠️ Failed to send push notification for venue share:', pushError);
+      }
+
       return data;
     } catch (error) {
       console.error('Error sending venue share notification:', error);
@@ -314,6 +392,15 @@ export class NotificationService {
   }
 
   /**
+   * Alias for markNotificationAsRead for consistency with NotificationHandler
+   * @param notificationId - ID of the notification to mark as read
+   * @throws Error if update fails
+   */
+  static async markAsRead(notificationId: string): Promise<void> {
+    return this.markNotificationAsRead(notificationId);
+  }
+
+  /**
    * Mark all notifications as read for a user
    * @param userId - ID of the user whose notifications to mark as read
    * @throws Error if update fails
@@ -361,6 +448,129 @@ export class NotificationService {
     } catch (error) {
       console.error('Error getting unread notification count:', error);
       return 0;
+    }
+  }
+
+  /**
+   * Report an inappropriate notification
+   * Requirement 15.9: Allow users to report inappropriate notifications
+   * 
+   * @param notificationId - ID of the notification being reported
+   * @param reporterId - ID of the user reporting the notification
+   * @param reason - Reason for reporting (spam, harassment, inappropriate, other)
+   * @param details - Optional additional details about the report
+   * @returns The created report record
+   * @throws Error if report creation fails
+   */
+  static async reportNotification(
+    notificationId: string,
+    reporterId: string,
+    reason: 'spam' | 'harassment' | 'inappropriate' | 'misleading' | 'other',
+    details?: string
+  ): Promise<{ id: string; status: string }> {
+    try {
+      // Get the notification being reported
+      const { data: notification, error: notifError } = await supabase
+        .from('social_notifications')
+        .select('*, actor:actor_id(id, email, name)')
+        .eq('id', notificationId)
+        .single();
+
+      if (notifError || !notification) {
+        throw new Error(`Failed to get notification: ${notifError?.message || 'Not found'}`);
+      }
+
+      // Verify the reporter is the recipient of the notification
+      if (notification.user_id !== reporterId) {
+        throw new Error('You can only report notifications sent to you');
+      }
+
+      // Create the report record
+      // Note: This assumes a notification_reports table exists
+      // If it doesn't exist yet, we'll create it in the database migration
+      const { data: report, error: reportError } = await supabase
+        .from('notification_reports')
+        .insert({
+          notification_id: notificationId,
+          reporter_id: reporterId,
+          reported_user_id: notification.actor_id,
+          notification_type: notification.type,
+          reason,
+          details: details || null,
+          notification_content: {
+            title: notification.title,
+            body: notification.body,
+            data: notification.data,
+          },
+          status: 'pending',
+          created_at: new Date().toISOString(),
+        })
+        .select('id, status')
+        .single();
+
+      if (reportError) {
+        throw new Error(`Failed to create report: ${reportError.message}`);
+      }
+
+      console.log('✅ Notification reported:', {
+        reportId: report.id,
+        notificationId,
+        reason,
+        reportedUserId: notification.actor_id,
+      });
+
+      // Log the report for compliance tracking
+      console.log('📋 Compliance Report:', {
+        reportId: report.id,
+        timestamp: new Date().toISOString(),
+        reporterId,
+        reportedUserId: notification.actor_id,
+        notificationType: notification.type,
+        reason,
+        details,
+      });
+
+      return report;
+    } catch (error) {
+      console.error('Error reporting notification:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get reports filed by a user
+   * 
+   * @param userId - ID of the user who filed the reports
+   * @param options - Pagination options
+   * @returns Array of reports filed by the user
+   */
+  static async getUserReports(
+    userId: string,
+    options?: PaginationOptions
+  ): Promise<any[]> {
+    try {
+      const limit = options?.limit || 50;
+      const offset = options?.offset || 0;
+
+      const { data, error } = await supabase
+        .from('notification_reports')
+        .select(`
+          *,
+          notification:notification_id(id, type, title, body),
+          reported_user:reported_user_id(id, name, email)
+        `)
+        .eq('reporter_id', userId)
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1);
+
+      if (error) {
+        throw new Error(`Failed to get user reports: ${error.message}`);
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Error getting user reports:', error);
+      throw error;
     }
   }
 

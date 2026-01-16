@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "729208089357",
+    "project_id": "otwm-6b1ac",
+    "storage_bucket": "otwm-6b1ac.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:729208089357:android:f6e5c2267dfe8eed401e44",
+        "android_client_info": {
+          "package_name": "com.alphacharlie722"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAM3uvlcd-wX7GPiAghCRKDxJdvWTnGohc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

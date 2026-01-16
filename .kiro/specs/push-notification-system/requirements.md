@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This specification outlines the implementation of a push notification system that enables venue owners to send targeted promotional notifications to customers. This is the core monetization feature of the OTW platform, allowing venues to drive foot traffic through geo-targeted, scheduled push notifications.
+This specification outlines the implementation of a push notification system that enables venue owners to send targeted promotional notifications to customers. This is the core monetization feature of the OTW platform, allowing venues to drive foot traffic through geo-targeted push notifications.
 
 ## Glossary
 
@@ -10,7 +10,7 @@ This specification outlines the implementation of a push notification system tha
 - **Venue Owner**: A business account user who can send push notifications to customers
 - **Customer**: An end user who receives push notifications from venues
 - **Geo-Targeting**: Filtering recipients based on their distance from the venue
-- **Push Credit**: A unit representing one push notification send (consumed per notification sent)
+- **Push Credit**: A purchasable unit representing one push notification send (available as add-on packs: 3 for $25, 10 for $120, 25 for $299)
 - **FCM**: Firebase Cloud Messaging, the service used to deliver push notifications
 - **Device Token**: A unique identifier for a user's device used by FCM to deliver notifications
 - **Flash Offer**: A time-limited promotional push notification
@@ -88,24 +88,7 @@ This specification outlines the implementation of a push notification system tha
 9. THE System SHALL exclude users who have disabled push notifications
 10. THE System SHALL exclude users who have blocked the venue
 
-### Requirement 5: Push Notification Scheduling
-
-**User Story:** As a venue owner, I want to schedule push notifications for future delivery, so that I can plan promotions in advance.
-
-#### Acceptance Criteria
-
-1. THE System SHALL provide "Send Now" and "Schedule for Later" options
-2. WHEN "Schedule for Later" is selected, THE System SHALL show a date/time picker
-3. THE System SHALL validate that scheduled time is in the future
-4. THE System SHALL store scheduled notifications in the database
-5. THE System SHALL process scheduled notifications at the specified time
-6. THE System SHALL allow venue owners to view scheduled notifications
-7. THE System SHALL allow venue owners to edit scheduled notifications
-8. THE System SHALL allow venue owners to cancel scheduled notifications
-9. THE System SHALL send a confirmation when a scheduled notification is sent
-10. THE System SHALL handle timezone conversions correctly
-
-### Requirement 6: Push Notification Delivery
+### Requirement 5: Push Notification Delivery
 
 **User Story:** As a system, I want to reliably deliver push notifications to users' devices, so that venues can effectively reach their customers.
 
@@ -122,7 +105,7 @@ This specification outlines the implementation of a push notification system tha
 9. WHEN a notification fails permanently, THE System SHALL log the error
 10. THE System SHALL deliver notifications within 30 seconds of sending
 
-### Requirement 7: Push Notification Templates
+### Requirement 6: Push Notification Templates
 
 **User Story:** As a venue owner, I want to use pre-built notification templates, so that I can quickly create effective promotions.
 
@@ -139,7 +122,7 @@ This specification outlines the implementation of a push notification system tha
 9. THE System SHALL save custom templates for reuse
 10. THE System SHALL provide template preview before sending
 
-### Requirement 8: Push Notification Analytics
+### Requirement 7: Push Notification Analytics
 
 **User Story:** As a venue owner, I want to see analytics for my push notifications, so that I can measure their effectiveness.
 
@@ -156,7 +139,7 @@ This specification outlines the implementation of a push notification system tha
 9. THE System SHALL show aggregate analytics for all notifications
 10. THE System SHALL display analytics in the venue dashboard
 
-### Requirement 9: Customer Push Notification Preferences
+### Requirement 8: Customer Push Notification Preferences
 
 **User Story:** As a customer, I want to control which types of notifications I receive, so that I only get relevant updates.
 
@@ -173,7 +156,7 @@ This specification outlines the implementation of a push notification system tha
 9. THE System SHALL sync preferences across user devices
 10. THE System SHALL provide a "Quiet Hours" setting (no notifications during specified times)
 
-### Requirement 10: Push Notification History
+### Requirement 9: Push Notification History
 
 **User Story:** As a venue owner, I want to view my notification history, so that I can track what I've sent and when.
 
@@ -185,12 +168,12 @@ This specification outlines the implementation of a push notification system tha
 4. THE System SHALL show delivery statistics (sent, delivered, opened)
 5. THE System SHALL allow filtering by date range
 6. THE System SHALL allow filtering by notification type
-7. THE System SHALL allow filtering by status (sent, scheduled, failed)
+7. THE System SHALL allow filtering by status (sent, failed)
 8. THE System SHALL allow venue owners to view notification details
 9. THE System SHALL allow venue owners to duplicate past notifications
 10. THE System SHALL paginate notification history for performance
 
-### Requirement 11: Push Notification Received Experience
+### Requirement 10: Push Notification Received Experience
 
 **User Story:** As a customer, I want to receive and interact with push notifications, so that I can discover promotions and events.
 
@@ -207,7 +190,7 @@ This specification outlines the implementation of a push notification system tha
 9. THE System SHALL mark notifications as read after opening
 10. THE System SHALL provide an in-app notification center for viewing past notifications
 
-### Requirement 12: Geo-Location for Push Targeting
+### Requirement 11: Geo-Location for Push Targeting
 
 **User Story:** As a venue owner, I want to target customers based on their proximity to my venue, so that I can reach people who can actually visit.
 
@@ -224,24 +207,24 @@ This specification outlines the implementation of a push notification system tha
 9. THE System SHALL not send geo-targeted pushes to users with location disabled
 10. THE System SHALL show venue owners how many users are within each radius
 
-### Requirement 13: Push Notification Rate Limiting
+### Requirement 12: Push Notification Rate Limiting
 
 **User Story:** As a system administrator, I want to prevent spam and abuse, so that users have a positive experience with notifications.
 
 #### Acceptance Criteria
 
-1. THE System SHALL limit venues to 5 notifications per day (Free tier)
-2. THE System SHALL enforce tier-based notification limits
+1. THE System SHALL not allow push notifications for Free tier venues
+2. THE System SHALL enforce tier-based notification limits (Core: 20/month, Pro: 60/month, Revenue+: unlimited with fair use)
 3. THE System SHALL show remaining notification quota in venue dashboard
 4. WHEN quota is exceeded, THE System SHALL prevent sending
-5. THE System SHALL reset daily quotas at midnight
-6. THE System SHALL track notification sends per venue per day
+5. THE System SHALL reset monthly quotas on the first day of each month
+6. THE System SHALL track notification sends per venue per month
 7. THE System SHALL provide clear error messages when limits are reached
 8. THE System SHALL allow system administrators to adjust limits
 9. THE System SHALL log all notification sends for audit purposes
-10. THE System SHALL implement fair use policies for unlimited tiers
+10. THE System SHALL implement fair use policies for Revenue+ tier (unlimited standard pushes)
 
-### Requirement 14: Push Notification Error Handling
+### Requirement 13: Push Notification Error Handling
 
 **User Story:** As a venue owner, I want to be notified when push notifications fail, so that I can take corrective action.
 
@@ -258,7 +241,7 @@ This specification outlines the implementation of a push notification system tha
 9. THE System SHALL provide troubleshooting guidance for common errors
 10. THE System SHALL allow venue owners to report notification issues
 
-### Requirement 15: Push Notification Database Schema
+### Requirement 14: Push Notification Database Schema
 
 **User Story:** As a system, I want a robust database schema for push notifications, so that all notification data is stored reliably.
 
@@ -275,24 +258,7 @@ This specification outlines the implementation of a push notification system tha
 9. THE System SHALL store targeting criteria (radius, user filters)
 10. THE System SHALL store delivery metadata (sent_at, delivered_at, opened_at)
 
-### Requirement 16: Background Push Processing
-
-**User Story:** As a system, I want to process push notifications in the background, so that scheduled notifications are sent reliably.
-
-#### Acceptance Criteria
-
-1. THE System SHALL implement a background job processor
-2. THE System SHALL check for scheduled notifications every minute
-3. THE System SHALL process due notifications immediately
-4. THE System SHALL handle concurrent notification processing
-5. THE System SHALL prevent duplicate sends of the same notification
-6. THE System SHALL log all background processing activities
-7. THE System SHALL handle background job failures gracefully
-8. THE System SHALL retry failed background jobs
-9. THE System SHALL monitor background job health
-10. THE System SHALL alert administrators of background job issues
-
-### Requirement 17: Push Notification Testing
+### Requirement 15: Push Notification Testing
 
 **User Story:** As a venue owner, I want to test push notifications before sending to all users, so that I can verify they work correctly.
 
@@ -309,7 +275,7 @@ This specification outlines the implementation of a push notification system tha
 9. THE System SHALL allow testing different targeting options
 10. THE System SHALL provide feedback on test notification success/failure
 
-### Requirement 18: Push Notification Compliance
+### Requirement 16: Push Notification Compliance
 
 **User Story:** As a system administrator, I want to ensure push notifications comply with platform guidelines, so that the app is not rejected or banned.
 
@@ -326,7 +292,7 @@ This specification outlines the implementation of a push notification system tha
 9. THE System SHALL log all notifications for compliance audits
 10. THE System SHALL allow users to report inappropriate notifications
 
-### Requirement 19: Push Notification Performance
+### Requirement 17: Push Notification Performance
 
 **User Story:** As a system, I want push notifications to be delivered quickly and efficiently, so that users receive timely updates.
 
@@ -343,7 +309,7 @@ This specification outlines the implementation of a push notification system tha
 9. THE System SHALL scale horizontally for increased load
 10. THE System SHALL maintain 99.9% delivery success rate
 
-### Requirement 20: Push Notification Integration with Existing Features
+### Requirement 18: Push Notification Integration with Existing Features
 
 **User Story:** As a developer, I want push notifications to integrate seamlessly with existing app features, so that the user experience is cohesive.
 

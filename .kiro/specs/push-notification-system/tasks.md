@@ -2,7 +2,7 @@
 
 ## Overview
 
-This plan outlines the step-by-step implementation of the push notification system, which is the core monetization feature of the OTW platform. The approach is incremental, starting with Firebase setup and basic delivery, then adding targeting, scheduling, analytics, and finally user preferences and testing.
+This plan outlines the step-by-step implementation of the push notification system, which is the core monetization feature of the OTW platform. The approach is incremental, starting with Firebase setup and basic delivery, then adding targeting, analytics, and finally user preferences and testing. All notifications are sent immediately when created (no scheduling for MVP).
 
 ## Tasks
 
@@ -198,12 +198,11 @@ This plan outlines the step-by-step implementation of the push notification syst
     - Add "combine with favorites" checkbox
     - _Requirements: 4.1, 4.4, 4.7_
   
-  - [ ] 6.4 Add send/schedule buttons
+  - [ ] 6.4 Add send button
     - Create "Send Now" button
-    - Create "Schedule for Later" button with date/time picker
-    - Validate scheduled time is in future
+    - Validate notification before sending
     - Show confirmation dialog before sending
-    - _Requirements: 5.1, 5.2, 5.3_
+    - _Requirements: 5.1, 5.2_
   
   - [ ]* 6.5 Write unit tests for dashboard UI
     - Test form validation
@@ -237,308 +236,272 @@ This plan outlines the step-by-step implementation of the push notification syst
     - _Requirements: 7.9_
   
   - [ ]* 7.5 Write property tests for templates
-    - **Property 32: Template Auto-Population**
-    - **Property 33: Custom Template Persistence**
+    - **Property 26: Template Auto-Population**
+    - **Property 27: Custom Template Persistence**
     - **Validates: Requirements 7.7, 7.9**
 
-- [ ] 8. Notification Scheduling
-  - [ ] 8.1 Create SchedulingService class
-    - Implement scheduleNotification() method
-    - Implement cancelScheduledNotification() method
-    - Implement updateScheduledNotification() method
-    - Store scheduled notifications in database
-    - _Requirements: 5.4, 5.7, 5.8_
-  
-  - [ ] 8.2 Implement background job processor
-    - Set up background job system (e.g., Bull queue)
-    - Create job to check for due notifications every minute
-    - Process due notifications and send via FCM
-    - Handle job failures and retries
-    - _Requirements: 16.1, 16.2, 16.3, 16.4_
-  
-  - [ ] 8.3 Add timezone handling
-    - Convert scheduled times to UTC for storage
-    - Convert back to venue timezone for display
-    - Handle daylight saving time changes
-    - _Requirements: 5.10_
-  
-  - [ ] 8.4 Implement scheduled notification management UI
-    - Show list of upcoming scheduled notifications
-    - Allow editing scheduled time
-    - Allow canceling scheduled notifications
-    - Send confirmation when notification is sent
-    - _Requirements: 5.6, 5.9_
-  
-  - [ ]* 8.5 Write property tests for scheduling
-    - **Property 21: Future Schedule Validation**
-    - **Property 22: Scheduled Notification Storage**
-    - **Property 23: Scheduled Notification Execution**
-    - **Property 24: Schedule Modification**
-    - **Property 25: Schedule Confirmation**
-    - **Property 26: Timezone Handling**
-    - **Validates: Requirements 5.3, 5.4, 5.5, 5.7, 5.8, 5.9, 5.10**
-
-- [ ] 9. Notification Delivery and Tracking
-  - [ ] 9.1 Implement delivery tracking
+- [ ] 8. Notification Delivery and Tracking
+  - [ ] 8.1 Implement delivery tracking
     - Track sent status when notification is queued
     - Track delivered status from FCM callback
     - Track opened status when user taps notification
     - Record timestamps for each status
     - _Requirements: 6.5, 6.6_
   
-  - [ ] 9.2 Implement retry logic
+  - [ ] 8.2 Implement retry logic
     - Retry failed deliveries up to 3 times
     - Use exponential backoff (1s, 2s, 4s)
     - Don't retry permanent errors
     - Log all retry attempts
     - _Requirements: 6.4, 14.5, 14.6_
   
-  - [ ] 9.3 Handle invalid device tokens
+  - [ ] 8.3 Handle invalid device tokens
     - Detect invalid/expired tokens from FCM errors
     - Remove invalid tokens from database
     - Log token removal for monitoring
     - _Requirements: 6.7, 6.8_
   
-  - [ ] 9.4 Implement error logging
+  - [ ] 8.4 Implement error logging
     - Log all delivery failures
     - Categorize errors (token, network, permission)
     - Store error details in database
     - _Requirements: 6.9, 14.1, 14.3_
   
-  - [ ]* 9.5 Write property tests for delivery
-    - **Property 27: Delivery Retry Logic**
-    - **Property 28: Delivery Status Tracking**
-    - **Property 29: Delivery Timestamp Recording**
-    - **Property 30: Invalid Token Handling**
-    - **Property 31: Permanent Failure Logging**
+  - [ ]* 8.5 Write property tests for delivery
+    - **Property 21: Delivery Retry Logic**
+    - **Property 22: Delivery Status Tracking**
+    - **Property 23: Delivery Timestamp Recording**
+    - **Property 24: Invalid Token Handling**
+    - **Property 25: Permanent Failure Logging**
     - **Validates: Requirements 6.4, 6.5, 6.6, 6.7, 6.8, 6.9**
 
-- [ ] 10. Customer Notification Handling
-  - [ ] 10.1 Implement notification reception
+- [ ] 9. Customer Notification Handling
+  - [ ] 9.1 Implement notification reception
     - Handle notifications in foreground
     - Handle notifications in background
     - Handle notifications when app is closed
     - Display notification in device tray
     - _Requirements: 11.1, 11.5, 11.6, 11.7_
   
-  - [ ] 10.2 Implement notification tap handling
+  - [ ] 9.2 Implement notification tap handling
     - Open app when notification is tapped
     - Navigate to venue detail screen
     - Pass venue ID from notification data
     - Track notification open event
     - _Requirements: 11.2, 11.3, 11.8_
   
-  - [ ] 10.3 Add venue branding to notifications
+  - [ ] 9.3 Add venue branding to notifications
     - Include venue name in notification
     - Include venue logo/image
     - Use venue colors if available
     - _Requirements: 11.4_
   
-  - [ ] 10.4 Create in-app notification center
+  - [ ] 9.4 Create in-app notification center
     - Show list of received notifications
     - Mark notifications as read when opened
     - Allow clearing old notifications
     - _Requirements: 11.9, 11.10_
   
-  - [ ]* 10.5 Write property tests for notification handling
-    - **Property 49: Notification Display in Tray**
-    - **Property 50: Tap-to-Open Behavior**
-    - **Property 51: Venue Branding in Notification**
-    - **Property 52: App State Handling**
-    - **Property 53: Open Event Tracking**
-    - **Property 54: Read Status Update**
+  - [ ]* 9.5 Write property tests for notification handling
+    - **Property 43: Notification Display in Tray**
+    - **Property 44: Tap-to-Open Behavior**
+    - **Property 45: Venue Branding in Notification**
+    - **Property 46: App State Handling**
+    - **Property 47: Open Event Tracking**
+    - **Property 48: Read Status Update**
     - **Validates: Requirements 11.1, 11.2, 11.3, 11.4, 11.5, 11.6, 11.7, 11.8, 11.9**
 
 
-- [ ] 11. Analytics Implementation
-  - [ ] 11.1 Create AnalyticsTracker class
+- [ ] 10. Analytics Implementation
+  - [ ] 10.1 Create AnalyticsTracker class
     - Implement trackNotificationSent() method
     - Implement trackNotificationDelivered() method
     - Implement trackNotificationOpened() method
     - Implement trackCheckInAfterNotification() method
     - _Requirements: 8.1, 8.2, 8.3, 8.6_
   
-  - [ ] 11.2 Implement analytics calculations
+  - [ ] 10.2 Implement analytics calculations
     - Calculate delivery rate (delivered / sent)
     - Calculate open rate (opened / delivered)
     - Track check-ins within 2 hours of notification
     - Calculate conversion rate
     - _Requirements: 8.4, 8.5, 8.7_
   
-  - [ ] 11.3 Create analytics dashboard UI
+  - [ ] 10.3 Create analytics dashboard UI
     - Show per-notification analytics
     - Show aggregate analytics for venue
     - Display charts for delivery and open rates
     - Show check-in attribution
     - _Requirements: 8.8, 8.9, 8.10_
   
-  - [ ]* 11.4 Write property tests for analytics
-    - **Property 34: Send Count Tracking**
-    - **Property 35: Delivery Count Tracking**
-    - **Property 36: Open Count Tracking**
-    - **Property 37: Delivery Rate Calculation**
-    - **Property 38: Open Rate Calculation**
-    - **Property 39: Check-In Attribution Window**
+  - [ ]* 10.4 Write property tests for analytics
+    - **Property 28: Send Count Tracking**
+    - **Property 29: Delivery Count Tracking**
+    - **Property 30: Open Count Tracking**
+    - **Property 31: Delivery Rate Calculation**
+    - **Property 32: Open Rate Calculation**
+    - **Property 33: Check-In Attribution Window**
     - **Validates: Requirements 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7**
 
-- [ ] 12. User Notification Preferences
-  - [ ] 12.1 Create UserPreferencesService class
+- [ ] 11. User Notification Preferences
+  - [ ] 11.1 Create UserPreferencesService class
     - Implement getUserPreferences() method
     - Implement updatePreferences() method
     - Implement muteVenue() and unmuteVenue() methods
     - Implement setQuietHours() method
     - _Requirements: 9.1, 9.6, 9.10_
   
-  - [ ] 12.2 Create notification preferences UI
+  - [ ] 11.2 Create notification preferences UI
     - Add toggle for all push notifications
     - Add toggles for Flash Offers, Events, General
     - Add venue muting interface
     - Add quiet hours time picker
     - _Requirements: 9.2, 9.3, 9.4, 9.5_
   
-  - [ ] 12.3 Implement preference enforcement
+  - [ ] 11.3 Implement preference enforcement
     - Check preferences before sending notifications
     - Exclude users based on type preferences
     - Exclude users in quiet hours
     - Exclude users who muted venue
     - _Requirements: 9.7_
   
-  - [ ] 12.4 Implement cross-device preference sync
+  - [ ] 11.4 Implement cross-device preference sync
     - Save preferences to database
     - Sync preferences when user logs in on new device
     - Update preferences immediately on change
     - _Requirements: 9.8, 9.9_
   
-  - [ ]* 12.5 Write property tests for preferences
-    - **Property 40: Venue Muting**
-    - **Property 41: Preference Respect**
-    - **Property 42: Immediate Preference Save**
-    - **Property 43: Cross-Device Preference Sync**
-    - **Property 44: Quiet Hours Enforcement**
+  - [ ]* 11.5 Write property tests for preferences
+    - **Property 34: Venue Muting**
+    - **Property 35: Preference Respect**
+    - **Property 36: Immediate Preference Save**
+    - **Property 37: Cross-Device Preference Sync**
+    - **Property 38: Quiet Hours Enforcement**
     - **Validates: Requirements 9.6, 9.7, 9.8, 9.9, 9.10**
 
-- [ ] 13. Notification History
-  - [ ] 13.1 Create notification history UI
+- [ ] 12. Notification History
+  - [ ] 12.1 Create notification history UI
     - Display list of all sent notifications
     - Show title, message, send date
     - Show targeting criteria
     - Show delivery statistics
     - _Requirements: 10.1, 10.2, 10.3, 10.4_
   
-  - [ ] 13.2 Implement history filtering
+  - [ ] 12.2 Implement history filtering
     - Add date range filter
     - Add notification type filter
-    - Add status filter (sent, scheduled, failed)
+    - Add status filter (sent, failed)
     - Apply filters to query
     - _Requirements: 10.5, 10.6, 10.7_
   
-  - [ ] 13.3 Add notification detail view
+  - [ ] 12.3 Add notification detail view
     - Show full notification details
     - Show complete analytics
     - Show list of recipients
     - Allow duplicating notification
     - _Requirements: 10.8, 10.9_
   
-  - [ ]* 13.4 Write property tests for history
-    - **Property 45: History Date Range Filter**
-    - **Property 46: History Type Filter**
-    - **Property 47: History Status Filter**
-    - **Property 48: Notification Duplication**
+  - [ ]* 12.4 Write property tests for history
+    - **Property 39: History Date Range Filter**
+    - **Property 40: History Type Filter**
+    - **Property 41: History Status Filter**
+    - **Property 42: Notification Duplication**
     - **Validates: Requirements 10.5, 10.6, 10.7, 10.9**
 
-- [ ] 14. Location Integration
-  - [ ] 14.1 Integrate with existing LocationService
+- [ ] 13. Location Integration
+  - [ ] 13.1 Integrate with existing LocationService
     - Use existing location permission handling
     - Use existing distance calculation
     - Store user's last known location
     - Update location on app open
     - _Requirements: 12.1, 12.3, 12.4_
   
-  - [ ] 14.2 Implement geo-targeting location queries
+  - [ ] 13.2 Implement geo-targeting location queries
     - Query users within specified radius
     - Calculate distance for each user
     - Filter users without location data
     - Respect location privacy settings
     - _Requirements: 12.5, 12.6, 12.7, 12.8, 12.9_
   
-  - [ ] 14.3 Add radius reach estimator
+  - [ ] 13.3 Add radius reach estimator
     - Show count of users within each radius option
     - Update count when radius changes
     - Display on targeting UI
     - _Requirements: 12.10_
   
-  - [ ]* 14.4 Write property tests for location integration
-    - **Property 55: Location Storage**
-    - **Property 56: Location Update on App Open**
-    - **Property 57: Distance Calculation for Targeting**
-    - **Property 58: Geo-Radius Filtering**
-    - **Property 59: No-Location Graceful Handling**
-    - **Property 60: Location Privacy Respect**
+  - [ ]* 13.4 Write property tests for location integration
+    - **Property 49: Location Storage**
+    - **Property 50: Location Update on App Open**
+    - **Property 51: Distance Calculation for Targeting**
+    - **Property 52: Geo-Radius Filtering**
+    - **Property 53: No-Location Graceful Handling**
+    - **Property 54: Location Privacy Respect**
     - **Validates: Requirements 12.3, 12.4, 12.5, 12.6, 12.7, 12.8, 12.9**
 
-- [ ] 15. Rate Limiting and Quotas
-  - [ ] 15.1 Implement daily quota system
+- [ ] 14. Rate Limiting and Quotas
+  - [ ] 14.1 Implement monthly quota system
     - Create quota tracking in push_notification_credits table
-    - Set daily limits based on subscription tier
+    - Set monthly limits based on subscription tier (Free: no access, Core: 20, Pro: 60, Revenue+: unlimited)
     - Track notification sends against quota
-    - Reset quotas at midnight
-    - _Requirements: 13.1, 13.2, 13.5, 13.6_
+    - Reset quotas on first day of each month
+    - _Requirements: 12.1, 12.2, 12.5, 12.6_
   
-  - [ ] 15.2 Implement quota enforcement
+  - [ ] 14.2 Implement quota enforcement
     - Check quota before allowing send
-    - Prevent sending when quota exceeded
+    - Block Free tier venues from accessing push notifications
+    - Prevent sending when quota exceeded for paid tiers
     - Show clear error message
     - Display remaining quota in dashboard
-    - _Requirements: 13.3, 13.4, 13.7_
+    - _Requirements: 12.3, 12.4, 12.7_
   
-  - [ ] 15.3 Implement audit logging
+  - [ ] 14.3 Implement audit logging
     - Log all notification sends
     - Include timestamp, venue, recipient count
     - Store for compliance and monitoring
-    - _Requirements: 13.9_
+    - _Requirements: 12.9_
   
-  - [ ]* 15.4 Write property tests for quotas
-    - **Property 61: Daily Quota Enforcement**
-    - **Property 62: Tier-Based Limits**
-    - **Property 63: Quota Exceeded Prevention**
-    - **Property 64: Daily Quota Reset**
-    - **Property 65: Send Tracking Per Venue**
-    - **Property 66: Quota Limit Error Message**
-    - **Property 67: Send Audit Logging**
-    - **Validates: Requirements 13.1, 13.2, 13.4, 13.5, 13.6, 13.7, 13.9**
+  - [ ]* 14.4 Write property tests for quotas
+    - **Property 55: Daily Quota Enforcement**
+    - **Property 56: Tier-Based Limits**
+    - **Property 57: Quota Exceeded Prevention**
+    - **Property 58: Daily Quota Reset**
+    - **Property 59: Send Tracking Per Venue**
+    - **Property 60: Quota Limit Error Message**
+    - **Property 61: Send Audit Logging**
+    - **Validates: Requirements 12.1, 12.2, 12.4, 12.5, 12.6, 12.7, 12.9**
 
-- [ ] 16. Error Handling and Monitoring
-  - [ ] 16.1 Implement comprehensive error handling
+- [ ] 15. Error Handling and Monitoring
+  - [ ] 15.1 Implement comprehensive error handling
     - Categorize all error types
     - Provide actionable error messages
     - Log errors with context
     - Display errors to venue owners
     - _Requirements: 14.1, 14.2, 14.3_
   
-  - [ ] 16.2 Implement error rate tracking
+  - [ ] 15.2 Implement error rate tracking
     - Track error rate per venue
     - Calculate error percentage
     - Alert when error rate is high
     - _Requirements: 14.7, 14.8_
   
-  - [ ] 16.3 Add troubleshooting guidance
+  - [ ] 15.3 Add troubleshooting guidance
     - Provide help text for common errors
     - Link to documentation
     - Allow reporting issues
     - _Requirements: 14.9, 14.10_
   
-  - [ ]* 16.4 Write property tests for error handling
-    - **Property 68: Failure Error Logging**
-    - **Property 69: Failure Error Display**
-    - **Property 70: Error Categorization**
-    - **Property 71: Transient Error Retry**
-    - **Property 72: Permanent Error No-Retry**
-    - **Property 73: Venue Error Rate Tracking**
-    - **Property 74: High Error Rate Alert**
+  - [ ]* 15.4 Write property tests for error handling
+    - **Property 62: Failure Error Logging**
+    - **Property 63: Failure Error Display**
+    - **Property 64: Error Categorization**
+    - **Property 65: Transient Error Retry**
+    - **Property 66: Permanent Error No-Retry**
+    - **Property 67: Venue Error Rate Tracking**
+    - **Property 68: High Error Rate Alert**
     - **Validates: Requirements 14.1, 14.2, 14.3, 14.5, 14.6, 14.7, 14.8**
 
-- [ ] 17. Test Notifications
-  - [ ] 17.1 Implement test notification feature
+- [ ] 16. Test Notifications
+  - [ ] 16.1 Implement test notification feature
     - Add "Send Test" button to notification form
     - Send test only to venue owner's devices
     - Don't consume push credits for tests
@@ -546,99 +509,98 @@ This plan outlines the step-by-step implementation of the push notification syst
     - Label tests clearly
     - _Requirements: 17.1, 17.2, 17.3, 17.4, 17.5_
   
-  - [ ] 17.2 Add test notification feedback
+  - [ ] 16.2 Add test notification feedback
     - Show delivery status for test
     - Display success/failure message
     - Allow multiple test sends
     - _Requirements: 17.6, 17.7, 17.10_
   
-  - [ ] 17.3 Allow testing different options
+  - [ ] 16.3 Allow testing different options
     - Test different notification types
     - Test different targeting options
     - Preview how notification appears
     - _Requirements: 17.8, 17.9_
   
-  - [ ]* 17.4 Write property tests for test notifications
-    - **Property 75: Test Notification Owner-Only**
-    - **Property 76: Test Notification Credit Exemption**
-    - **Property 77: Test Notification Analytics Exclusion**
-    - **Property 78: Test Notification Labeling**
-    - **Property 79: Test Notification Feedback**
+  - [ ]* 16.4 Write property tests for test notifications
+    - **Property 69: Test Notification Owner-Only**
+    - **Property 70: Test Notification Credit Exemption**
+    - **Property 71: Test Notification Analytics Exclusion**
+    - **Property 72: Test Notification Labeling**
+    - **Property 73: Test Notification Feedback**
     - **Validates: Requirements 17.2, 17.3, 17.4, 17.5, 17.10**
 
-- [ ] 18. Checkpoint - Core functionality complete
+- [ ] 17. Checkpoint - Core functionality complete
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 19. Integration with Existing Features
-  - [ ] 19.1 Integrate with venue dashboard
+- [ ] 18. Integration with Existing Features
+  - [ ] 18.1 Integrate with venue dashboard
     - Add "Push Notifications" tab to dashboard
     - Show notification stats in overview
     - Link to notification history
     - _Requirements: 20.1_
   
-  - [ ] 19.2 Integrate with favorites system
+  - [ ] 18.2 Integrate with favorites system
     - Use existing favorites table for targeting
     - Update targeting when favorites change
     - _Requirements: 20.5_
   
-  - [ ] 19.3 Integrate with check-in system
+  - [ ] 18.3 Integrate with check-in system
     - Track check-ins after notifications
     - Attribute check-ins to notifications
     - Show attribution in analytics
     - _Requirements: 20.6_
   
-  - [ ] 19.4 Apply existing theme and styling
+  - [ ] 18.4 Apply existing theme and styling
     - Use existing theme colors
     - Use existing fonts (Poppins, Inter)
     - Follow existing component patterns
     - Maintain UI consistency
     - _Requirements: 20.7, 20.8, 20.10_
 
-- [ ] 20. Performance Optimization
-  - [ ] 20.1 Implement caching strategy
+- [ ] 19. Performance Optimization
+  - [ ] 19.1 Implement caching strategy
     - Cache device tokens (Redis, 1 hour TTL)
     - Cache user preferences (Redis, 1 hour TTL)
     - Cache venue locations (Redis, 24 hour TTL)
     - Invalidate cache on updates
   
-  - [ ] 20.2 Optimize database queries
+  - [ ] 19.2 Optimize database queries
     - Add indexes to frequently queried columns
     - Use connection pooling
     - Batch FCM requests (500 devices per batch)
     - Use read replicas for analytics
   
-  - [ ] 20.3 Implement monitoring
+  - [ ] 19.3 Implement monitoring
     - Monitor delivery rate (target > 95%)
     - Monitor open rate (target > 10%)
     - Monitor FCM error rate (target < 5%)
     - Monitor API response time (target < 500ms)
     - Alert on anomalies
 
-- [ ] 21. Documentation and Testing
-  - [ ] 21.1 Write API documentation
+- [ ] 20. Documentation and Testing
+  - [ ] 20.1 Write API documentation
     - Document all service methods
     - Include request/response examples
     - Document error codes
     - Add usage examples
   
-  - [ ] 21.2 Write user documentation
+  - [ ] 20.2 Write user documentation
     - Create venue owner guide
     - Create customer guide
     - Document notification best practices
     - Add troubleshooting guide
   
-  - [ ]* 21.3 Write integration tests
+  - [ ]* 20.3 Write integration tests
     - Test complete notification send flow
-    - Test scheduling flow
     - Test permission flow
     - Test analytics tracking
   
-  - [ ]* 21.4 Write E2E tests
+  - [ ]* 20.4 Write E2E tests
     - Test venue owner journey (create, send, view analytics)
     - Test customer journey (receive, tap, check-in)
     - Test error scenarios
 
-- [ ] 22. Final checkpoint - Push notification system complete
+- [ ] 21. Final checkpoint - Push notification system complete
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes
@@ -646,10 +608,9 @@ This plan outlines the step-by-step implementation of the push notification syst
 - Tasks marked with `*` are optional and can be skipped for faster MVP
 - Each task references specific requirements for traceability
 - Checkpoints ensure incremental validation
-- Property tests validate universal correctness properties (79 properties total)
+- Property tests validate universal correctness properties (73 properties total)
 - Unit tests validate specific examples and edge cases
 - Integration and E2E tests validate complete user flows
 - Firebase setup requires external configuration (APNs certificates, google-services.json)
-- Background job processing requires additional infrastructure (Bull queue or similar)
 - Caching requires Redis or similar key-value store
 - Monitoring requires logging infrastructure (e.g., Sentry, DataDog)

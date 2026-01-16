@@ -23,6 +23,9 @@ target 'alphaCharlie722' do
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
 
+  # Firebase dependencies
+  pod 'Firebase/Messaging'
+
   post_install do |installer|
     react_native_post_install(
       installer,

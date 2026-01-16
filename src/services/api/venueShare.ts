@@ -1,5 +1,6 @@
 import { supabase } from '../../lib/supabase';
 import type { VenueShare } from '../../types/social.types';
+import { NotificationService } from './notifications';
 
 /**
  * VenueShareService - Handles venue sharing between users
@@ -59,6 +60,18 @@ export class VenueShareService {
       }
 
       console.log(`✅ Venue shared successfully with ${toUserIds.length} user(s)`);
+
+      // Send notification for each share (in-app and push)
+      // Do this after venue shares are created successfully
+      for (const share of data) {
+        try {
+          await NotificationService.sendVenueShareNotification(share);
+        } catch (notificationError) {
+          // Log notification failure but don't throw - venue share was created successfully
+          console.error('⚠️ Failed to send notification for venue share:', notificationError);
+        }
+      }
+
       return data;
     } catch (error) {
       console.error('Error sharing venue:', error);

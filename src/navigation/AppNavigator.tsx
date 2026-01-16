@@ -1,10 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import messaging from '@react-native-firebase/messaging';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useNavigationStyle } from '../contexts/NavigationStyleContext';
 import { useNotifications } from '../contexts/NotificationContext';
+import { NotificationHandler } from '../services/NotificationHandler';
 import { NewFloatingTabBar, AnimatedTabBar } from '../components/navigation';
 import { FriendRequestModal } from '../components/social';
 import type {
@@ -140,12 +142,12 @@ function MainTabNavigator() {
   const { navigationStyle } = useNavigationStyle();
   const { setNotificationPressHandler } = useNotifications();
   const [friendRequestModalVisible, setFriendRequestModalVisible] = useState(false);
-  const navigationRef = React.useRef<any>(null);
+  const navigationRef = useRef<any>(null);
 
-  // Set up notification tap handler
+  // Set up notification tap handler for in-app notifications
   useEffect(() => {
     const handleNotificationTap = (notification: SocialNotification) => {
-      console.log('🔔 Handling notification tap:', notification.type);
+      console.log('🔔 Handling in-app notification tap:', notification.type);
 
       switch (notification.type) {
         case 'friend_request':
@@ -179,6 +181,79 @@ function MainTabNavigator() {
 
     setNotificationPressHandler(handleNotificationTap);
   }, [setNotificationPressHandler]);
+
+  // Set up push notification tap handler
+  useEffect(() => {
+    console.log('🔔 Setting up push notification tap handler');
+
+    // Register navigation handler with NotificationHandler
+    NotificationHandler.setNavigationHandler((screen: string, params?: Record<string, any>) => {
+      console.log('🧭 Navigating to:', screen, params);
+
+      if (!navigationRef.current) {
+        console.warn('⚠️ Navigation ref not available');
+        return;
+      }
+
+      // Handle different navigation targets
+      switch (screen) {
+        case 'FriendRequests':
+          setFriendRequestModalVisible(true);
+          break;
+
+        case 'Settings':
+          navigationRef.current.navigate('Settings');
+          break;
+
+        case 'Profile':
+          if (params?.userId) {
+            // TODO: Navigate to user profile screen when implemented
+            console.log('Navigate to user profile:', params.userId);
+            navigationRef.current.navigate('Profile');
+          } else {
+            navigationRef.current.navigate('Profile');
+          }
+          break;
+
+        case 'VenueDetail':
+          if (params?.venueId) {
+            navigationRef.current.navigate('Home', {
+              screen: 'VenueDetail',
+              params: {
+                venueId: params.venueId,
+                venueName: params.venueName || 'Venue',
+              },
+            });
+          }
+          break;
+
+        case 'Home':
+        default:
+          navigationRef.current.navigate('Home');
+          break;
+      }
+    });
+
+    // Listen for notification taps when app is in background/closed
+    const unsubscribe = messaging().onNotificationOpenedApp((remoteMessage) => {
+      console.log('🔔 Notification opened app (background):', remoteMessage);
+      NotificationHandler.handleNotificationTap(remoteMessage);
+    });
+
+    // Check if app was opened from a notification (killed state)
+    messaging()
+      .getInitialNotification()
+      .then((remoteMessage) => {
+        if (remoteMessage) {
+          console.log('🔔 Notification opened app (killed):', remoteMessage);
+          NotificationHandler.handleNotificationTap(remoteMessage);
+        }
+      });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
 
   const getTabLabel = (routeName: string) => {
     switch (routeName) {

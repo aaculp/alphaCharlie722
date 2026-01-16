@@ -8,6 +8,7 @@ import type {
 } from '../../types/social.types';
 import { cacheManager, CACHE_TTL } from '../../utils/cache/CacheManager';
 import { PrivacyService } from './privacy';
+import { NotificationService } from './notifications';
 
 /**
  * FriendsService - Handles all friend-related operations
@@ -84,6 +85,15 @@ export class FriendsService {
       }
 
       console.log('✅ Friend request sent successfully:', data);
+
+      // Send notification (in-app and push)
+      try {
+        await NotificationService.sendFriendRequestNotification(fromUserId, toUserId);
+      } catch (notificationError) {
+        // Log notification failure but don't throw - friend request was created successfully
+        console.error('⚠️ Failed to send friend request notification:', notificationError);
+      }
+
       return data;
     } catch (error) {
       console.error('Error sending friend request:', error);
