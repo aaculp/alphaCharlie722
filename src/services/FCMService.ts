@@ -17,6 +17,16 @@ import { PayloadValidator } from '../utils/security/PayloadValidator';
 import { supabase } from '../lib/supabase';
 
 /**
+ * Get Supabase URL from the supabase client
+ * This ensures we use the same URL configured in src/lib/supabase.ts
+ */
+function getSupabaseUrl(): string {
+  // Extract URL from supabase client's internal configuration
+  // @ts-ignore - accessing internal property
+  return supabase.supabaseUrl || 'https://cznhaaigowjhqdjtfeyz.supabase.co';
+}
+
+/**
  * FCM notification payload structure
  */
 export interface NotificationPayload {
@@ -458,8 +468,8 @@ export class FCMService {
         tokenLength: jwtToken.length,
       });
 
-      // Get Supabase URL from environment or use default
-      const supabaseUrl = process.env.SUPABASE_URL || 'https://cznhaaigowjhqdjtfeyz.supabase.co';
+      // Construct Edge Function URL using the same URL as the supabase client
+      const supabaseUrl = getSupabaseUrl();
       const edgeFunctionUrl = `${supabaseUrl}/functions/v1/send-flash-offer-push`;
 
       console.log(`📡 Calling Edge Function at: ${edgeFunctionUrl}`);
