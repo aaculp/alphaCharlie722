@@ -14,7 +14,7 @@ import type { RateLimit } from './types.ts';
  * Subscription tier rate limits (offers per 24 hours)
  */
 const TIER_RATE_LIMITS: Record<string, number> = {
-  free: 3,
+  free: 100, // Increased for testing
   core: 5,
   pro: 10,
   revenue: -1, // -1 means unlimited
