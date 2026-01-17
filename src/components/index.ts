@@ -11,18 +11,10 @@ export { default as UserSignUpForm } from './UserSignUpForm';
 
 // Re-export all venue components from the venue domain folder
 export { 
-  TestVenueCard,
   VenueCardDialog,
   VenueSignUpForm,
-  WaitTimesCard,
-  PopularItemsCard,
-  AtmosphereTagsCard,
-  ParkingInfoCard,
-  VenueInfoCards,
-  ModernVenueCards,
-  CompactWaitTimes,
-  CompactAtmosphere,
-  CompactParking
+  VenueInfoComponents,
+  FlashOfferCreationModal
 } from './venue';
 
 // Re-export all check-in components from the checkin domain folder
@@ -41,8 +33,12 @@ export {
 
 // Re-export all shared components from the shared domain folder
 export {
-  OTWLogo
+  default as OTWLogo,
+  HelpTooltip,
+  HelpText,
+  FAQSection
 } from './shared';
+export type { FAQItem } from './shared';
 
 // Re-export all UI components from the ui domain folder
 export {

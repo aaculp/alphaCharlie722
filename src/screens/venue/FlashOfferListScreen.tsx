@@ -44,8 +44,8 @@ const FlashOfferListScreen: React.FC<FlashOfferListScreenProps> = ({ navigation 
     }
 
     try {
-      const data = await FlashOfferService.getVenueOffers(venueId);
-      setOffers(data);
+      const result = await FlashOfferService.getVenueOffers(venueId);
+      setOffers(result.offers);
     } catch (error) {
       console.error('Error loading offers:', error);
     } finally {
@@ -118,6 +118,11 @@ const FlashOfferListScreen: React.FC<FlashOfferListScreenProps> = ({ navigation 
   };
 
   const groupOffersByStatus = (): OfferSection[] => {
+    // Safety check: return empty array if offers is not loaded yet
+    if (!offers || !Array.isArray(offers)) {
+      return [];
+    }
+
     const active = offers.filter(o => o.status === 'active');
     const scheduled = offers.filter(o => o.status === 'scheduled');
     const expired = offers.filter(o => o.status === 'expired' || o.status === 'cancelled' || o.status === 'full');

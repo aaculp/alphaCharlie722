@@ -4,7 +4,7 @@
 
 import { AppRegistry } from 'react-native';
 import { enableScreens } from 'react-native-screens';
-import messaging from '@react-native-firebase/messaging';
+import { getMessaging, setBackgroundMessageHandler } from '@react-native-firebase/messaging';
 import 'react-native-reanimated';
 import App from './App';
 import { name as appName } from './app.json';
@@ -14,10 +14,10 @@ import { NotificationHandler } from './src/services/NotificationHandler';
 // Call this before any navigation components are rendered
 enableScreens(true);
 
-// Register background message handler
+// Register background message handler using modular API
 // This must be done outside of the application lifecycle
 // Requirements: 7.5, 7.6
-messaging().setBackgroundMessageHandler(async (remoteMessage) => {
+setBackgroundMessageHandler(getMessaging(), async (remoteMessage) => {
   console.log('📭 Background message received:', remoteMessage);
   
   // Handle the background notification

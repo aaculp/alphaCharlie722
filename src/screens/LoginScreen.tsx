@@ -13,7 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { OTWLogo } from '../components';
+import OTWLogo from '../components/shared/OTWLogo';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 interface LoginScreenProps {

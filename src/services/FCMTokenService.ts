@@ -7,7 +7,7 @@
  * Requirements: 1.4, 1.5, 1.6, 1.7, 1.8, 10.6
  */
 
-import messaging from '@react-native-firebase/messaging';
+import { getMessaging, requestPermission, getToken, onTokenRefresh, deleteToken, AuthorizationStatus } from '@react-native-firebase/messaging';
 import { Platform } from 'react-native';
 import { DeviceTokenManager } from './DeviceTokenManager';
 
@@ -25,10 +25,10 @@ export class FCMTokenService {
       console.log('🔔 Initializing FCM...');
       
       // Request permission (iOS requires this, Android 13+ also requires it)
-      const authStatus = await messaging().requestPermission();
+      const authStatus = await requestPermission(getMessaging());
       const enabled =
-        authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-        authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+        authStatus === AuthorizationStatus.AUTHORIZED ||
+        authStatus === AuthorizationStatus.PROVISIONAL;
 
       if (!enabled) {
         console.log('⚠️ Push notification permission not granted');
@@ -54,7 +54,7 @@ export class FCMTokenService {
       console.log('🔑 Generating FCM token for user:', userId);
       
       // Get FCM token
-      const token = await messaging().getToken();
+      const token = await getToken(getMessaging());
       
       if (!token) {
         throw new Error('Failed to get FCM token');
@@ -89,7 +89,7 @@ export class FCMTokenService {
     }
 
     // Set up new listener
-    this.tokenRefreshListener = messaging().onTokenRefresh(async (token) => {
+    this.tokenRefreshListener = onTokenRefresh(getMessaging(), async (token) => {
       try {
         console.log('🔄 FCM token refreshed:', token.substring(0, 20) + '...');
         
@@ -125,7 +125,7 @@ export class FCMTokenService {
    */
   static async getCurrentToken(): Promise<string | null> {
     try {
-      const token = await messaging().getToken();
+      const token = await getToken(getMessaging());
       return token;
     } catch (error) {
       console.error('❌ Error getting current FCM token:', error);
@@ -139,7 +139,7 @@ export class FCMTokenService {
    */
   static async deleteToken(): Promise<void> {
     try {
-      await messaging().deleteToken();
+      await deleteToken(getMessaging());
       console.log('✅ FCM token deleted');
     } catch (error) {
       console.error('❌ Error deleting FCM token:', error);

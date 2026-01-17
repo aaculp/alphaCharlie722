@@ -22,7 +22,7 @@ type TabType = 'overview' | 'activity' | 'actions' | 'hints' | 'profile' | 'sett
 const VenueDashboardScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const { theme, isDark, themeMode, setThemeMode } = useTheme();
-  const { user, venueBusinessAccount } = useAuth();
+  const { user, venueBusinessAccount, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [autoAcceptReservations, setAutoAcceptReservations] = useState(false);
@@ -79,8 +79,8 @@ const VenueDashboardScreen: React.FC = () => {
 
       try {
         setFlashOffersLoading(true);
-        const offers = await FlashOfferService.getVenueOffers(venueId, 'active');
-        setActiveOffersCount(offers.length);
+        const result = await FlashOfferService.getVenueOffers(venueId, 'active');
+        setActiveOffersCount(result.offers.length);
       } catch (error) {
         console.error('Error loading flash offers:', error);
       } finally {
@@ -99,10 +99,22 @@ const VenueDashboardScreen: React.FC = () => {
 
   const handleSignOut = async () => {
     showAlert(
-      'Demo Mode',
-      'This is demo mode. In the real app, this would sign you out.',
+      'Sign Out',
+      'Are you sure you want to sign out?',
       [
-        { text: 'OK', style: 'default' }
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Sign Out', 
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await signOut();
+            } catch (error) {
+              console.error('Error signing out:', error);
+              Alert.alert('Error', 'Failed to sign out. Please try again.');
+            }
+          }
+        }
       ]
     );
   };

@@ -14,10 +14,10 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { FlashOfferService } from '../../services/api/flashOffers';
+import { FlashOfferNotificationService } from '../../services/api/flashOfferNotifications';
 import type { CreateFlashOfferInput } from '../../types/flashOffer.types';
 import { HelpTooltip, HelpText } from '../shared';
 
@@ -41,16 +41,15 @@ export const FlashOfferCreationModal: React.FC<FlashOfferCreationModalProps> = (
   const [description, setDescription] = useState('');
   const [valueCap, setValueCap] = useState('');
   const [maxClaims, setMaxClaims] = useState('');
-  const [startTime, setStartTime] = useState(new Date());
-  const [endTime, setEndTime] = useState(new Date(Date.now() + 2 * 60 * 60 * 1000)); // 2 hours from now
+  const [durationHours, setDurationHours] = useState('2');
+  const [durationMinutes, setDurationMinutes] = useState('0');
+  const [useEndOfDay, setUseEndOfDay] = useState(false);
   const [radiusMiles, setRadiusMiles] = useState('1');
   const [targetFavoritesOnly, setTargetFavoritesOnly] = useState(false);
   const [sendPushNotification, setSendPushNotification] = useState(true);
   
   // UI state
   const [loading, setLoading] = useState(false);
-  const [showStartPicker, setShowStartPicker] = useState(false);
-  const [showEndPicker, setShowEndPicker] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Reset form when modal closes
@@ -60,8 +59,9 @@ export const FlashOfferCreationModal: React.FC<FlashOfferCreationModalProps> = (
     setDescription('');
     setValueCap('');
     setMaxClaims('');
-    setStartTime(new Date());
-    setEndTime(new Date(Date.now() + 2 * 60 * 60 * 1000));
+    setDurationHours('2');
+    setDurationMinutes('0');
+    setUseEndOfDay(false);
     setRadiusMiles('1');
     setTargetFavoritesOnly(false);
     setSendPushNotification(true);
@@ -102,14 +102,25 @@ export const FlashOfferCreationModal: React.FC<FlashOfferCreationModalProps> = (
   const validateStep2 = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    const now = new Date();
-    if (startTime < now && startTime.getTime() < now.getTime() - 60000) {
-      // Allow start time within last minute (for "immediate" offers)
-      newErrors.startTime = 'Start time must be now or in the future';
-    }
-
-    if (endTime <= startTime) {
-      newErrors.endTime = 'End time must be after start time';
+    if (!useEndOfDay) {
+      const hours = parseInt(durationHours, 10);
+      const minutes = parseInt(durationMinutes, 10);
+      
+      if (isNaN(hours) || hours < 0) {
+        newErrors.duration = 'Hours must be 0 or greater';
+      }
+      
+      if (isNaN(minutes) || minutes < 0 || minutes > 59) {
+        newErrors.duration = 'Minutes must be between 0 and 59';
+      }
+      
+      if (hours === 0 && minutes === 0) {
+        newErrors.duration = 'Duration must be at least 1 minute';
+      }
+      
+      if (hours > 24) {
+        newErrors.duration = 'Duration cannot exceed 24 hours';
+      }
     }
 
     const radiusNum = parseFloat(radiusMiles);
@@ -134,6 +145,39 @@ export const FlashOfferCreationModal: React.FC<FlashOfferCreationModalProps> = (
     setErrors({});
   };
 
+  // Calculate end time based on duration or end of day
+  const calculateEndTime = (): Date => {
+    if (useEndOfDay) {
+      const endTime = new Date();
+      endTime.setHours(23, 59, 59, 999);
+      return endTime;
+    } else {
+      const hours = parseInt(durationHours, 10) || 0;
+      const minutes = parseInt(durationMinutes, 10) || 0;
+      const totalMs = (hours * 60 * 60 * 1000) + (minutes * 60 * 1000);
+      return new Date(Date.now() + totalMs);
+    }
+  };
+
+  // Format duration for display
+  const formatDuration = (): string => {
+    if (useEndOfDay) {
+      const endTime = calculateEndTime();
+      return `Until ${endTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`;
+    } else {
+      const hours = parseInt(durationHours, 10) || 0;
+      const minutes = parseInt(durationMinutes, 10) || 0;
+      
+      if (hours === 0) {
+        return `${minutes} minute${minutes !== 1 ? 's' : ''}`;
+      } else if (minutes === 0) {
+        return `${hours} hour${hours !== 1 ? 's' : ''}`;
+      } else {
+        return `${hours}h ${minutes}m`;
+      }
+    }
+  };
+
   // Handle form submission
   const handleSubmit = async () => {
     if (!validateStep2()) {
@@ -149,6 +193,9 @@ export const FlashOfferCreationModal: React.FC<FlashOfferCreationModalProps> = (
     setLoading(true);
 
     try {
+      const startTime = new Date();
+      const endTime = calculateEndTime();
+
       const offerData: CreateFlashOfferInput = {
         venue_id: venueId,
         title: title.trim(),
@@ -163,15 +210,29 @@ export const FlashOfferCreationModal: React.FC<FlashOfferCreationModalProps> = (
 
       const offer = await FlashOfferService.createFlashOffer(venueId, offerData);
 
-      // TODO: Send push notification if enabled
+      // Send push notification if enabled
       if (sendPushNotification) {
-        console.log('📲 Push notification would be sent for offer:', offer.id);
-        // await FlashOfferNotificationService.sendFlashOfferPush(offer.id);
+        console.log('📲 Sending push notification for offer:', offer.id);
+        try {
+          const pushResult = await FlashOfferNotificationService.sendFlashOfferPush(offer.id);
+          console.log('✅ Push notification result:', pushResult);
+          
+          if (pushResult.success) {
+            console.log(`📤 Push sent to ${pushResult.sentCount} users`);
+          } else {
+            console.warn('⚠️ Push notification failed:', pushResult.errors);
+          }
+        } catch (pushError) {
+          console.error('❌ Error sending push notification:', pushError);
+          // Don't block the success flow if push fails
+        }
       }
 
       Alert.alert(
         'Success!',
-        'Your flash offer has been created successfully.',
+        sendPushNotification 
+          ? 'Your flash offer has been created and push notifications are being sent!'
+          : 'Your flash offer has been created successfully.',
         [
           {
             text: 'OK',
@@ -191,17 +252,6 @@ export const FlashOfferCreationModal: React.FC<FlashOfferCreationModalProps> = (
     } finally {
       setLoading(false);
     }
-  };
-
-  // Format date for display
-  const formatDateTime = (date: Date): string => {
-    return date.toLocaleString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    });
   };
 
   return (
@@ -402,77 +452,94 @@ export const FlashOfferCreationModal: React.FC<FlashOfferCreationModalProps> = (
                 When and who?
               </Text>
 
-              {/* Start Time */}
+              {/* Duration */}
               <View style={styles.fieldContainer}>
-                <Text style={[styles.label, { color: theme.colors.text }]}>
-                  Start Time <Text style={styles.required}>*</Text>
-                </Text>
-                <TouchableOpacity
-                  style={[
-                    styles.dateButton,
-                    {
-                      backgroundColor: theme.colors.surface,
-                      borderColor: errors.startTime ? '#FF6B6B' : theme.colors.border,
-                    },
-                  ]}
-                  onPress={() => setShowStartPicker(true)}
-                >
-                  <Icon name="calendar-outline" size={20} color={theme.colors.primary} />
-                  <Text style={[styles.dateButtonText, { color: theme.colors.text }]}>
-                    {formatDateTime(startTime)}
+                <View style={styles.labelRow}>
+                  <Text style={[styles.label, { color: theme.colors.text }]}>
+                    Duration <Text style={styles.required}>*</Text>
                   </Text>
-                </TouchableOpacity>
-                {errors.startTime && (
-                  <Text style={styles.errorText}>{errors.startTime}</Text>
-                )}
-                {showStartPicker && (
-                  <DateTimePicker
-                    value={startTime}
-                    mode="datetime"
-                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                    onChange={(_event: any, date?: Date) => {
-                      setShowStartPicker(false);
-                      if (date) setStartTime(date);
-                    }}
+                  <HelpTooltip
+                    title="Offer Duration"
+                    content="Set how long your flash offer will be active. Most successful offers run for 1-4 hours. Use 'End of Day' for all-day specials."
                   />
-                )}
-              </View>
+                </View>
 
-              {/* End Time */}
-              <View style={styles.fieldContainer}>
-                <Text style={[styles.label, { color: theme.colors.text }]}>
-                  End Time <Text style={styles.required}>*</Text>
-                </Text>
-                <TouchableOpacity
-                  style={[
-                    styles.dateButton,
-                    {
-                      backgroundColor: theme.colors.surface,
-                      borderColor: errors.endTime ? '#FF6B6B' : theme.colors.border,
-                    },
-                  ]}
-                  onPress={() => setShowEndPicker(true)}
-                >
-                  <Icon name="calendar-outline" size={20} color={theme.colors.primary} />
-                  <Text style={[styles.dateButtonText, { color: theme.colors.text }]}>
-                    {formatDateTime(endTime)}
+                {/* End of Day Toggle */}
+                <View style={[styles.switchContainer, { marginBottom: 12 }]}>
+                  <Text style={[styles.switchLabel, { color: theme.colors.text }]}>
+                    Run until end of day
                   </Text>
-                </TouchableOpacity>
-                {errors.endTime && (
-                  <Text style={styles.errorText}>{errors.endTime}</Text>
-                )}
-                {showEndPicker && (
-                  <DateTimePicker
-                    value={endTime}
-                    mode="datetime"
-                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                    minimumDate={startTime}
-                    onChange={(_event: any, date?: Date) => {
-                      setShowEndPicker(false);
-                      if (date) setEndTime(date);
-                    }}
+                  <Switch
+                    value={useEndOfDay}
+                    onValueChange={setUseEndOfDay}
+                    trackColor={{ false: '#767577', true: theme.colors.primary + '80' }}
+                    thumbColor={useEndOfDay ? theme.colors.primary : '#f4f3f4'}
                   />
+                </View>
+
+                {/* Duration Inputs (only show if not end of day) */}
+                {!useEndOfDay && (
+                  <View style={styles.durationContainer}>
+                    <View style={styles.durationInput}>
+                      <TextInput
+                        style={[
+                          styles.input,
+                          {
+                            backgroundColor: theme.colors.surface,
+                            color: theme.colors.text,
+                            borderColor: errors.duration ? '#FF6B6B' : theme.colors.border,
+                          },
+                        ]}
+                        placeholder="2"
+                        placeholderTextColor={theme.colors.textSecondary}
+                        value={durationHours}
+                        onChangeText={setDurationHours}
+                        keyboardType="number-pad"
+                        maxLength={2}
+                      />
+                      <Text style={[styles.durationLabel, { color: theme.colors.textSecondary }]}>
+                        hours
+                      </Text>
+                    </View>
+                    <View style={styles.durationInput}>
+                      <TextInput
+                        style={[
+                          styles.input,
+                          {
+                            backgroundColor: theme.colors.surface,
+                            color: theme.colors.text,
+                            borderColor: errors.duration ? '#FF6B6B' : theme.colors.border,
+                          },
+                        ]}
+                        placeholder="0"
+                        placeholderTextColor={theme.colors.textSecondary}
+                        value={durationMinutes}
+                        onChangeText={setDurationMinutes}
+                        keyboardType="number-pad"
+                        maxLength={2}
+                      />
+                      <Text style={[styles.durationLabel, { color: theme.colors.textSecondary }]}>
+                        minutes
+                      </Text>
+                    </View>
+                  </View>
                 )}
+
+                {/* Duration Preview */}
+                <View style={[styles.durationPreview, { backgroundColor: theme.colors.surface }]}>
+                  <Icon name="time-outline" size={20} color={theme.colors.primary} />
+                  <Text style={[styles.durationPreviewText, { color: theme.colors.text }]}>
+                    Offer will run for: {formatDuration()}
+                  </Text>
+                </View>
+
+                {errors.duration && (
+                  <Text style={styles.errorText}>{errors.duration}</Text>
+                )}
+                <HelpText
+                  text="Tip: 2-4 hour offers create urgency and drive immediate action"
+                  type="tip"
+                />
               </View>
 
               {/* Radius */}
@@ -512,7 +579,7 @@ export const FlashOfferCreationModal: React.FC<FlashOfferCreationModalProps> = (
 
               {/* Target Favorites Only */}
               <View style={[styles.fieldContainer, styles.switchContainer]}>
-                <View style={styles.switchLabel}>
+                <View style={{ flex: 1, marginRight: 16 }}>
                   <View style={styles.labelRow}>
                     <Text style={[styles.label, { color: theme.colors.text }]}>
                       Target Favorites Only
@@ -536,7 +603,7 @@ export const FlashOfferCreationModal: React.FC<FlashOfferCreationModalProps> = (
 
               {/* Send Push Notification */}
               <View style={[styles.fieldContainer, styles.switchContainer]}>
-                <View style={styles.switchLabel}>
+                <View style={{ flex: 1, marginRight: 16 }}>
                   <View style={styles.labelRow}>
                     <Text style={[styles.label, { color: theme.colors.text }]}>
                       Send Push Notification
@@ -751,8 +818,33 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   switchLabel: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  durationContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 12,
+  },
+  durationInput: {
     flex: 1,
-    marginRight: 16,
+  },
+  durationLabel: {
+    fontSize: 14,
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  durationPreview: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 8,
+    gap: 8,
+    marginBottom: 8,
+  },
+  durationPreviewText: {
+    fontSize: 14,
+    fontWeight: '500',
   },
   helperText: {
     fontSize: 14,

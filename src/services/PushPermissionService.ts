@@ -7,7 +7,7 @@
  * Requirements: 2.1, 2.2, 2.3, 2.6, 2.7
  */
 
-import messaging from '@react-native-firebase/messaging';
+import { getMessaging, requestPermission, hasPermission, AuthorizationStatus } from '@react-native-firebase/messaging';
 import { Platform, Linking, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -48,7 +48,7 @@ export class PushPermissionService {
       const hasRequested = await this.hasRequestedPermission();
       
       // Request permission from Firebase Messaging
-      const authStatus = await messaging().requestPermission({
+      const authStatus = await requestPermission(getMessaging(), {
         sound: true,
         announcement: true,
         badge: true,
@@ -103,7 +103,7 @@ export class PushPermissionService {
       }
 
       // If no stored status, check with Firebase
-      const authStatus = await messaging().hasPermission();
+      const authStatus = await hasPermission(getMessaging());
       const status = this.mapAuthStatusToPermissionStatus(authStatus);
       
       // Store for future checks
@@ -264,13 +264,13 @@ export class PushPermissionService {
     authStatus: number
   ): PermissionStatus {
     switch (authStatus) {
-      case messaging.AuthorizationStatus.AUTHORIZED:
+      case AuthorizationStatus.AUTHORIZED:
         return 'authorized';
-      case messaging.AuthorizationStatus.DENIED:
+      case AuthorizationStatus.DENIED:
         return 'denied';
-      case messaging.AuthorizationStatus.PROVISIONAL:
+      case AuthorizationStatus.PROVISIONAL:
         return 'provisional';
-      case messaging.AuthorizationStatus.NOT_DETERMINED:
+      case AuthorizationStatus.NOT_DETERMINED:
         return 'not_determined';
       default:
         return 'unavailable';

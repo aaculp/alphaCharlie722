@@ -244,6 +244,7 @@ export class FlashOfferNotificationService {
             );
             
             if (distance <= radiusMiles) {
+              console.log(`🔍 Adding user to nearbyUsers:`, checkIn.user_id, typeof checkIn.user_id);
               nearbyUsers.add(checkIn.user_id);
             }
           }
@@ -251,6 +252,7 @@ export class FlashOfferNotificationService {
 
         userIds = Array.from(nearbyUsers);
         console.log(`📍 Found ${userIds.length} users within ${radiusMiles} miles`);
+        console.log(`🔍 User IDs array:`, userIds, userIds.map(id => typeof id));
       }
 
       if (userIds.length === 0) {
@@ -262,11 +264,24 @@ export class FlashOfferNotificationService {
       // For now, we'll return all users and filter in sendFlashOfferPush
       
       // Get device tokens for these users
-      const { data: tokens, error: tokenError } = await supabase
+      console.log(`🔍 Querying device_tokens with user IDs:`, userIds);
+      
+      // Build OR query for UUIDs (workaround for .in() issues with UUIDs)
+      let query = supabase
         .from('device_tokens')
         .select('user_id, token')
-        .in('user_id', userIds)
         .eq('is_active', true);
+      
+      // If only one user, use eq instead of in
+      if (userIds.length === 1) {
+        query = query.eq('user_id', userIds[0]);
+      } else {
+        query = query.in('user_id', userIds);
+      }
+      
+      const { data: tokens, error: tokenError } = await query;
+
+      console.log(`🔍 Device tokens query result:`, { tokensCount: tokens?.length, error: tokenError });
 
       if (tokenError) {
         console.error('Error fetching device tokens:', tokenError);

@@ -7,7 +7,7 @@
  * Requirements: 6.1, 6.2, 6.3, 6.4, 6.5
  */
 
-import messaging, { FirebaseMessagingTypes } from '@react-native-firebase/messaging';
+import { getMessaging, getToken, onTokenRefresh, onMessage, setBackgroundMessageHandler, isDeviceRegisteredForRemoteMessages, registerDeviceForRemoteMessages, FirebaseMessagingTypes } from '@react-native-firebase/messaging';
 import { Platform } from 'react-native';
 import { DeviceTokenManager } from './DeviceTokenManager';
 import { PushNotificationError, PushErrorCategory, ErrorSeverity, ErrorLogger } from './errors/PushNotificationError';
@@ -87,10 +87,10 @@ export class FCMService {
 
       // Register for remote messages on iOS
       if (Platform.OS === 'ios') {
-        const isRegistered = await messaging().isDeviceRegisteredForRemoteMessages;
+        const isRegistered = await isDeviceRegisteredForRemoteMessages(getMessaging());
         
         if (!isRegistered) {
-          await messaging().registerDeviceForRemoteMessages();
+          await registerDeviceForRemoteMessages(getMessaging());
           console.log('✅ iOS device registered for remote messages');
           DebugLogger.logFCMEvent('ios_registered_for_remote_messages');
         }
@@ -126,7 +126,7 @@ export class FCMService {
       }
 
       DebugLogger.logFCMEvent('get_token_start');
-      const token = await messaging().getToken();
+      const token = await getToken(getMessaging());
       
       if (!token) {
         console.warn('⚠️ No FCM token available');
@@ -162,7 +162,7 @@ export class FCMService {
     }
 
     // Set up new listener
-    this.tokenRefreshListener = messaging().onTokenRefresh((token) => {
+    this.tokenRefreshListener = onTokenRefresh(getMessaging(), (token) => {
       console.log('🔄 FCM token refreshed:', token.substring(0, 20) + '...');
       DebugLogger.logFCMEvent('token_refresh', { token: token.substring(0, 20) + '...' });
       callback(token);
@@ -411,7 +411,7 @@ export class FCMService {
     }
 
     // Set up new listener
-    this.foregroundMessageListener = messaging().onMessage(handler);
+    this.foregroundMessageListener = onMessage(getMessaging(), handler);
     
     console.log('✅ Foreground message listener registered');
   }
@@ -436,7 +436,7 @@ export class FCMService {
   static setBackgroundMessageHandler(
     handler: (message: FirebaseMessagingTypes.RemoteMessage) => Promise<void>
   ): void {
-    messaging().setBackgroundMessageHandler(handler);
+    setBackgroundMessageHandler(getMessaging(), handler);
     console.log('✅ Background message handler registered');
   }
 

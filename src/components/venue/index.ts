@@ -5,6 +5,6 @@
  */
 
 export { FlashOfferCreationModal } from './FlashOfferCreationModal';
-export { VenueCardDialog } from './VenueCardDialog';
+export { default as VenueCardDialog } from './VenueCardDialog';
 export { VenueInfoComponents } from './VenueInfoComponents';
-export { VenueSignUpForm } from './VenueSignUpForm';
+export { default as VenueSignUpForm } from './VenueSignUpForm';

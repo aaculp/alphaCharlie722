@@ -385,7 +385,10 @@ export class VenueAnalyticsService {
       const avgDuration = completedVisits > 0 ? totalDuration / completedVisits / (1000 * 60) : 45; // Convert to minutes
 
       // Find peak day
-      const peakDay = Object.entries(dailyCounts).reduce((a, b) => dailyCounts[a[0]] > dailyCounts[b[0]] ? a : b)?.[0] || 'Friday';
+      const dailyEntries = Object.entries(dailyCounts);
+      const peakDay = dailyEntries.length > 0 
+        ? dailyEntries.reduce((a, b) => dailyCounts[a[0]] > dailyCounts[b[0]] ? a : b)?.[0] || 'Friday'
+        : 'Friday';
 
       return {
         repeatCustomerPercentage: repeatPercentage,

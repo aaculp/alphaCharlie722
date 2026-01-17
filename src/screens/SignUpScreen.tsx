@@ -10,7 +10,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../contexts/ThemeContext';
-import { OTWLogo, UserSignUpForm, VenueSignUpForm } from '../components';
+import OTWLogo from '../components/shared/OTWLogo';
+import { UserSignUpForm, VenueSignUpForm } from '../components';
 
 interface SignUpScreenProps {
   onSwitchToLogin: () => void;

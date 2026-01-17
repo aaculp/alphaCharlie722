@@ -53,16 +53,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       if (businessAccount) {
         console.log('🏢 User is a venue owner:', businessAccount);
+        console.log('🔄 Setting userType to: venue_owner');
         setUserType('venue_owner');
         setVenueBusinessAccount(businessAccount);
+        console.log('✅ UserType state updated to venue_owner');
       } else {
         console.log('👤 User is a regular customer');
+        console.log('🔄 Setting userType to: customer');
         setUserType('customer');
         setVenueBusinessAccount(null);
+        console.log('✅ UserType state updated to customer');
       }
     } catch (error) {
       console.error('❌ Error determining user type:', error);
       // Default to customer if we can't determine
+      console.log('🔄 Setting userType to: customer (error fallback)');
       setUserType('customer');
       setVenueBusinessAccount(null);
     }
@@ -203,10 +208,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             setVenueBusinessAccount(null);
           } else if (hasValidSession && mounted) {
             // Determine user type AFTER auth listener completes (not inside the callback)
-            const currentUser = session?.user;
-            if (currentUser?.id) {
+            // Use currentSession from the getSession call, not the state variable
+            const { data: { session: currentSession } } = await supabase.auth.getSession();
+            if (currentSession?.user?.id) {
               console.log('🔍 Determining user type after initialization...');
-              await determineUserType(currentUser.id);
+              await determineUserType(currentSession.user.id);
+            } else {
+              console.warn('⚠️ No user ID found in session after initialization');
             }
           }
         } else {
@@ -265,17 +273,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         accessToken: data.session?.access_token ? 'present' : 'missing'
       });
 
+      // Determine user type after successful sign in
+      if (data.user?.id) {
+        console.log('🔍 Determining user type after sign in...');
+        await determineUserType(data.user.id);
+      }
+
       // Check if session was persisted
       setTimeout(async () => {
         const keys = await AsyncStorage.getAllKeys();
         const supabaseKeys = keys.filter((key: string) => key.includes('supabase'));
         console.log('🔑 Supabase keys after sign in:', supabaseKeys);
       }, 1000);
-
-      // User type will be determined by the auth state change listener
     } catch (error) {
       setLoading(false);
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 

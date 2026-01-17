@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import messaging from '@react-native-firebase/messaging';
+import { getMessaging, onNotificationOpenedApp, getInitialNotification, onMessage } from '@react-native-firebase/messaging';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useNavigationStyle } from '../contexts/NavigationStyleContext';
@@ -363,14 +363,13 @@ function MainTabNavigator() {
     });
 
     // Listen for notification taps when app is in background/closed
-    const unsubscribe = messaging().onNotificationOpenedApp((remoteMessage) => {
+    const unsubscribe = onNotificationOpenedApp(getMessaging(), (remoteMessage) => {
       console.log('🔔 Notification opened app (background):', remoteMessage);
       NotificationHandler.handleNotificationTap(remoteMessage);
     });
 
     // Check if app was opened from a notification (killed state)
-    messaging()
-      .getInitialNotification()
+    getInitialNotification(getMessaging())
       .then((remoteMessage) => {
         if (remoteMessage) {
           console.log('🔔 Notification opened app (killed):', remoteMessage);
@@ -379,7 +378,7 @@ function MainTabNavigator() {
       });
 
     // Listen for foreground notifications
-    const foregroundUnsubscribe = messaging().onMessage((remoteMessage) => {
+    const foregroundUnsubscribe = onMessage(getMessaging(), (remoteMessage) => {
       console.log('📬 Foreground notification received:', remoteMessage);
       
       // Handle flash offer notifications with in-app banner
@@ -573,9 +572,16 @@ function AppNavigator() {
     timestamp: new Date().toISOString()
   });
 
-  // Show splash screen while initializing
+  // Show splash screen while initializing OR while determining user type
   if (initializing) {
     console.log('🎬 AppNavigator: Showing splash screen (initializing)');
+    return <SplashScreen />;
+  }
+
+  // If we have a session but userType is still null, keep showing splash
+  // This prevents flashing the wrong screen while determining user type
+  if (session && userType === null) {
+    console.log('🎬 AppNavigator: Showing splash screen (determining user type)');
     return <SplashScreen />;
   }
 
@@ -603,8 +609,7 @@ function AppNavigator() {
 
   // Show main tab navigator for customers
   console.log('👤 AppNavigator: Showing main tab navigator (customer)');
-  // return <MainTabNavigator />;
-  return <VenueStackNavigator />;
+  return <MainTabNavigator />;
 }
 
 // Unused styles - kept for potential future use

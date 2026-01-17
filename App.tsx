@@ -49,7 +49,7 @@ function AppContent() {
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
       <StatusBar 
         barStyle={isDark ? 'light-content' : 'dark-content'}
-        backgroundColor={theme.colors.surface}
+        backgroundColor={theme.colors.background}
         translucent={false}
       />
       <NavigationContainer linking={linking}>
