@@ -14,6 +14,7 @@ import { PushNotificationError, PushErrorCategory, ErrorSeverity, ErrorLogger } 
 import { trackSuccess, trackError } from './monitoring/ErrorRateTracker';
 import { DebugLogger } from './DebugLogger';
 import { PayloadValidator } from '../utils/security/PayloadValidator';
+import { supabase } from '../lib/supabase';
 
 /**
  * FCM notification payload structure
@@ -396,6 +397,212 @@ export class FCMService {
   }
 
   /**
+   * Send push notification via Supabase Edge Function
+   * Replaces the simulated backend with real FCM delivery
+   * 
+   * Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7
+   * 
+   * @param offerId - Flash offer ID to send notifications for
+   * @param retryCount - Current retry attempt (internal use)
+   * @returns Edge Function response with success/failure counts
+   */
+  static async sendViaEdgeFunction(
+    offerId: string,
+    retryCount: number = 0
+  ): Promise<{
+    success: boolean;
+    targetedUserCount: number;
+    sentCount: number;
+    failedCount: number;
+    errors: Array<{ token: string; error: string }>;
+    errorCode?: string;
+    errorDetails?: {
+      currentCount?: number;
+      limit?: number;
+      resetsAt?: string;
+    };
+  }> {
+    try {
+      console.log(`📤 Calling Edge Function for offer: ${offerId}`);
+      DebugLogger.logFCMEvent('edge_function_call_start', {
+        offerId,
+        retryCount,
+      });
+
+      // Get the current user's JWT token from Supabase session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session?.access_token) {
+        const error = new PushNotificationError(
+          'No active Supabase session - user must be authenticated',
+          PushErrorCategory.INVALID_CONFIGURATION,
+          ErrorSeverity.HIGH,
+          false,
+          { offerId }
+        );
+        ErrorLogger.logError(error);
+        DebugLogger.logError('FCM', error);
+        
+        return {
+          success: false,
+          targetedUserCount: 0,
+          sentCount: 0,
+          failedCount: 0,
+          errors: [{ token: '', error: 'Authentication required' }],
+        };
+      }
+
+      const jwtToken = session.access_token;
+      console.log('✅ JWT token retrieved for Edge Function call');
+      DebugLogger.logFCMEvent('jwt_token_retrieved', {
+        tokenLength: jwtToken.length,
+      });
+
+      // Get Supabase URL from environment or use default
+      const supabaseUrl = process.env.SUPABASE_URL || 'https://cznhaaigowjhqdjtfeyz.supabase.co';
+      const edgeFunctionUrl = `${supabaseUrl}/functions/v1/send-flash-offer-push`;
+
+      console.log(`📡 Calling Edge Function at: ${edgeFunctionUrl}`);
+      DebugLogger.logFCMEvent('edge_function_request', {
+        url: edgeFunctionUrl,
+        offerId,
+      });
+
+      // Call the Edge Function with JWT token in Authorization header
+      const response = await fetch(edgeFunctionUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${jwtToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          offerId,
+        }),
+      });
+
+      console.log(`📥 Edge Function response status: ${response.status}`);
+      DebugLogger.logFCMEvent('edge_function_response', {
+        status: response.status,
+        statusText: response.statusText,
+      });
+
+      // Parse response body
+      const responseData = await response.json();
+
+      // Handle successful response
+      if (response.ok && responseData.success) {
+        console.log('✅ Edge Function call successful');
+        console.log(`📊 Targeted: ${responseData.targetedUserCount}, Sent: ${responseData.sentCount}, Failed: ${responseData.failedCount}`);
+        
+        DebugLogger.logFCMEvent('edge_function_success', {
+          targetedUserCount: responseData.targetedUserCount,
+          sentCount: responseData.sentCount,
+          failedCount: responseData.failedCount,
+        });
+
+        trackSuccess();
+
+        return {
+          success: true,
+          targetedUserCount: responseData.targetedUserCount || 0,
+          sentCount: responseData.sentCount || 0,
+          failedCount: responseData.failedCount || 0,
+          errors: responseData.errors || [],
+        };
+      }
+
+      // Handle error response
+      const errorMessage = responseData.error || `Edge Function returned status ${response.status}`;
+      const errorCode = responseData.code || 'UNKNOWN_ERROR';
+
+      console.error(`❌ Edge Function error: ${errorMessage} (${errorCode})`);
+      
+      const pushError = new PushNotificationError(
+        errorMessage,
+        this.mapErrorCodeToCategory(errorCode, response.status),
+        ErrorSeverity.HIGH,
+        this.isRetryableError(response.status, errorCode),
+        { offerId, errorCode, status: response.status }
+      );
+
+      ErrorLogger.logError(pushError);
+      DebugLogger.logError('FCM', pushError, {
+        offerId,
+        errorCode,
+        status: response.status,
+        retryCount,
+      });
+
+      trackError(pushError, 'sendViaEdgeFunction');
+
+      // Retry logic for retryable errors (once after 2 seconds)
+      if (pushError.isRetryable && retryCount < 1) {
+        console.log(`🔄 Retrying Edge Function call (attempt ${retryCount + 1}/1)...`);
+        DebugLogger.logFCMEvent('edge_function_retry', {
+          offerId,
+          retryCount: retryCount + 1,
+        });
+
+        // Wait 2 seconds before retry
+        await this.sleep(2000);
+
+        return this.sendViaEdgeFunction(offerId, retryCount + 1);
+      }
+
+      // Return error response
+      return {
+        success: false,
+        targetedUserCount: 0,
+        sentCount: 0,
+        failedCount: 0,
+        errors: [{ token: '', error: errorMessage }],
+        errorCode: errorCode,
+        errorDetails: responseData.details || undefined,
+      };
+
+    } catch (error) {
+      console.error('❌ Edge Function call failed:', error);
+      
+      const pushError = PushNotificationError.fromError(error, {
+        operation: 'sendViaEdgeFunction',
+        offerId,
+        retryCount,
+      });
+
+      ErrorLogger.logError(pushError);
+      DebugLogger.logError('FCM', pushError, {
+        offerId,
+        retryCount,
+      });
+
+      trackError(pushError, 'sendViaEdgeFunction');
+
+      // Retry logic for network errors (once after 2 seconds)
+      if (pushError.isRetryable && retryCount < 1) {
+        console.log(`🔄 Retrying Edge Function call after network error (attempt ${retryCount + 1}/1)...`);
+        DebugLogger.logFCMEvent('edge_function_retry', {
+          offerId,
+          retryCount: retryCount + 1,
+          reason: 'network_error',
+        });
+
+        await this.sleep(2000);
+
+        return this.sendViaEdgeFunction(offerId, retryCount + 1);
+      }
+
+      return {
+        success: false,
+        targetedUserCount: 0,
+        sentCount: 0,
+        failedCount: 0,
+        errors: [{ token: '', error: pushError.message }],
+        errorCode: pushError.category,
+      };
+    }
+  }
+
+  /**
    * Register foreground message handler
    * Handles notifications received while app is in foreground
    * 
@@ -443,6 +650,77 @@ export class FCMService {
   // ============================================================================
   // Private Helper Methods
   // ============================================================================
+
+  /**
+   * Map Edge Function error code to PushErrorCategory
+   * 
+   * @param errorCode - Error code from Edge Function
+   * @param statusCode - HTTP status code
+   * @returns Appropriate PushErrorCategory
+   */
+  private static mapErrorCodeToCategory(errorCode: string, statusCode: number): PushErrorCategory {
+    // Map based on error code
+    switch (errorCode) {
+      case 'UNAUTHORIZED':
+        return PushErrorCategory.AUTHENTICATION_FAILED;
+      case 'INVALID_REQUEST':
+        return PushErrorCategory.INVALID_CONFIGURATION;
+      case 'OFFER_NOT_FOUND':
+      case 'VENUE_NOT_FOUND':
+        return PushErrorCategory.INVALID_CONFIGURATION;
+      case 'RATE_LIMIT_EXCEEDED':
+      case 'FCM_QUOTA_EXCEEDED':
+        return PushErrorCategory.RATE_LIMITED;
+      case 'PUSH_ALREADY_SENT':
+        return PushErrorCategory.INVALID_CONFIGURATION;
+      case 'FIREBASE_INIT_FAILED':
+      case 'DATABASE_ERROR':
+      case 'INTERNAL_ERROR':
+        return PushErrorCategory.SERVER_ERROR;
+      default:
+        // Map based on status code if error code is unknown
+        if (statusCode === 401 || statusCode === 403) {
+          return PushErrorCategory.AUTHENTICATION_FAILED;
+        } else if (statusCode === 429) {
+          return PushErrorCategory.RATE_LIMITED;
+        } else if (statusCode >= 500) {
+          return PushErrorCategory.SERVER_ERROR;
+        } else {
+          return PushErrorCategory.UNKNOWN;
+        }
+    }
+  }
+
+  /**
+   * Check if an error is retryable based on status code and error code
+   * 
+   * @param statusCode - HTTP status code
+   * @param errorCode - Error code from Edge Function
+   * @returns True if error is retryable
+   */
+  private static isRetryableError(statusCode: number, errorCode: string): boolean {
+    // Don't retry client errors (4xx) except for rate limits
+    if (statusCode >= 400 && statusCode < 500 && statusCode !== 429) {
+      return false;
+    }
+
+    // Don't retry specific error codes
+    const nonRetryableErrors = [
+      'UNAUTHORIZED',
+      'INVALID_REQUEST',
+      'OFFER_NOT_FOUND',
+      'VENUE_NOT_FOUND',
+      'RATE_LIMIT_EXCEEDED',
+      'PUSH_ALREADY_SENT',
+    ];
+
+    if (nonRetryableErrors.includes(errorCode)) {
+      return false;
+    }
+
+    // Retry server errors (5xx) and network errors
+    return statusCode >= 500 || statusCode === 0;
+  }
 
   /**
    * Send notification via backend API

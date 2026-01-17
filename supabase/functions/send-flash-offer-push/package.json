@@ -1,0 +1,26 @@
+{
+  "name": "send-flash-offer-push",
+  "version": "1.0.0",
+  "description": "Supabase Edge Function for sending flash offer push notifications via Firebase Cloud Messaging",
+  "type": "module",
+  "scripts": {
+    "deploy:local": "supabase functions deploy send-flash-offer-push --no-verify-jwt",
+    "deploy:prod": "supabase functions deploy send-flash-offer-push",
+    "logs": "supabase functions logs send-flash-offer-push --tail",
+    "logs:recent": "supabase functions logs send-flash-offer-push --limit 100"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.0.0",
+    "@supabase/supabase-js": "^2.0.0"
+  },
+  "devDependencies": {},
+  "keywords": [
+    "supabase",
+    "edge-function",
+    "firebase",
+    "push-notifications",
+    "fcm"
+  ],
+  "author": "",
+  "license": "MIT"
+}

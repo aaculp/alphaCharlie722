@@ -1,0 +1,15 @@
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Deno cache
+.deno/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
