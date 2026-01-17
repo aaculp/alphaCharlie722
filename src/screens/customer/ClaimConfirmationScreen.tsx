@@ -20,30 +20,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '../../contexts/ThemeContext';
 import type { FlashOfferClaim } from '../../types/flashOfferClaim.types';
-
-type ClaimConfirmationScreenProps = {
-  navigation: any;
-  route: {
-    params: {
-      claim: FlashOfferClaim;
-      offerTitle: string;
-      venueName: string;
-    };
-  };
-};
-
-import React, { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Animated,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import Icon from 'react-native-vector-icons/Ionicons';
-import { useTheme } from '../../contexts/ThemeContext';
-import type { FlashOfferClaim } from '../../types/flashOfferClaim.types';
 import { successCelebration, bounceIn } from '../../utils/animations';
 import { triggerSuccessHaptic } from '../../utils/haptics';
 
