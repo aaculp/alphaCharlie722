@@ -4,8 +4,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Replace these with your actual Supabase project credentials
 // You'll get these after creating your Supabase project
-const supabaseUrl = 'https://cznhaaigowjhqdjtfeyz.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN6bmhhYWlnb3dqaHFkanRmZXl6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc0NjQ1NDcsImV4cCI6MjA4MzA0MDU0N30.UMOiS197aGaVsl92UPxwArgUE7iiuEsgVlefKawfD8g';
+// For testing: Override with SUPABASE_URL and SUPABASE_ANON_KEY environment variables
+const supabaseUrl = process.env.SUPABASE_URL || 'https://cznhaaigowjhqdjtfeyz.supabase.co';
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN6bmhhYWlnb3dqaHFkanRmZXl6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc0NjQ1NDcsImV4cCI6MjA4MzA0MDU0N30.UMOiS197aGaVsl92UPxwArgUE7iiuEsgVlefKawfD8g';
 
 // Custom AsyncStorage adapter with minimal logging
 const customAsyncStorage = {

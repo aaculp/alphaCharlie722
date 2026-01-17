@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import { VenueBusinessService } from '../services/venueBusinessService';
 import { FCMTokenService } from '../services/FCMTokenService';
 import { DeviceTokenManager } from '../services/DeviceTokenManager';
+import { NotificationPreferencesService } from '../services/api/notificationPreferences';
 import type { UserType } from '../types';
 
 interface AuthContextType {
@@ -325,6 +326,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           }
         } catch (profileError) {
           console.log('⚠️ Profile creation failed:', profileError);
+        }
+
+        // Create default notification preferences (Requirement 12.2)
+        try {
+          await NotificationPreferencesService.createDefaultPreferences(signUpData.user.id);
+          console.log('✅ Default notification preferences created for new user');
+        } catch (preferencesError) {
+          console.log('⚠️ Notification preferences creation failed:', preferencesError);
+          // Don't block signup if preferences creation fails
         }
       }
 

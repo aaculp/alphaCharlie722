@@ -221,6 +221,51 @@ export const FlashOfferCreationModal: React.FC<FlashOfferCreationModalProps> = (
             console.log(`📤 Push sent to ${pushResult.sentCount} users`);
           } else {
             console.warn('⚠️ Push notification failed:', pushResult.errors);
+            
+            // Handle rate limit errors specially
+            if (pushResult.errorCode === 'RATE_LIMIT_EXCEEDED' && pushResult.errorDetails) {
+              const { currentCount, limit, resetsAt } = pushResult.errorDetails;
+              const tier = venueBusinessAccount?.subscription_tier || 'free';
+              
+              let message = `You've reached your daily limit of ${limit} flash offers (${currentCount}/${limit} sent).\n\n`;
+              message += `Your ${tier.toUpperCase()} plan allows ${limit} offer${limit !== '1' ? 's' : ''} per 24 hours.\n\n`;
+              
+              // Add reset time if available
+              if (resetsAt) {
+                try {
+                  const resetTime = new Date(resetsAt);
+                  const now = new Date();
+                  const hoursUntilReset = Math.ceil((resetTime.getTime() - now.getTime()) / (1000 * 60 * 60));
+                  
+                  if (hoursUntilReset > 0) {
+                    message += `You can send your next offer in approximately ${hoursUntilReset} hour${hoursUntilReset !== 1 ? 's' : ''}.\n\n`;
+                  }
+                } catch (e) {
+                  // Ignore date parsing errors
+                }
+              }
+              
+              // Add upgrade suggestion for free/core tiers
+              if (tier === 'free' || tier === 'core') {
+                const nextTier = tier === 'free' ? 'CORE' : 'PRO';
+                const nextLimit = tier === 'free' ? '5' : '10';
+                message += `💡 Upgrade to ${nextTier} to send up to ${nextLimit} offers per day!`;
+              }
+              
+              Alert.alert(
+                'Daily Limit Reached',
+                message,
+                [
+                  {
+                    text: 'OK',
+                    style: 'default',
+                  },
+                ]
+              );
+              
+              setLoading(false);
+              return; // Don't show success message
+            }
           }
         } catch (pushError) {
           console.error('❌ Error sending push notification:', pushError);

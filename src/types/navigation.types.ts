@@ -19,6 +19,8 @@ export type SettingsStackParamList = {
   Profile: undefined;
   MyClaims: undefined;
   ClaimDetail: { claimId: string };
+  NotificationSettings: undefined;
+  FlashOffersHelp: undefined;
 };
 
 // Home stack navigation types

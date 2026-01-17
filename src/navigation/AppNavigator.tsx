@@ -24,6 +24,8 @@ import type { SocialNotification } from '../types/social.types';
 import { HomeScreen, SearchScreen, VenueDetailScreen, SettingsScreen, FavoritesScreen, ProfileScreen, FlashOfferDetailScreen, ClaimConfirmationScreen } from '../screens/customer';
 import MyClaimsScreen from '../screens/customer/MyClaimsScreen';
 import ClaimDetailScreen from '../screens/customer/ClaimDetailScreen';
+import NotificationSettingsScreen from '../screens/customer/NotificationSettingsScreen';
+import FlashOffersHelpScreen from '../screens/customer/FlashOffersHelpScreen';
 import { SplashScreen, AuthScreen } from '../screens/auth';
 import { VenueDashboardScreen, FlashOfferListScreen, FlashOfferDetailScreen as VenueFlashOfferDetailScreen, TokenRedemptionScreen } from '../screens/venue';
 
@@ -192,6 +194,20 @@ function SettingsStackNavigator() {
         component={ClaimDetailScreen}
         options={{
           animation: 'slide_from_bottom',
+        }}
+      />
+      <SettingsStack.Screen
+        name="NotificationSettings"
+        component={NotificationSettingsScreen}
+        options={{
+          animation: 'slide_from_right',
+        }}
+      />
+      <SettingsStack.Screen
+        name="FlashOffersHelp"
+        component={FlashOffersHelpScreen}
+        options={{
+          animation: 'slide_from_right',
         }}
       />
     </SettingsStack.Navigator>

@@ -14,6 +14,7 @@ export { PushPermissionService } from './PushPermissionService';
 export { FCMService } from './FCMService';
 export { PushNotificationService } from './PushNotificationService';
 export { NotificationPayloadBuilder } from './NotificationPayloadBuilder';
+export { NotificationPreferencesService } from './api/notificationPreferences';
 export type { PermissionStatus, PermissionResult } from './PushPermissionService';
 export type { NotificationPayload, SendResult, BatchSendResult } from './FCMService';
 export type { SocialNotificationPayload, PushResult, PushError } from './PushNotificationService';
@@ -24,6 +25,7 @@ export type {
   FriendAcceptedPayloadOptions,
   VenueSharePayloadOptions,
 } from './NotificationPayloadBuilder';
+export type { FlashOfferNotificationPreferences } from './api/notificationPreferences';
 
 // Compliance exports
 export { ComplianceService } from './compliance/ComplianceService';

@@ -426,6 +426,12 @@ const SettingsScreen: React.FC = () => {
             }
             showArrow={false}
           />
+          <SettingItem
+            icon="flash"
+            title="Flash Offer Notifications"
+            subtitle="Configure flash offer notification preferences"
+            onPress={() => navigation.navigate('NotificationSettings')}
+          />
           
           {/* Notification Types Accordion */}
           <TouchableOpacity 

@@ -15,6 +15,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { VenueAnalyticsService, type VenueAnalytics } from '../../services/venueAnalyticsService';
 import { FlashOfferCreationModal } from '../../components/venue';
 import { FlashOfferService, type FlashOffer } from '../../services/api/flashOffers';
+import { RateLimitsService, type VenueRateLimitStatus } from '../../services/api/rateLimits';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 type TabType = 'overview' | 'activity' | 'actions' | 'hints' | 'profile' | 'settings';
@@ -31,6 +32,7 @@ const VenueDashboardScreen: React.FC = () => {
   const [flashOfferModalVisible, setFlashOfferModalVisible] = useState(false);
   const [activeOffersCount, setActiveOffersCount] = useState<number>(0);
   const [flashOffersLoading, setFlashOffersLoading] = useState(false);
+  const [rateLimitStatus, setRateLimitStatus] = useState<VenueRateLimitStatus | null>(null);
 
   // Load analytics data
   useEffect(() => {
@@ -90,6 +92,25 @@ const VenueDashboardScreen: React.FC = () => {
 
     loadFlashOffers();
   }, [venueBusinessAccount?.venues?.id]);
+
+  // Load rate limit status
+  useEffect(() => {
+    const loadRateLimitStatus = async () => {
+      const venueId = venueBusinessAccount?.venues?.id;
+      const tier = venueBusinessAccount?.subscription_tier || 'free';
+      
+      if (!venueId) return;
+
+      try {
+        const status = await RateLimitsService.getVenueRateLimitStatus(venueId, tier);
+        setRateLimitStatus(status);
+      } catch (error) {
+        console.error('Error loading rate limit status:', error);
+      }
+    };
+
+    loadRateLimitStatus();
+  }, [venueBusinessAccount?.venues?.id, venueBusinessAccount?.subscription_tier]);
 
   const showAlert = (title: string, message: string, buttons?: any[]) => {
     setTimeout(() => {
@@ -389,6 +410,40 @@ const VenueDashboardScreen: React.FC = () => {
                 <Icon name="chevron-forward" size={24} color={theme.colors.textSecondary} />
               </View>
               
+              {/* Rate Limit Status */}
+              {rateLimitStatus && (
+                <View style={[styles.rateLimitContainer, { borderTopColor: theme.colors.border }]}>
+                  <View style={styles.rateLimitInfo}>
+                    <Icon 
+                      name={rateLimitStatus.isUnlimited ? "infinite" : "calendar-outline"} 
+                      size={16} 
+                      color={
+                        rateLimitStatus.isUnlimited 
+                          ? '#4CAF50' 
+                          : rateLimitStatus.remaining === 0 
+                            ? '#F44336' 
+                            : theme.colors.primary
+                      } 
+                    />
+                    <Text style={[styles.rateLimitText, { color: theme.colors.textSecondary }]}>
+                      {rateLimitStatus.isUnlimited 
+                        ? 'Unlimited offers available' 
+                        : `${rateLimitStatus.currentCount} of ${rateLimitStatus.limit} offers sent today`}
+                    </Text>
+                  </View>
+                  {!rateLimitStatus.isUnlimited && rateLimitStatus.remaining === 0 && rateLimitStatus.resetsAt && (
+                    <Text style={[styles.rateLimitReset, { color: '#F44336' }]}>
+                      Resets in {RateLimitsService.getTimeUntilReset(rateLimitStatus.resetsAt)}
+                    </Text>
+                  )}
+                  {!rateLimitStatus.isUnlimited && rateLimitStatus.remaining > 0 && (
+                    <Text style={[styles.rateLimitRemaining, { color: '#4CAF50' }]}>
+                      {rateLimitStatus.remaining} {rateLimitStatus.remaining === 1 ? 'offer' : 'offers'} remaining
+                    </Text>
+                  )}
+                </View>
+              )}
+              
               <View style={[styles.flashOffersActions, { borderTopColor: theme.colors.border }]}>
                 <TouchableOpacity
                   style={styles.flashOffersActionButton}
@@ -411,9 +466,17 @@ const VenueDashboardScreen: React.FC = () => {
                     e.stopPropagation();
                     setFlashOfferModalVisible(true);
                   }}
+                  disabled={rateLimitStatus?.remaining === 0}
                 >
-                  <Icon name="add-circle-outline" size={18} color={theme.colors.primary} />
-                  <Text style={[styles.flashOffersActionText, { color: theme.colors.primary }]}>
+                  <Icon 
+                    name="add-circle-outline" 
+                    size={18} 
+                    color={rateLimitStatus?.remaining === 0 ? theme.colors.textSecondary : theme.colors.primary} 
+                  />
+                  <Text style={[
+                    styles.flashOffersActionText, 
+                    { color: rateLimitStatus?.remaining === 0 ? theme.colors.textSecondary : theme.colors.primary }
+                  ]}>
                     Create New
                   </Text>
                 </TouchableOpacity>
@@ -1750,6 +1813,31 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     fontFamily: 'Inter-SemiBold',
+  },
+  rateLimitContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+  },
+  rateLimitInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
+  rateLimitText: {
+    fontSize: 13,
+    fontFamily: 'Inter-Medium',
+  },
+  rateLimitReset: {
+    fontSize: 12,
+    fontFamily: 'Inter-Regular',
+    marginTop: 4,
+  },
+  rateLimitRemaining: {
+    fontSize: 12,
+    fontFamily: 'Inter-Medium',
+    marginTop: 4,
   },
 });
 

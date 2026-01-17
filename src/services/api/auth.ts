@@ -1,4 +1,5 @@
 import { supabase } from '../../lib/supabase';
+import { NotificationPreferencesService } from './notificationPreferences';
 import type { Profile, ProfileInsert } from '../../types';
 
 export class AuthService {
@@ -40,6 +41,15 @@ export class AuthService {
         console.log('✅ Profile created successfully');
       } catch (profileError) {
         console.log('⚠️ Profile creation failed:', profileError);
+      }
+
+      // Create default notification preferences (Requirement 12.2)
+      try {
+        await NotificationPreferencesService.createDefaultPreferences(signUpData.user.id);
+        console.log('✅ Default notification preferences created for new user');
+      } catch (preferencesError) {
+        console.log('⚠️ Notification preferences creation failed:', preferencesError);
+        // Don't block signup if preferences creation fails
       }
     }
 

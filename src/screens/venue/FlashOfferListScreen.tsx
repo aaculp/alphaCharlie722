@@ -14,6 +14,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { FlashOfferService, type FlashOffer, type FlashOfferStatus } from '../../services/api/flashOffers';
 import { FlashOfferCreationModal } from '../../components/venue';
 import { OfferListItemSkeleton } from '../../components/flashOffer/SkeletonLoaders';
+import { FlashOfferAnalyticsService } from '../../services/api/flashOfferAnalytics';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 type FlashOfferListScreenProps = {
@@ -26,10 +27,18 @@ interface OfferSection {
   status: FlashOfferStatus;
 }
 
+interface OfferWithAnalytics extends FlashOffer {
+  analytics?: {
+    push_sent_count: number;
+    views_count: number;
+    delivery_rate: number;
+  };
+}
+
 const FlashOfferListScreen: React.FC<FlashOfferListScreenProps> = ({ navigation }) => {
   const { theme, isDark } = useTheme();
   const { venueBusinessAccount } = useAuth();
-  const [offers, setOffers] = useState<FlashOffer[]>([]);
+  const [offers, setOffers] = useState<OfferWithAnalytics[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -45,7 +54,41 @@ const FlashOfferListScreen: React.FC<FlashOfferListScreenProps> = ({ navigation 
 
     try {
       const result = await FlashOfferService.getVenueOffers(venueId);
-      setOffers(result.offers);
+      
+      // Load analytics for each offer
+      const offersWithAnalytics = await Promise.all(
+        result.offers.map(async (offer) => {
+          try {
+            const eventCounts = await FlashOfferAnalyticsService.getEventCounts(offer.id);
+            const pushSentCount = eventCounts.push_sent;
+            const viewsCount = eventCounts.view;
+            
+            // Calculate delivery rate (views / push_sent)
+            const deliveryRate = pushSentCount > 0 ? (viewsCount / pushSentCount) * 100 : 0;
+            
+            return {
+              ...offer,
+              analytics: {
+                push_sent_count: pushSentCount,
+                views_count: viewsCount,
+                delivery_rate: Math.round(deliveryRate * 100) / 100,
+              },
+            };
+          } catch (error) {
+            console.error(`Error loading analytics for offer ${offer.id}:`, error);
+            return {
+              ...offer,
+              analytics: {
+                push_sent_count: 0,
+                views_count: 0,
+                delivery_rate: 0,
+              },
+            };
+          }
+        })
+      );
+      
+      setOffers(offersWithAnalytics);
     } catch (error) {
       console.error('Error loading offers:', error);
     } finally {
@@ -142,7 +185,7 @@ const FlashOfferListScreen: React.FC<FlashOfferListScreenProps> = ({ navigation 
     return sections;
   };
 
-  const renderOfferCard = ({ item }: { item: FlashOffer }) => {
+  const renderOfferCard = ({ item }: { item: OfferWithAnalytics }) => {
     const statusColor = getStatusColor(item.status);
     const statusIcon = getStatusIcon(item.status);
     const timeRemaining = item.status === 'active' ? getTimeRemaining(item.end_time) : null;
@@ -214,6 +257,41 @@ const FlashOfferListScreen: React.FC<FlashOfferListScreenProps> = ({ navigation 
             </View>
           )}
         </View>
+
+        {/* Push Metrics - Show if push was sent */}
+        {item.push_sent && item.analytics && (
+          <View style={[styles.pushMetricsContainer, { borderTopColor: theme.colors.border }]}>
+            <View style={styles.pushMetricItem}>
+              <Icon name="send-outline" size={14} color="#4CAF50" />
+              <Text style={[styles.pushMetricLabel, { color: theme.colors.textSecondary }]}>
+                Sent:
+              </Text>
+              <Text style={[styles.pushMetricValue, { color: theme.colors.text }]}>
+                {item.analytics.push_sent_count}
+              </Text>
+            </View>
+            
+            <View style={styles.pushMetricItem}>
+              <Icon name="eye-outline" size={14} color="#2196F3" />
+              <Text style={[styles.pushMetricLabel, { color: theme.colors.textSecondary }]}>
+                Opened:
+              </Text>
+              <Text style={[styles.pushMetricValue, { color: theme.colors.text }]}>
+                {item.analytics.views_count}
+              </Text>
+            </View>
+            
+            <View style={styles.pushMetricItem}>
+              <Icon name="stats-chart-outline" size={14} color="#FF9800" />
+              <Text style={[styles.pushMetricLabel, { color: theme.colors.textSecondary }]}>
+                Rate:
+              </Text>
+              <Text style={[styles.pushMetricValue, { color: theme.colors.text }]}>
+                {item.analytics.delivery_rate}%
+              </Text>
+            </View>
+          </View>
+        )}
 
         {/* Chevron */}
         <View style={styles.chevronContainer}>
@@ -434,6 +512,27 @@ const styles = StyleSheet.create({
   statText: {
     fontSize: 13,
     fontFamily: 'Inter-Medium',
+  },
+  pushMetricsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingTop: 12,
+    marginTop: 12,
+    borderTopWidth: 1,
+  },
+  pushMetricItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  pushMetricLabel: {
+    fontSize: 11,
+    fontFamily: 'Inter-Regular',
+  },
+  pushMetricValue: {
+    fontSize: 12,
+    fontWeight: '600',
+    fontFamily: 'Inter-SemiBold',
   },
   chevronContainer: {
     position: 'absolute',
