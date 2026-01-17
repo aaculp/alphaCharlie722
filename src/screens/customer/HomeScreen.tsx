@@ -16,7 +16,7 @@ import type { Venue, HomeStackParamList } from '../../types';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useLocationContext } from '../../contexts/LocationContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { useVenues, useCheckInStats, useNewVenues } from '../../hooks';
+import { useVenues, useCheckInStats, useNewVenues, useFlashOffers } from '../../hooks';
 import { useLocation } from '../../hooks/useLocation';
 import { LocationService } from '../../services/locationService';
 import { CheckInService } from '../../services/api/checkins';
@@ -26,6 +26,7 @@ import { VenuesCarouselSection } from '../../components/ui';
 import { QuickPickChip } from '../../components/quickpicks';
 import { RecentCheckInsSection } from '../../components/checkin';
 import { FriendVenueCarousel, SharedCollectionCarousel, FriendActivityFeed } from '../../components/social';
+import { FlashOfferCard } from '../../components/flashOffer';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<HomeStackParamList, 'HomeList'>;
@@ -144,6 +145,17 @@ const HomeScreen: React.FC = () => {
   const { venues, loading, error, refetch } = useVenues({ featured: true, limit: 10 });
   const { location, loading: locationLoading, error: locationError, refetch: refetchLocation } = useLocation();
   const { venues: newVenues, loading: newVenuesLoading, refetch: refetchNewVenues } = useNewVenues();
+  const { 
+    offers: flashOffers, 
+    loading: flashOffersLoading, 
+    refetch: refetchFlashOffers,
+    locationPermissionDenied,
+    requestLocationPermission,
+    isOffline: flashOffersOffline,
+  } = useFlashOffers({
+    radiusMiles: 10,
+    enabled: locationEnabled,
+  });
 
   // Debug logging
   useEffect(() => {
@@ -219,6 +231,7 @@ const HomeScreen: React.FC = () => {
     await Promise.all([
       refetch(),
       refetchNewVenues(),
+      refetchFlashOffers(),
       sortByDistance && locationEnabled ? refetchLocation() : Promise.resolve()
     ]);
     setRefreshing(false);
@@ -360,6 +373,71 @@ const HomeScreen: React.FC = () => {
           icon="sparkles"
           showNewBadge={true}
         />
+
+        {/* Flash Offers Section */}
+        {locationEnabled && flashOffers.length > 0 && (
+          <View style={styles.flashOffersSection}>
+            <View style={styles.sectionHeader}>
+              <Icon name="flash" size={20} color={theme.colors.primary} />
+              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+                Flash Offers
+              </Text>
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.flashOffersScroll}
+            >
+              {flashOffers.map((offer) => (
+                <FlashOfferCard
+                  key={offer.id}
+                  offer={offer}
+                  venueName={offer.venue_name}
+                  onPress={() => {
+                    // TODO: Navigate to FlashOfferDetail screen when implemented
+                    console.log('Flash offer pressed:', offer.id);
+                  }}
+                />
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
+        {/* Location permission prompt for flash offers */}
+        {locationPermissionDenied && user && (
+          <View style={styles.flashOffersPrompt}>
+            <Icon name="location-outline" size={24} color={theme.colors.primary} />
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              <Text style={[styles.promptText, { color: theme.colors.text, fontWeight: '600' }]}>
+                Location Permission Required
+              </Text>
+              <Text style={[styles.promptSubtext, { color: theme.colors.textSecondary, fontSize: 14 }]}>
+                Enable location to see flash offers near you
+              </Text>
+              <TouchableOpacity
+                style={[styles.permissionButton, { backgroundColor: theme.colors.primary }]}
+                onPress={requestLocationPermission}
+              >
+                <Text style={styles.permissionButtonText}>Grant Permission</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
+        {/* Offline indicator for flash offers */}
+        {flashOffersOffline && !locationPermissionDenied && user && (
+          <View style={[styles.flashOffersPrompt, { backgroundColor: '#FFF3E0' }]}>
+            <Icon name="cloud-offline-outline" size={24} color="#FF9800" />
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              <Text style={[styles.promptText, { color: '#E65100', fontWeight: '600' }]}>
+                Offline Mode
+              </Text>
+              <Text style={[styles.promptSubtext, { color: '#E65100', fontSize: 14 }]}>
+                Showing cached flash offers. Connect to see latest offers.
+              </Text>
+            </View>
+          </View>
+        )}
 
         {/* Recent Check-Ins Section */}
         {user && (
@@ -619,6 +697,51 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Regular',
     paddingHorizontal: 15,
     fontStyle: 'italic',
+  },
+  flashOffersSection: {
+    marginBottom: 20,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 15,
+    marginBottom: 12,
+    gap: 8,
+  },
+  flashOffersScroll: {
+    paddingHorizontal: 15,
+  },
+  flashOffersPrompt: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 15,
+    paddingVertical: 20,
+    marginBottom: 20,
+    gap: 8,
+    borderRadius: 12,
+    marginHorizontal: 15,
+  },
+  promptText: {
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+  },
+  promptSubtext: {
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+    marginTop: 4,
+  },
+  permissionButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+    marginTop: 12,
+    alignSelf: 'flex-start',
+  },
+  permissionButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+    fontFamily: 'Inter-SemiBold',
   },
 });
 

@@ -18,6 +18,7 @@ import { useLocationContext } from '../../contexts/LocationContext';
 import { useFriends, useNotificationPreferences } from '../../hooks';
 import { populateVenuesDatabase } from '../../utils/populateVenues';
 import { PushPermissionService, PermissionStatus } from '../../services/PushPermissionService';
+import { ClaimService } from '../../services/api/flashOfferClaims';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 const SettingsScreen: React.FC = () => {
@@ -29,6 +30,7 @@ const SettingsScreen: React.FC = () => {
   const [notificationTypesExpanded, setNotificationTypesExpanded] = useState(false);
   const [pushPermissionStatus, setPushPermissionStatus] = useState<PermissionStatus>('not_determined');
   const [pushEnabled, setPushEnabled] = useState(false);
+  const [activeClaimsCount, setActiveClaimsCount] = useState(0);
   
   const { signOut, user } = useAuth();
   const { theme, themeMode, setThemeMode } = useTheme();
@@ -43,6 +45,13 @@ const SettingsScreen: React.FC = () => {
   useEffect(() => {
     loadPushPermissionStatus();
   }, []);
+
+  // Load active claims count on mount
+  useEffect(() => {
+    if (user?.id) {
+      loadActiveClaimsCount();
+    }
+  }, [user?.id]);
 
   // Update push enabled state when preferences load
   useEffect(() => {
@@ -62,6 +71,17 @@ const SettingsScreen: React.FC = () => {
       setPushPermissionStatus(status);
     } catch (error) {
       console.error('Error loading push permission status:', error);
+    }
+  };
+
+  const loadActiveClaimsCount = async () => {
+    if (!user?.id) return;
+    
+    try {
+      const claims = await ClaimService.getUserClaims(user.id, 'active');
+      setActiveClaimsCount(claims.length);
+    } catch (error) {
+      console.error('Error loading active claims count:', error);
     }
   };
 
@@ -378,6 +398,18 @@ const SettingsScreen: React.FC = () => {
             title="My Favorites"
             subtitle="View your saved venues"
             onPress={() => navigation.navigate('Favorites')}
+          />
+          <SettingItem
+            icon="ticket"
+            title="My Flash Offers"
+            subtitle={activeClaimsCount > 0 ? `${activeClaimsCount} active claim${activeClaimsCount !== 1 ? 's' : ''}` : 'View your claimed offers'}
+            onPress={() => navigation.navigate('MyClaims')}
+          />
+          <SettingItem
+            icon="help-circle"
+            title="Flash Offers Help"
+            subtitle="Learn how to use Flash Offers"
+            onPress={() => navigation.navigate('FlashOffersHelp')}
           />
           <SettingItem
             icon="notifications"

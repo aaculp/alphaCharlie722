@@ -421,7 +421,8 @@ export type NotificationType =
   | 'collection_update'
   | 'activity_like'
   | 'activity_comment'
-  | 'friend_checkin_nearby';
+  | 'friend_checkin_nearby'
+  | 'flash_offer';
 
 // ============================================================================
 // Privacy Settings Types

@@ -9,25 +9,30 @@ import { useNotifications } from '../contexts/NotificationContext';
 import { NotificationHandler } from '../services/NotificationHandler';
 import { NewFloatingTabBar, AnimatedTabBar } from '../components/navigation';
 import { FriendRequestModal } from '../components/social';
+import { FlashOfferNotificationBanner } from '../components/flashOffer';
 import type {
   RootTabParamList,
   ProfileStackParamList,
   SettingsStackParamList,
   HomeStackParamList,
   SearchStackParamList,
+  VenueStackParamList,
 } from '../types';
 import type { SocialNotification } from '../types/social.types';
 
 // Import screens
-import { HomeScreen, SearchScreen, VenueDetailScreen, SettingsScreen, FavoritesScreen, ProfileScreen } from '../screens/customer';
+import { HomeScreen, SearchScreen, VenueDetailScreen, SettingsScreen, FavoritesScreen, ProfileScreen, FlashOfferDetailScreen, ClaimConfirmationScreen } from '../screens/customer';
+import MyClaimsScreen from '../screens/customer/MyClaimsScreen';
+import ClaimDetailScreen from '../screens/customer/ClaimDetailScreen';
 import { SplashScreen, AuthScreen } from '../screens/auth';
-import { VenueDashboardScreen } from '../screens/venue';
+import { VenueDashboardScreen, FlashOfferListScreen, FlashOfferDetailScreen as VenueFlashOfferDetailScreen, TokenRedemptionScreen } from '../screens/venue';
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
 const SearchStack = createNativeStackNavigator<SearchStackParamList>();
 const ProfileStack = createNativeStackNavigator<ProfileStackParamList>();
 const SettingsStack = createNativeStackNavigator<SettingsStackParamList>();
+const VenueStack = createNativeStackNavigator<VenueStackParamList>();
 
 // Home Stack Navigator
 function HomeStackNavigator() {
@@ -40,15 +45,38 @@ function HomeStackNavigator() {
         contentStyle: {
           backgroundColor: theme.colors.background,
         },
+        animation: 'slide_from_right',
+        animationDuration: 250,
       }}
     >
       <HomeStack.Screen
         name="HomeList"
         component={HomeScreen}
+        options={{
+          animation: 'fade',
+        }}
       />
       <HomeStack.Screen
         name="VenueDetail"
         component={VenueDetailScreen}
+        options={{
+          animation: 'slide_from_right',
+        }}
+      />
+      <HomeStack.Screen
+        name="FlashOfferDetail"
+        component={FlashOfferDetailScreen}
+        options={{
+          animation: 'slide_from_bottom',
+        }}
+      />
+      <HomeStack.Screen
+        name="ClaimConfirmation"
+        component={ClaimConfirmationScreen}
+        options={{
+          animation: 'fade_from_bottom',
+          presentation: 'modal',
+        }}
       />
     </HomeStack.Navigator>
   );
@@ -65,15 +93,23 @@ function SearchStackNavigator() {
         contentStyle: {
           backgroundColor: theme.colors.background,
         },
+        animation: 'slide_from_right',
+        animationDuration: 250,
       }}
     >
       <SearchStack.Screen
         name="SearchList"
         component={SearchScreen}
+        options={{
+          animation: 'fade',
+        }}
       />
       <SearchStack.Screen
         name="VenueDetail"
         component={VenueDetailScreen}
+        options={{
+          animation: 'slide_from_right',
+        }}
       />
     </SearchStack.Navigator>
   );
@@ -119,21 +155,94 @@ function SettingsStackNavigator() {
         contentStyle: {
           backgroundColor: theme.colors.background,
         },
+        animation: 'slide_from_right',
+        animationDuration: 250,
       }}
     >
       <SettingsStack.Screen
         name="SettingsList"
         component={SettingsScreen}
+        options={{
+          animation: 'fade',
+        }}
       />
       <SettingsStack.Screen
         name="Favorites"
         component={FavoritesScreen}
+        options={{
+          animation: 'slide_from_right',
+        }}
       />
       <SettingsStack.Screen
         name="Profile"
         component={ProfileScreen}
+        options={{
+          animation: 'slide_from_right',
+        }}
+      />
+      <SettingsStack.Screen
+        name="MyClaims"
+        component={MyClaimsScreen}
+        options={{
+          animation: 'slide_from_right',
+        }}
+      />
+      <SettingsStack.Screen
+        name="ClaimDetail"
+        component={ClaimDetailScreen}
+        options={{
+          animation: 'slide_from_bottom',
+        }}
       />
     </SettingsStack.Navigator>
+  );
+}
+
+// Venue Stack Navigator
+function VenueStackNavigator() {
+  const { theme } = useTheme();
+
+  return (
+    <VenueStack.Navigator
+      screenOptions={{
+        headerShown: false,
+        contentStyle: {
+          backgroundColor: theme.colors.background,
+        },
+        animation: 'slide_from_right',
+        animationDuration: 250,
+      }}
+    >
+      <VenueStack.Screen
+        name="VenueDashboard"
+        component={VenueDashboardScreen}
+        options={{
+          animation: 'fade',
+        }}
+      />
+      <VenueStack.Screen
+        name="FlashOfferList"
+        component={FlashOfferListScreen}
+        options={{
+          animation: 'slide_from_right',
+        }}
+      />
+      <VenueStack.Screen
+        name="FlashOfferDetail"
+        component={VenueFlashOfferDetailScreen}
+        options={{
+          animation: 'slide_from_bottom',
+        }}
+      />
+      <VenueStack.Screen
+        name="TokenRedemption"
+        component={TokenRedemptionScreen}
+        options={{
+          animation: 'slide_from_bottom',
+          presentation: 'modal',
+        }}
+      />
+    </VenueStack.Navigator>
   );
 }
 
@@ -142,6 +251,13 @@ function MainTabNavigator() {
   const { navigationStyle } = useNavigationStyle();
   const { setNotificationPressHandler } = useNotifications();
   const [friendRequestModalVisible, setFriendRequestModalVisible] = useState(false);
+  const [flashOfferBannerVisible, setFlashOfferBannerVisible] = useState(false);
+  const [flashOfferBannerData, setFlashOfferBannerData] = useState<{
+    title: string;
+    body: string;
+    offerId: string;
+    venueName: string;
+  } | null>(null);
   const navigationRef = useRef<any>(null);
 
   // Set up notification tap handler for in-app notifications
@@ -227,6 +343,18 @@ function MainTabNavigator() {
           }
           break;
 
+        case 'FlashOfferDetail':
+          if (params?.offerId) {
+            navigationRef.current.navigate('Home', {
+              screen: 'FlashOfferDetail',
+              params: {
+                offerId: params.offerId,
+                venueName: params.venueName || 'Venue',
+              },
+            });
+          }
+          break;
+
         case 'Home':
         default:
           navigationRef.current.navigate('Home');
@@ -250,8 +378,33 @@ function MainTabNavigator() {
         }
       });
 
+    // Listen for foreground notifications
+    const foregroundUnsubscribe = messaging().onMessage((remoteMessage) => {
+      console.log('📬 Foreground notification received:', remoteMessage);
+      
+      // Handle flash offer notifications with in-app banner
+      if (remoteMessage.data?.type === 'flash_offer') {
+        const title = remoteMessage.notification?.title || 'Flash Offer';
+        const body = remoteMessage.notification?.body || '';
+        const offerId = remoteMessage.data.offer_id as string;
+        const venueName = remoteMessage.data.venue_name as string;
+
+        setFlashOfferBannerData({
+          title,
+          body,
+          offerId,
+          venueName,
+        });
+        setFlashOfferBannerVisible(true);
+      }
+      
+      // Handle other notification types
+      NotificationHandler.handleForegroundNotification(remoteMessage);
+    });
+
     return () => {
       unsubscribe();
+      foregroundUnsubscribe();
     };
   }, []);
 
@@ -266,6 +419,23 @@ function MainTabNavigator() {
       default:
         return routeName;
     }
+  };
+
+  const handleFlashOfferBannerPress = () => {
+    if (flashOfferBannerData && navigationRef.current) {
+      navigationRef.current.navigate('Home', {
+        screen: 'FlashOfferDetail',
+        params: {
+          offerId: flashOfferBannerData.offerId,
+          venueName: flashOfferBannerData.venueName,
+        },
+      });
+    }
+  };
+
+  const handleFlashOfferBannerDismiss = () => {
+    setFlashOfferBannerVisible(false);
+    setFlashOfferBannerData(null);
   };
 
   if (navigationStyle === 'floating') {
@@ -314,6 +484,17 @@ function MainTabNavigator() {
           visible={friendRequestModalVisible}
           onClose={() => setFriendRequestModalVisible(false)}
         />
+
+        {/* Flash Offer Notification Banner */}
+        {flashOfferBannerData && (
+          <FlashOfferNotificationBanner
+            visible={flashOfferBannerVisible}
+            title={flashOfferBannerData.title}
+            body={flashOfferBannerData.body}
+            onPress={handleFlashOfferBannerPress}
+            onDismiss={handleFlashOfferBannerDismiss}
+          />
+        )}
       </>
     );
   } else {
@@ -362,6 +543,17 @@ function MainTabNavigator() {
           visible={friendRequestModalVisible}
           onClose={() => setFriendRequestModalVisible(false)}
         />
+
+        {/* Flash Offer Notification Banner */}
+        {flashOfferBannerData && (
+          <FlashOfferNotificationBanner
+            visible={flashOfferBannerVisible}
+            title={flashOfferBannerData.title}
+            body={flashOfferBannerData.body}
+            onPress={handleFlashOfferBannerPress}
+            onDismiss={handleFlashOfferBannerDismiss}
+          />
+        )}
       </>
     );
   }
@@ -406,13 +598,13 @@ function AppNavigator() {
   // Show venue dashboard for venue owners
   if (userType === 'venue_owner') {
     console.log('🏢 AppNavigator: Showing venue dashboard (venue owner)');
-    return <VenueDashboardScreen />;
+    return <VenueStackNavigator />;
   }
 
   // Show main tab navigator for customers
   console.log('👤 AppNavigator: Showing main tab navigator (customer)');
-  return <MainTabNavigator />;
-  // return <VenueDashboardScreen />
+  // return <MainTabNavigator />;
+  return <VenueStackNavigator />;
 }
 
 // Unused styles - kept for potential future use

@@ -31,6 +31,7 @@ export type {
   SettingsStackParamList,
   HomeStackParamList,
   SearchStackParamList,
+  VenueStackParamList,
 } from './navigation.types';
 
 // Check-in types
@@ -132,3 +133,37 @@ export type {
   FetchUserProfileRequest,
   FetchUserProfileResponse,
 } from './profile.types';
+
+// Flash Offer types
+export type {
+  // Flash Offer
+  FlashOffer,
+  FlashOfferStatus,
+  CreateFlashOfferInput,
+  UpdateFlashOfferInput,
+  FlashOfferWithVenue,
+  FlashOfferWithStats,
+  FlashOfferQueryOptions,
+  ActiveOffersQueryOptions,
+} from './flashOffer.types';
+
+// Flash Offer Claim types
+export type {
+  // Claim
+  FlashOfferClaim,
+  ClaimStatus,
+  FlashOfferClaimWithOffer,
+  FlashOfferClaimWithDetails,
+  
+  // Validation
+  ClaimValidationResult,
+  ClaimIneligibilityReason,
+  
+  // Input/Output
+  ClaimOfferInput,
+  RedeemClaimInput,
+  UserClaimsQueryOptions,
+  ClaimByTokenQuery,
+  ClaimOfferResponse,
+  RedeemClaimResponse,
+} from './flashOfferClaim.types';

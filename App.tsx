@@ -20,6 +20,18 @@ function AppContent() {
   const { isLoading, theme, isDark } = useTheme();
   const systemColorScheme = useColorScheme();
 
+  // Configure deep linking
+  const linking = {
+    prefixes: ['otw://', 'https://ontheway.app'],
+    config: {
+      screens: {
+        Home: 'home',
+        Search: 'search',
+        Profile: 'profile',
+      },
+    },
+  };
+
   // Show a simple loading view while theme is loading
   // Use system color scheme to avoid black flicker
   if (isLoading) {
@@ -40,7 +52,7 @@ function AppContent() {
         backgroundColor={theme.colors.surface}
         translucent={false}
       />
-      <NavigationContainer>
+      <NavigationContainer linking={linking}>
         <AppNavigator />
       </NavigationContainer>
     </SafeAreaView>

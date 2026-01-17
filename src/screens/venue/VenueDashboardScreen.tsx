@@ -9,14 +9,18 @@ import {
   Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { VenueAnalyticsService, type VenueAnalytics } from '../../services/venueAnalyticsService';
+import { FlashOfferCreationModal } from '../../components/venue';
+import { FlashOfferService, type FlashOffer } from '../../services/api/flashOffers';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 type TabType = 'overview' | 'activity' | 'actions' | 'hints' | 'profile' | 'settings';
 
 const VenueDashboardScreen: React.FC = () => {
+  const navigation = useNavigation<any>();
   const { theme, isDark, themeMode, setThemeMode } = useTheme();
   const { user, venueBusinessAccount } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>('overview');
@@ -24,6 +28,9 @@ const VenueDashboardScreen: React.FC = () => {
   const [autoAcceptReservations, setAutoAcceptReservations] = useState(false);
   const [analytics, setAnalytics] = useState<VenueAnalytics | null>(VenueAnalyticsService.getMockAnalytics());
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [flashOfferModalVisible, setFlashOfferModalVisible] = useState(false);
+  const [activeOffersCount, setActiveOffersCount] = useState<number>(0);
+  const [flashOffersLoading, setFlashOffersLoading] = useState(false);
 
   // Load analytics data
   useEffect(() => {
@@ -62,6 +69,26 @@ const VenueDashboardScreen: React.FC = () => {
     };
 
     loadAnalytics();
+  }, [venueBusinessAccount?.venues?.id]);
+
+  // Load flash offers count
+  useEffect(() => {
+    const loadFlashOffers = async () => {
+      const venueId = venueBusinessAccount?.venues?.id;
+      if (!venueId) return;
+
+      try {
+        setFlashOffersLoading(true);
+        const offers = await FlashOfferService.getVenueOffers(venueId, 'active');
+        setActiveOffersCount(offers.length);
+      } catch (error) {
+        console.error('Error loading flash offers:', error);
+      } finally {
+        setFlashOffersLoading(false);
+      }
+    };
+
+    loadFlashOffers();
   }, [venueBusinessAccount?.venues?.id]);
 
   const showAlert = (title: string, message: string, buttons?: any[]) => {
@@ -311,6 +338,76 @@ const VenueDashboardScreen: React.FC = () => {
               />
             </View>
 
+            {/* Flash Offers Card */}
+            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+              Flash Offers
+            </Text>
+            
+            <TouchableOpacity
+              style={[
+                styles.flashOffersCard,
+                {
+                  backgroundColor: theme.colors.surface,
+                  shadowColor: theme.colors.shadow,
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: isDark ? 0 : 0.1,
+                  shadowRadius: 8,
+                  elevation: isDark ? 0 : 4,
+                  borderWidth: isDark ? 0 : 1,
+                  borderColor: theme.colors.border,
+                },
+              ]}
+              onPress={() => navigation.navigate('FlashOfferList')}
+            >
+              <View style={styles.flashOffersHeader}>
+                <View style={[styles.flashOffersIconContainer, { backgroundColor: '#FF9800' + '20' }]}>
+                  <Icon name="flash" size={32} color="#FF9800" />
+                </View>
+                <View style={styles.flashOffersContent}>
+                  <Text style={[styles.flashOffersTitle, { color: theme.colors.text }]}>
+                    Active Flash Offers
+                  </Text>
+                  <Text style={[styles.flashOffersCount, { color: theme.colors.text }]}>
+                    {flashOffersLoading ? '...' : activeOffersCount}
+                  </Text>
+                  <Text style={[styles.flashOffersSubtitle, { color: theme.colors.textSecondary }]}>
+                    {activeOffersCount === 1 ? 'offer running' : 'offers running'}
+                  </Text>
+                </View>
+                <Icon name="chevron-forward" size={24} color={theme.colors.textSecondary} />
+              </View>
+              
+              <View style={[styles.flashOffersActions, { borderTopColor: theme.colors.border }]}>
+                <TouchableOpacity
+                  style={styles.flashOffersActionButton}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    navigation.navigate('FlashOfferList');
+                  }}
+                >
+                  <Icon name="list-outline" size={18} color={theme.colors.primary} />
+                  <Text style={[styles.flashOffersActionText, { color: theme.colors.primary }]}>
+                    View All
+                  </Text>
+                </TouchableOpacity>
+                
+                <View style={[styles.flashOffersActionDivider, { backgroundColor: theme.colors.border }]} />
+                
+                <TouchableOpacity
+                  style={styles.flashOffersActionButton}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    setFlashOfferModalVisible(true);
+                  }}
+                >
+                  <Icon name="add-circle-outline" size={18} color={theme.colors.primary} />
+                  <Text style={[styles.flashOffersActionText, { color: theme.colors.primary }]}>
+                    Create New
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableOpacity>
+
             {/* Peak Hours */}
             <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
               Peak Hours Analysis
@@ -511,6 +608,7 @@ const VenueDashboardScreen: React.FC = () => {
                     borderColor: theme.colors.border,
                   }
                 ]}
+                onPress={() => setFlashOfferModalVisible(true)}
               >
                 <Icon name="flash-outline" size={32} color="#FF9800" />
                 <Text style={[styles.actionText, { color: theme.colors.text }]}>
@@ -535,8 +633,33 @@ const VenueDashboardScreen: React.FC = () => {
                     borderColor: theme.colors.border,
                   }
                 ]}
+                onPress={() => navigation.navigate('TokenRedemption')}
               >
-                <Icon name="time-outline" size={32} color="#4CAF50" />
+                <Icon name="ticket-outline" size={32} color="#4CAF50" />
+                <Text style={[styles.actionText, { color: theme.colors.text }]}>
+                  Redeem Token
+                </Text>
+                <Text style={[styles.actionSubtext, { color: theme.colors.textSecondary }]}>
+                  Validate customer tokens
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={[
+                  styles.actionButton, 
+                  { 
+                    backgroundColor: theme.colors.surface,
+                    shadowColor: theme.colors.shadow,
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: isDark ? 0 : 0.05,
+                    shadowRadius: 4,
+                    elevation: isDark ? 0 : 2,
+                    borderWidth: isDark ? 0 : 1,
+                    borderColor: theme.colors.border,
+                  }
+                ]}
+              >
+                <Icon name="time-outline" size={32} color="#2196F3" />
                 <Text style={[styles.actionText, { color: theme.colors.text }]}>
                   Update Hours
                 </Text>
@@ -831,7 +954,7 @@ const VenueDashboardScreen: React.FC = () => {
                 icon="flash-outline"
                 title="Flash Offers"
                 subtitle="Create time-limited promotions"
-                onPress={() => showAlert('Coming Soon', 'Flash offers are being developed')}
+                onPress={() => setFlashOfferModalVisible(true)}
               />
             </View>
 
@@ -1053,6 +1176,16 @@ const VenueDashboardScreen: React.FC = () => {
         </View>
         <View style={styles.bottomSpacing} />
       </ScrollView>
+
+      {/* Flash Offer Creation Modal */}
+      <FlashOfferCreationModal
+        visible={flashOfferModalVisible}
+        onClose={() => setFlashOfferModalVisible(false)}
+        onSuccess={() => {
+          // Optionally refresh analytics or show success message
+          console.log('Flash offer created successfully!');
+        }}
+      />
     </SafeAreaView>
   );
 };
@@ -1549,6 +1682,62 @@ const styles = StyleSheet.create({
   },
   bottomSpacing: {
     height: 100,
+  },
+  flashOffersCard: {
+    borderRadius: 16,
+    marginBottom: 24,
+    overflow: 'hidden',
+  },
+  flashOffersHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 20,
+  },
+  flashOffersIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  flashOffersContent: {
+    flex: 1,
+  },
+  flashOffersTitle: {
+    fontSize: 14,
+    fontFamily: 'Inter-Medium',
+    marginBottom: 4,
+  },
+  flashOffersCount: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    fontFamily: 'Poppins-Bold',
+    marginBottom: 2,
+  },
+  flashOffersSubtitle: {
+    fontSize: 12,
+    fontFamily: 'Inter-Regular',
+  },
+  flashOffersActions: {
+    flexDirection: 'row',
+    borderTopWidth: 1,
+  },
+  flashOffersActionButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    gap: 6,
+  },
+  flashOffersActionDivider: {
+    width: 1,
+  },
+  flashOffersActionText: {
+    fontSize: 14,
+    fontWeight: '600',
+    fontFamily: 'Inter-SemiBold',
   },
 });
 

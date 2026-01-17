@@ -263,6 +263,20 @@ export class NotificationHandler {
         }
         break;
 
+      case 'flash_offer':
+        // Navigate to flash offer detail screen
+        if (params.offerId) {
+          DebugLogger.logNavigationEvent(type, 'FlashOfferDetail', {
+            offerId: params.offerId,
+            venueName: params.venueName,
+          });
+          this.navigationHandler('FlashOfferDetail', {
+            offerId: params.offerId,
+            venueName: params.venueName || 'Venue',
+          });
+        }
+        break;
+
       default:
         console.warn('⚠️ Unknown notification type:', type);
         DebugLogger.logError('NAVIGATION', `Unknown notification type: ${type}`);

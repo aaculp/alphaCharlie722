@@ -70,6 +70,7 @@ const NOTIFICATION_TYPE_TO_PREFERENCE: Record<NotificationType, keyof import('..
   activity_like: 'activity_likes',
   activity_comment: 'activity_comments',
   friend_checkin_nearby: 'friend_checkins_nearby',
+  flash_offer: 'friend_requests', // Use friend_requests as default for now
 };
 
 export class PushNotificationService {

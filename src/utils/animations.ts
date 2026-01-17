@@ -251,3 +251,133 @@ export const sequence = (
 ): Animated.CompositeAnimation => {
   return Animated.sequence(animations);
 };
+
+/**
+ * Success celebration animation (scale + fade)
+ * Perfect for claim confirmations and success states
+ * @param scaleValue - Animated value for scale
+ * @param fadeValue - Animated value for fade
+ */
+export const successCelebration = (
+  scaleValue: Animated.Value,
+  fadeValue: Animated.Value
+): Animated.CompositeAnimation => {
+  return Animated.parallel([
+    Animated.spring(scaleValue, {
+      toValue: 1,
+      tension: 50,
+      friction: 7,
+      useNativeDriver: true,
+    }),
+    Animated.timing(fadeValue, {
+      toValue: 1,
+      duration: 300,
+      easing: EASING.EASE_OUT,
+      useNativeDriver: true,
+    }),
+  ]);
+};
+
+/**
+ * Countdown pulse animation (for urgent timers)
+ * Creates a pulsing effect to draw attention
+ * @param scaleValue - Animated value for scale
+ */
+export const countdownPulse = (
+  scaleValue: Animated.Value
+): Animated.CompositeAnimation => {
+  return Animated.loop(
+    Animated.sequence([
+      Animated.timing(scaleValue, {
+        toValue: 1.05,
+        duration: 800,
+        easing: EASING.EASE_IN_OUT,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleValue, {
+        toValue: 1,
+        duration: 800,
+        easing: EASING.EASE_IN_OUT,
+        useNativeDriver: true,
+      }),
+    ])
+  );
+};
+
+/**
+ * Slide in from top animation (for banners/notifications)
+ * @param animatedValue - Animated value to animate
+ * @param duration - Animation duration in ms
+ */
+export const slideInTop = (
+  animatedValue: Animated.Value,
+  duration: number = ANIMATION_DURATION.NORMAL
+): Animated.CompositeAnimation => {
+  return Animated.spring(animatedValue, {
+    toValue: 0,
+    friction: 9,
+    tension: 50,
+    useNativeDriver: true,
+  });
+};
+
+/**
+ * Slide out to top animation (for banners/notifications)
+ * @param animatedValue - Animated value to animate
+ * @param toValue - Target value (typically negative screen height)
+ * @param duration - Animation duration in ms
+ */
+export const slideOutTop = (
+  animatedValue: Animated.Value,
+  toValue: number,
+  duration: number = ANIMATION_DURATION.NORMAL
+): Animated.CompositeAnimation => {
+  return Animated.timing(animatedValue, {
+    toValue,
+    duration,
+    easing: EASING.EASE_IN,
+    useNativeDriver: true,
+  });
+};
+
+/**
+ * Bounce in animation (for cards and important elements)
+ * @param scaleValue - Animated value for scale
+ */
+export const bounceIn = (
+  scaleValue: Animated.Value
+): Animated.CompositeAnimation => {
+  return Animated.sequence([
+    Animated.timing(scaleValue, {
+      toValue: 1.1,
+      duration: 200,
+      easing: EASING.EASE_OUT,
+      useNativeDriver: true,
+    }),
+    Animated.spring(scaleValue, {
+      toValue: 1,
+      friction: 4,
+      tension: 40,
+      useNativeDriver: true,
+    }),
+  ]);
+};
+
+/**
+ * Rotate animation (for loading spinners or refresh indicators)
+ * @param rotateValue - Animated value for rotation (0 to 1)
+ * @param duration - Animation duration in ms
+ */
+export const rotate = (
+  rotateValue: Animated.Value,
+  duration: number = 1000
+): Animated.CompositeAnimation => {
+  return Animated.loop(
+    Animated.timing(rotateValue, {
+      toValue: 1,
+      duration,
+      easing: Easing.linear,
+      useNativeDriver: true,
+    })
+  );
+};

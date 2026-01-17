@@ -13,4 +13,8 @@ export { UserFeedbackService } from './feedback';
 export { FriendsService } from './friends';
 export { NotificationService } from './notifications';
 export { ProfileService } from './profile';
+export { FlashOfferService } from './flashOffers';
+export { ClaimService } from './flashOfferClaims';
+export { FlashOfferNotificationService } from './flashOfferNotifications';
+export { FlashOfferAnalyticsService } from './flashOfferAnalytics';
 

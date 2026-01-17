@@ -33,6 +33,13 @@ export const NotificationChannels = {
    * Used for: Likes, comments, and other activity
    */
   ACTIVITY: 'activity_updates',
+
+  /**
+   * Flash offers channel
+   * Importance: HIGH
+   * Used for: Time-sensitive flash offer notifications
+   */
+  FLASH_OFFERS: 'flash_offers',
 } as const;
 
 export type NotificationChannelId = typeof NotificationChannels[keyof typeof NotificationChannels];

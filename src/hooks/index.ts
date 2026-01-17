@@ -275,3 +275,47 @@ export { useAboutMe } from './useAboutMe';
  * ```
  */
 export { useNotificationPreferences } from './useNotificationPreferences';
+
+/**
+ * useFlashOffers - Fetches active flash offers near the user's current location
+ * 
+ * @example
+ * ```tsx
+ * const { offers, loading, error, refetch } = useFlashOffers({
+ *   radiusMiles: 10,
+ *   enabled: true
+ * });
+ * ```
+ */
+export { useFlashOffers } from './useFlashOffers';
+export type {
+  UseFlashOffersOptions,
+  UseFlashOffersReturn,
+  FlashOfferWithVenueName,
+} from './useFlashOffers';
+
+/**
+ * useCountdownTimer - Creates a countdown timer that updates every second
+ * 
+ * @example
+ * ```tsx
+ * const { timeRemaining, isExpired, totalSeconds } = useCountdownTimer(offer.end_time);
+ * ```
+ */
+export { useCountdownTimer, useClaimExpirationTimer } from './useCountdownTimer';
+export type { CountdownResult } from './useCountdownTimer';
+
+/**
+ * useRealtimeOffer - Subscribes to real-time updates for a flash offer
+ * 
+ * @example
+ * ```tsx
+ * const { offer, loading, refetch } = useRealtimeOffer({
+ *   offerId: 'offer-123',
+ *   onOfferFull: () => Alert.alert('Offer Full'),
+ *   onOfferExpired: () => Alert.alert('Offer Expired')
+ * });
+ * ```
+ */
+export { useRealtimeOffer } from './useRealtimeOffer';
+export type { UseRealtimeOfferOptions, UseRealtimeOfferReturn } from './useRealtimeOffer';
