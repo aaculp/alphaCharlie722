@@ -78,6 +78,10 @@ export class FCMTokenService {
 
       console.log('✅ FCM token generated:', token.substring(0, 20) + '...');
 
+      // Wait 500ms to ensure auth session is fully established
+      console.log('⏳ Waiting for auth session to stabilize...');
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       // Store token in database with retry
       const platform = Platform.OS as 'ios' | 'android';
       

@@ -114,6 +114,12 @@ export class DeviceTokenManager {
 
       if (checkError && checkError.code !== 'PGRST116') {
         // PGRST116 is "not found" error, which is expected
+        console.error('❌ Supabase check error:', {
+          code: checkError.code,
+          message: checkError.message,
+          details: checkError.details,
+          hint: checkError.hint,
+        });
         throw checkError;
       }
 
@@ -132,6 +138,12 @@ export class DeviceTokenManager {
           .eq('token', token);
 
         if (updateError) {
+          console.error('❌ Supabase update error:', {
+            code: updateError.code,
+            message: updateError.message,
+            details: updateError.details,
+            hint: updateError.hint,
+          });
           throw updateError;
         }
       } else {
@@ -149,6 +161,12 @@ export class DeviceTokenManager {
           });
 
         if (insertError) {
+          console.error('❌ Supabase insert error:', {
+            code: insertError.code,
+            message: insertError.message,
+            details: insertError.details,
+            hint: insertError.hint,
+          });
           throw insertError;
         }
       }
