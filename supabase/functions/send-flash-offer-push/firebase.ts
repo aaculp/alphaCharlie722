@@ -10,8 +10,8 @@
  * - 3.3: Load credentials from environment variables
  */
 
-import { initializeApp, cert, App, ServiceAccount } from 'npm:firebase-admin@^12.0.0/app';
-import { getMessaging, Messaging } from 'npm:firebase-admin@^12.0.0/messaging';
+import { initializeApp, cert, App, ServiceAccount } from 'npm:firebase-admin@11.11.1/app';
+import { getMessaging, Messaging } from 'npm:firebase-admin@11.11.1/messaging';
 
 let firebaseApp: App | null = null;
 let messagingInstance: Messaging | null = null;

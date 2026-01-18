@@ -12,7 +12,7 @@
  */
 
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import type { Messaging, MulticastMessage, BatchResponse } from 'npm:firebase-admin@^12.0.0/messaging';
+import type { Messaging, MulticastMessage, BatchResponse } from 'npm:firebase-admin@11.11.1/messaging';
 import type { FCMPayload, FCMBatchResult } from './types.ts';
 
 /**
