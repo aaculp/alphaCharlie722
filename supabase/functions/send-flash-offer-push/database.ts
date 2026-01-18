@@ -154,47 +154,72 @@ export async function getTargetedUsers(
       userIds = favorites?.map(f => f.user_id) || [];
       console.log(`Found ${userIds.length} users who favorited this venue`);
     } else {
-      // Step 1: Get users with recent check-ins (last 30 days)
-      // Use check-ins to determine user locations
-      const { data: checkIns, error: checkInError } = await supabase
-        .from('check_ins')
-        .select('user_id, venues!inner(latitude, longitude)')
-        .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
-        .limit(1000);
+      // For very large radius (>= 500 miles), target all users with active tokens
+      // This is useful for testing and for venues that want to reach everyone
+      if (radius >= 500) {
+        console.log(`Large radius (${radius} miles) - targeting all users with active tokens`);
+        
+        // Get all users with active device tokens
+        const { data: tokens, error: tokensError } = await supabase
+          .from('device_tokens')
+          .select('user_id')
+          .eq('is_active', true);
 
-      if (checkInError) {
-        console.error('Error fetching check-ins:', checkInError);
-        return [];
-      }
+        if (tokensError) {
+          console.error('Error fetching device tokens:', tokensError);
+          return [];
+        }
 
-      // Filter by distance (calculate distance from each check-in venue to target venue)
-      // Store the closest distance for each user
-      const nearbyUsersMap = new Map<string, number>();
-      checkIns?.forEach((checkIn: any) => {
-        const venue = checkIn.venues;
-        if (venue?.latitude && venue?.longitude) {
-          const distance = calculateDistance(
-            lat,
-            lon,
-            venue.latitude,
-            venue.longitude
-          );
+        userIds = tokens?.map(t => t.user_id) || [];
+        console.log(`Found ${userIds.length} users with active device tokens`);
+        
+        // Set distance to 0 for all users (not location-based)
+        const distanceMap = new Map<string, number>();
+        userIds.forEach(userId => distanceMap.set(userId, 0));
+        (getTargetedUsers as any)._distanceMap = distanceMap;
+      } else {
+        // Step 1: Get users with recent check-ins (last 30 days)
+        // Use check-ins to determine user locations
+        const { data: checkIns, error: checkInError } = await supabase
+          .from('check_ins')
+          .select('user_id, venues!inner(latitude, longitude)')
+          .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
+          .limit(1000);
 
-          if (distance <= radius) {
-            // Keep track of the closest check-in for each user
-            const currentDistance = nearbyUsersMap.get(checkIn.user_id);
-            if (currentDistance === undefined || distance < currentDistance) {
-              nearbyUsersMap.set(checkIn.user_id, distance);
+        if (checkInError) {
+          console.error('Error fetching check-ins:', checkInError);
+          return [];
+        }
+
+        // Filter by distance (calculate distance from each check-in venue to target venue)
+        // Store the closest distance for each user
+        const nearbyUsersMap = new Map<string, number>();
+        checkIns?.forEach((checkIn: any) => {
+          const venue = checkIn.venues;
+          if (venue?.latitude && venue?.longitude) {
+            const distance = calculateDistance(
+              lat,
+              lon,
+              venue.latitude,
+              venue.longitude
+            );
+
+            if (distance <= radius) {
+              // Keep track of the closest check-in for each user
+              const currentDistance = nearbyUsersMap.get(checkIn.user_id);
+              if (currentDistance === undefined || distance < currentDistance) {
+                nearbyUsersMap.set(checkIn.user_id, distance);
+              }
             }
           }
-        }
-      });
+        });
 
-      userIds = Array.from(nearbyUsersMap.keys());
-      console.log(`Found ${userIds.length} users within ${radius} miles`);
-      
-      // Store the distance map for later use
-      (getTargetedUsers as any)._distanceMap = nearbyUsersMap;
+        userIds = Array.from(nearbyUsersMap.keys());
+        console.log(`Found ${userIds.length} users within ${radius} miles`);
+        
+        // Store the distance map for later use
+        (getTargetedUsers as any)._distanceMap = nearbyUsersMap;
+      }
     }
 
     if (userIds.length === 0) {
