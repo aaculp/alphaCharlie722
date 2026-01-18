@@ -105,70 +105,29 @@ export class DeviceTokenManager {
     try {
       DebugLogger.logTokenOperation('store_start', token, true, { userId, platform });
       
-      // Check if token already exists
-      const { data: existingToken, error: checkError } = await supabase
+      // Use UPSERT to handle both insert and update cases
+      // This avoids race conditions when multiple processes try to store the same token
+      const { error: upsertError } = await supabase
         .from('device_tokens')
-        .select('*')
-        .eq('token', token)
-        .single();
-
-      if (checkError && checkError.code !== 'PGRST116') {
-        // PGRST116 is "not found" error, which is expected
-        console.error('❌ Supabase check error:', {
-          code: checkError.code,
-          message: checkError.message,
-          details: checkError.details,
-          hint: checkError.hint,
+        .upsert({
+          token,
+          user_id: userId,
+          platform,
+          is_active: true,
+          last_used_at: new Date().toISOString(),
+        }, {
+          onConflict: 'token',
+          ignoreDuplicates: false,
         });
-        throw checkError;
-      }
 
-      if (existingToken) {
-        // Token exists, update it
-        DebugLogger.logTokenOperation('update', token, true, { userId, platform });
-        
-        const { error: updateError } = await supabase
-          .from('device_tokens')
-          .update({
-            user_id: userId,
-            platform,
-            is_active: true,
-            last_used_at: new Date().toISOString(),
-          })
-          .eq('token', token);
-
-        if (updateError) {
-          console.error('❌ Supabase update error:', {
-            code: updateError.code,
-            message: updateError.message,
-            details: updateError.details,
-            hint: updateError.hint,
-          });
-          throw updateError;
-        }
-      } else {
-        // Token doesn't exist, insert it
-        DebugLogger.logTokenOperation('insert', token, true, { userId, platform });
-        
-        const { error: insertError } = await supabase
-          .from('device_tokens')
-          .insert({
-            user_id: userId,
-            token,
-            platform,
-            is_active: true,
-            last_used_at: new Date().toISOString(),
-          });
-
-        if (insertError) {
-          console.error('❌ Supabase insert error:', {
-            code: insertError.code,
-            message: insertError.message,
-            details: insertError.details,
-            hint: insertError.hint,
-          });
-          throw insertError;
-        }
+      if (upsertError) {
+        console.error('❌ Supabase upsert error:', {
+          code: upsertError.code,
+          message: upsertError.message,
+          details: upsertError.details,
+          hint: upsertError.hint,
+        });
+        throw upsertError;
       }
       
       // Invalidate cache for this user
