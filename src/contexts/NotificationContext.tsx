@@ -99,15 +99,20 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       try {
         console.log('📝 Registering device token for user:', user.id);
 
-        // Generate and store FCM token
-        await FCMTokenService.generateAndStoreToken(user.id);
+        // Generate and store FCM token (returns null on failure, doesn't throw)
+        const token = await FCMTokenService.generateAndStoreToken(user.id);
 
-        // Set up token refresh listener
-        FCMTokenService.setupTokenRefreshListener(user.id);
-
-        console.log('✅ Device token registered');
+        if (token) {
+          // Set up token refresh listener only if token was successfully generated
+          FCMTokenService.setupTokenRefreshListener(user.id);
+          console.log('✅ Device token registered successfully');
+        } else {
+          console.warn('⚠️ Device token registration failed - push notifications disabled');
+          console.warn('⚠️ User can still use the app normally');
+        }
       } catch (error) {
         console.error('❌ Error registering device token:', error);
+        console.warn('⚠️ Continuing without push notifications');
       }
     };
 

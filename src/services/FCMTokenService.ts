@@ -46,32 +46,74 @@ export class FCMTokenService {
    * Generate and store FCM token for the current user
    * 
    * @param userId - User ID to associate with the token
-   * @returns The generated FCM token
-   * @throws Error if token generation or storage fails
+   * @returns The generated FCM token or null if generation fails
+   * @throws Error only for critical failures that should block the flow
    */
-  static async generateAndStoreToken(userId: string): Promise<string> {
+  static async generateAndStoreToken(userId: string): Promise<string | null> {
     try {
       console.log('🔑 Generating FCM token for user:', userId);
       
-      // Get FCM token
-      const token = await getToken(getMessaging());
+      // Validate userId
+      if (!userId || userId.trim() === '') {
+        console.error('❌ Invalid userId provided to generateAndStoreToken');
+        return null;
+      }
+
+      // Get FCM token with timeout (10 seconds)
+      const tokenPromise = getToken(getMessaging());
+      const timeoutPromise = new Promise<null>((resolve) => {
+        setTimeout(() => {
+          console.warn('⚠️ FCM token generation timed out after 10 seconds');
+          resolve(null);
+        }, 10000);
+      });
+
+      const token = await Promise.race([tokenPromise, timeoutPromise]);
       
       if (!token) {
-        throw new Error('Failed to get FCM token');
+        console.warn('⚠️ Failed to get FCM token - user will not receive push notifications');
+        console.warn('⚠️ Possible causes: No Google Play Services, network issue, or Firebase config missing');
+        return null;
       }
 
       console.log('✅ FCM token generated:', token.substring(0, 20) + '...');
 
-      // Store token in database
+      // Store token in database with retry
       const platform = Platform.OS as 'ios' | 'android';
-      await DeviceTokenManager.storeToken(userId, token, platform);
-
-      console.log('✅ FCM token stored in database');
+      
+      try {
+        await DeviceTokenManager.storeToken(userId, token, platform);
+        console.log('✅ FCM token stored in database');
+      } catch (dbError) {
+        console.error('❌ Failed to store FCM token in database:', dbError);
+        console.warn('⚠️ User will not receive push notifications until token is stored');
+        
+        // Retry once after 2 seconds
+        try {
+          console.log('🔄 Retrying token storage...');
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          await DeviceTokenManager.storeToken(userId, token, platform);
+          console.log('✅ FCM token stored in database (retry succeeded)');
+        } catch (retryError) {
+          console.error('❌ Failed to store FCM token after retry:', retryError);
+          return null;
+        }
+      }
 
       return token;
     } catch (error) {
       console.error('❌ Error generating and storing FCM token:', error);
-      throw new Error('Failed to generate and store FCM token');
+      
+      // Log detailed error information for debugging
+      if (error instanceof Error) {
+        console.error('Error name:', error.name);
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+      }
+      
+      // Don't throw - return null to allow app to continue without push notifications
+      console.warn('⚠️ User can still use the app, but will not receive push notifications');
+      return null;
     }
   }
 

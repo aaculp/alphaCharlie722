@@ -14,6 +14,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { NotificationPreferencesService, FlashOfferNotificationPreferences } from '../../services/api/notificationPreferences';
+import { PushNotificationStatus } from '../../components/settings/PushNotificationStatus';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 /**
@@ -221,6 +222,9 @@ const NotificationSettingsScreen: React.FC<{ navigation: any }> = ({ navigation 
       </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        {/* Push Notification Status */}
+        <PushNotificationStatus style={styles.statusCard} />
+
         {/* Description */}
         <View style={styles.descriptionContainer}>
           <Text style={[styles.descriptionText, { color: theme.colors.textSecondary }]}>
@@ -470,6 +474,10 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+  },
+  statusCard: {
+    marginHorizontal: 16,
+    marginTop: 16,
   },
   descriptionContainer: {
     paddingHorizontal: 20,
