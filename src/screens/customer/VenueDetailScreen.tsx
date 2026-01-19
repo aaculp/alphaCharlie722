@@ -300,20 +300,24 @@ const VenueDetailScreen: React.FC = () => {
   };
 
   const handleReviewSubmitSuccess = async () => {
+    console.log('📝 Review submitted, refreshing data...');
+    
     // Refresh user's review
     if (user?.id) {
       try {
         const review = await ReviewService.getUserReviewForVenue(user.id, venueId);
         setUserReview(review);
+        console.log('✅ User review refreshed:', review);
       } catch (error) {
         console.error('Error refreshing user review:', error);
       }
     }
     
-    // Refresh venue details to get updated aggregate rating
+    // Refresh venue details to get updated aggregate rating and review_count
     try {
       const supabaseVenue = await VenueService.getVenueById(venueId);
       if (supabaseVenue) {
+        console.log('✅ Venue refreshed - review_count:', supabaseVenue.review_count, 'aggregate_rating:', supabaseVenue.aggregate_rating);
         setVenue(supabaseVenue);
       }
     } catch (error) {
@@ -328,6 +332,7 @@ const VenueDetailScreen: React.FC = () => {
         offset: 0,
         sortBy: 'recent',
       });
+      console.log('✅ Recent reviews refreshed - count:', response.reviews.length, 'total:', response.total);
       setRecentReviews(response.reviews);
     } catch (error) {
       console.error('Error refreshing recent reviews:', error);
@@ -509,7 +514,7 @@ const VenueDetailScreen: React.FC = () => {
         <UserFeedback venue={venue} />
 
         {/* Reviews Section */}
-        {venue.review_count !== undefined && venue.review_count > 0 && (
+        {((venue.review_count !== undefined && venue.review_count > 0) || recentReviews.length > 0) && (
           <View style={[styles.reviewsSection, { backgroundColor: theme.colors.surface }]}>
             <View style={styles.reviewsSectionHeader}>
               <Text style={[styles.reviewsSectionTitle, { color: theme.colors.text }]}>
