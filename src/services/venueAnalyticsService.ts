@@ -897,6 +897,7 @@ export class VenueAnalyticsService {
    */
   private static async getRecentReviews(venueId: string) {
     try {
+      // Fetch reviews without profiles join
       const { data: reviews, error } = await supabase
         .from('reviews')
         .select(`
@@ -905,10 +906,6 @@ export class VenueAnalyticsService {
           rating,
           review_text,
           created_at,
-          profiles:user_id (
-            display_name,
-            profile_picture_url
-          ),
           venue_responses (
             id
           )
@@ -919,14 +916,31 @@ export class VenueAnalyticsService {
 
       if (error) throw error;
 
+      // Fetch profiles separately
+      const userIds = (reviews || []).map((r: any) => r.user_id);
+      const profilesMap: Record<string, any> = {};
+      
+      if (userIds.length > 0) {
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, display_name, profile_picture_url')
+          .in('id', userIds);
+        
+        if (!profilesError && profilesData) {
+          profilesData.forEach((profile: any) => {
+            profilesMap[profile.id] = profile;
+          });
+        }
+      }
+
       return (reviews || []).map((review: any) => ({
         id: review.id,
         user_id: review.user_id,
         rating: review.rating,
         review_text: review.review_text,
         created_at: review.created_at,
-        reviewer_name: review.profiles?.display_name || 'Anonymous',
-        reviewer_picture: review.profiles?.profile_picture_url,
+        reviewer_name: profilesMap[review.user_id]?.display_name || 'Anonymous',
+        reviewer_picture: profilesMap[review.user_id]?.profile_picture_url,
         has_response: review.venue_responses && review.venue_responses.length > 0
       }));
     } catch (error) {
