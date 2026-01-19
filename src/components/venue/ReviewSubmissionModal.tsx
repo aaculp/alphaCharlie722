@@ -437,7 +437,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContainer: {
-    maxHeight: height * 0.9,
+    height: height * 0.9, // Fixed height instead of maxHeight
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     shadowColor: '#000',
