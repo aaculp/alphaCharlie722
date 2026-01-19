@@ -335,17 +335,10 @@ export class ReviewService {
         verifiedOnly = false,
       } = params;
 
-      // Build query
+      // Build query - fetch reviews without profiles join
       let query = supabase
         .from('reviews')
-        .select(`
-          *,
-          profiles!reviews_user_id_fkey (
-            id,
-            name,
-            avatar_url
-          )
-        `, { count: 'exact' })
+        .select('*', { count: 'exact' })
         .eq('venue_id', venueId);
 
       // Apply rating filter
@@ -383,8 +376,24 @@ export class ReviewService {
         throw new Error(`Failed to fetch reviews: ${error.message}`);
       }
 
-      // Fetch reviewer statistics for quality badges (Requirements 16.3, 16.4)
+      // Fetch profiles for all reviewers
       const userIds = (data || []).map((item: any) => item.user_id);
+      const profilesMap: Record<string, any> = {};
+      
+      if (userIds.length > 0) {
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, name, avatar_url')
+          .in('id', userIds);
+        
+        if (!profilesError && profilesData) {
+          profilesData.forEach((profile: any) => {
+            profilesMap[profile.id] = profile;
+          });
+        }
+      }
+
+      // Fetch reviewer statistics for quality badges (Requirements 16.3, 16.4)
       const reviewerStats = await this.getReviewerStatistics(userIds);
 
       // Transform data to include reviewer info and stats
@@ -398,10 +407,10 @@ export class ReviewService {
         helpful_count: item.helpful_count,
         created_at: item.created_at,
         updated_at: item.updated_at,
-        reviewer: item.profiles ? {
-          id: item.profiles.id,
-          display_name: item.profiles.name || 'Anonymous',
-          profile_picture_url: item.profiles.avatar_url,
+        reviewer: profilesMap[item.user_id] ? {
+          id: profilesMap[item.user_id].id,
+          display_name: profilesMap[item.user_id].name || 'Anonymous',
+          profile_picture_url: profilesMap[item.user_id].avatar_url,
         } : undefined,
         reviewer_stats: reviewerStats[item.user_id],
       }));

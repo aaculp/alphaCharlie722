@@ -68,12 +68,17 @@ export class ReviewNotificationService {
       // Get venue owner user ID
       const { data: venueAccount, error: accountError } = await supabase
         .from('venue_business_accounts')
-        .select('user_id')
+        .select('owner_user_id')
         .eq('venue_id', venueId)
         .single();
 
       if (accountError) {
         console.warn('⚠️ Failed to fetch venue owner:', accountError.message);
+        return;
+      }
+
+      if (!venueAccount?.owner_user_id) {
+        console.warn('⚠️ No venue owner found for venue:', venueId);
         return;
       }
 
@@ -89,7 +94,7 @@ export class ReviewNotificationService {
 
       // Send notification
       await PushNotificationService.sendSocialNotification(
-        venueAccount.user_id,
+        venueAccount.owner_user_id,
         'activity_comment', // Reuse activity_comment type for review notifications
         {
           title: `New review for ${venue.name}`,
