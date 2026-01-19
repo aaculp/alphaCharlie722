@@ -25,7 +25,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSwitchToSignUp }) => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { signIn, resetPassword } = useAuth();
+  const { signIn, resetPassword, authError, clearAuthError } = useAuth();
   const { theme, isDark } = useTheme();
 
   const handleLogin = async () => {
@@ -70,6 +70,16 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSwitchToSignUp }) => {
           </View>
 
           <View style={[styles.form, { backgroundColor: theme.colors.surface }]}>
+            {authError && (
+              <View style={[styles.errorBanner, { backgroundColor: '#fee', borderColor: '#fcc' }]}>
+                <Icon name="alert-circle-outline" size={20} color="#c00" style={styles.errorIcon} />
+                <Text style={[styles.errorText, { color: '#c00' }]}>{authError}</Text>
+                <TouchableOpacity onPress={clearAuthError} style={styles.errorClose}>
+                  <Icon name="close-outline" size={20} color="#c00" />
+                </TouchableOpacity>
+              </View>
+            )}
+            
             <View style={[styles.inputContainer, { 
               borderColor: theme.colors.border, 
               backgroundColor: isDark ? theme.colors.card : '#f9f9f9' 
@@ -227,6 +237,25 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     fontFamily: 'Inter-SemiBold', // Secondary font for links
+  },
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginBottom: 16,
+  },
+  errorIcon: {
+    marginRight: 8,
+  },
+  errorText: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+  },
+  errorClose: {
+    padding: 4,
   },
 });
 

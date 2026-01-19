@@ -15,11 +15,13 @@ interface AuthContextType {
   venueBusinessAccount: any | null;
   loading: boolean;
   initializing: boolean;
+  authError: string | null;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, name?: string) => Promise<{ user: User | null; session: Session | null; autoSignedIn?: boolean; needsManualLogin?: boolean; }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   refreshUserType: () => Promise<void>;
+  clearAuthError: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -43,41 +45,131 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [venueBusinessAccount, setVenueBusinessAccount] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
   const [initializing, setInitializing] = useState(true);
+  const [authError, setAuthError] = useState<string | null>(null);
+
+  // Cache keys for AsyncStorage
+  const USER_TYPE_CACHE_KEY = '@user_type_cache';
+  const VENUE_ACCOUNT_CACHE_KEY = '@venue_account_cache';
+
+  // Function to cache user type
+  const cacheUserType = async (type: UserType, account: any | null) => {
+    try {
+      await AsyncStorage.setItem(USER_TYPE_CACHE_KEY, type);
+      if (account) {
+        await AsyncStorage.setItem(VENUE_ACCOUNT_CACHE_KEY, JSON.stringify(account));
+      } else {
+        await AsyncStorage.removeItem(VENUE_ACCOUNT_CACHE_KEY);
+      }
+      console.log('💾 User type cached:', type);
+    } catch (error) {
+      console.error('❌ Error caching user type:', error);
+    }
+  };
+
+  // Function to load cached user type
+  const loadCachedUserType = async (): Promise<{ type: UserType | null; account: any | null }> => {
+    try {
+      const cachedType = await AsyncStorage.getItem(USER_TYPE_CACHE_KEY);
+      const cachedAccount = await AsyncStorage.getItem(VENUE_ACCOUNT_CACHE_KEY);
+      
+      if (cachedType) {
+        console.log('📦 Loaded cached user type:', cachedType);
+        return {
+          type: cachedType as UserType,
+          account: cachedAccount ? JSON.parse(cachedAccount) : null,
+        };
+      }
+    } catch (error) {
+      console.error('❌ Error loading cached user type:', error);
+    }
+    return { type: null, account: null };
+  };
+
+  // Function to clear cached user type
+  const clearCachedUserType = async () => {
+    try {
+      await AsyncStorage.removeItem(USER_TYPE_CACHE_KEY);
+      await AsyncStorage.removeItem(VENUE_ACCOUNT_CACHE_KEY);
+      console.log('🗑️ User type cache cleared');
+    } catch (error) {
+      console.error('❌ Error clearing user type cache:', error);
+    }
+  };
 
   // Function to determine user type
-  const determineUserType = async (userId: string) => {
+  const determineUserType = async (userId: string, useCache: boolean = true) => {
     try {
       console.log('🔍 Determining user type for:', userId);
+      
+      // First, try to load from cache if enabled
+      if (useCache) {
+        const cached = await loadCachedUserType();
+        if (cached.type) {
+          console.log('⚡ Using cached user type:', cached.type);
+          setUserType(cached.type);
+          setVenueBusinessAccount(cached.account);
+          // Still verify in background, but don't block
+          verifyUserTypeInBackground(userId);
+          return;
+        }
+      }
       
       // Check if user has a venue business account
       const businessAccount = await VenueBusinessService.getBusinessAccount(userId);
       
       if (businessAccount) {
         console.log('🏢 User is a venue owner:', businessAccount);
-        console.log('🔄 Setting userType to: venue_owner');
         setUserType('venue_owner');
         setVenueBusinessAccount(businessAccount);
+        await cacheUserType('venue_owner', businessAccount);
         console.log('✅ UserType state updated to venue_owner');
       } else {
         console.log('👤 User is a regular customer');
-        console.log('🔄 Setting userType to: customer');
         setUserType('customer');
         setVenueBusinessAccount(null);
+        await cacheUserType('customer', null);
         console.log('✅ UserType state updated to customer');
       }
+      
+      // Clear any previous auth errors
+      setAuthError(null);
     } catch (error) {
       console.error('❌ Error determining user type:', error);
-      // Default to customer if we can't determine
-      console.log('🔄 Setting userType to: customer (error fallback)');
-      setUserType('customer');
-      setVenueBusinessAccount(null);
+      throw error; // Re-throw to be handled by caller
+    }
+  };
+
+  // Background verification of cached user type
+  const verifyUserTypeInBackground = async (userId: string) => {
+    try {
+      console.log('🔄 Verifying cached user type in background...');
+      const businessAccount = await VenueBusinessService.getBusinessAccount(userId);
+      
+      const actualType: UserType = businessAccount ? 'venue_owner' : 'customer';
+      
+      // Update cache if it changed
+      await cacheUserType(actualType, businessAccount);
+      
+      // Update state if it changed
+      if (actualType !== userType) {
+        console.log('⚠️ User type changed, updating:', actualType);
+        setUserType(actualType);
+        setVenueBusinessAccount(businessAccount);
+      }
+    } catch (error) {
+      console.error('❌ Error verifying user type in background:', error);
+      // Don't throw - this is background verification
     }
   };
 
   const refreshUserType = async () => {
     if (user?.id) {
-      await determineUserType(user.id);
+      await determineUserType(user.id, false); // Force refresh, don't use cache
     }
+  };
+
+  const clearAuthError = () => {
+    setAuthError(null);
   };
 
   useEffect(() => {
@@ -125,8 +217,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     );
 
-    // Initialize auth state with minimum splash screen duration
+    // Initialize auth state with maximum 3-second splash screen
     const initializeAuth = async () => {
+      const startTime = Date.now();
+      const MAX_SPLASH_DURATION = 3000; // 3 seconds maximum
+      
       try {
         console.log('🔄 Initializing auth...');
         
@@ -159,10 +254,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           console.error('❌ Error checking AsyncStorage keys:', storageError);
         }
         
-        // Record start time for minimum splash duration
-        const startTime = Date.now();
-        const MINIMUM_SPLASH_DURATION = 2000; // 2 seconds
-        const MAX_WAIT_FOR_LISTENER = 3000; // Wait up to 3 seconds for auth listener
+        const MAX_WAIT_FOR_LISTENER = 2000; // Wait up to 2 seconds for auth listener
         
         // Wait for auth listener to fire (if there's a stored session)
         console.log('⏳ Waiting for auth listener to restore session...');
@@ -175,7 +267,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           console.log('✅ Auth listener fired');
           
           // Check if we actually have a valid session
-          // If getSession() hangs or returns no session, we'll timeout and show login
           console.log('⏳ Verifying session is valid...');
           
           let hasValidSession = false;
@@ -208,41 +299,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             setUserType(null);
             setVenueBusinessAccount(null);
           } else if (hasValidSession && mounted) {
-            // Determine user type AFTER auth listener completes (not inside the callback)
-            // Use currentSession from the getSession call, not the state variable
+            // Determine user type AFTER auth listener completes
             const { data: { session: currentSession } } = await supabase.auth.getSession();
             if (currentSession?.user?.id) {
               console.log('🔍 Determining user type after initialization...');
-              let attempts = 0;
-              const maxAttempts = 3;
-              let success = false;
-              
-              while (attempts < maxAttempts && !success) {
-                try {
-                  attempts++;
-                  console.log(`🔄 User type determination attempt ${attempts}/${maxAttempts}`);
-                  
-                  // Add timeout to prevent hanging (10 seconds per attempt)
-                  const determineUserTypePromise = determineUserType(currentSession.user.id);
-                  const timeoutPromise = new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error('User type determination timeout')), 10000)
-                  );
-                  
-                  await Promise.race([determineUserTypePromise, timeoutPromise]);
-                  console.log('✅ User type determined successfully');
-                  success = true;
-                } catch (typeError) {
-                  console.error(`❌ Attempt ${attempts} failed:`, typeError);
-                  
-                  if (attempts < maxAttempts) {
-                    console.log(`⏳ Retrying in 1 second...`);
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                  } else {
-                    console.error('❌ All attempts failed, defaulting to customer');
-                    // Only default to customer after all retries fail
-                    setUserType('customer');
-                    setVenueBusinessAccount(null);
-                  }
+              try {
+                // Try to determine user type with 2-second timeout
+                const determinePromise = determineUserType(currentSession.user.id, true);
+                const timeoutPromise = new Promise((_, reject) => 
+                  setTimeout(() => reject(new Error('User type determination timeout')), 2000)
+                );
+                
+                await Promise.race([determinePromise, timeoutPromise]);
+                console.log('✅ User type determined successfully');
+              } catch (typeError) {
+                console.error('❌ Error determining user type:', typeError);
+                // Set error but allow app to continue with cached or default type
+                setAuthError('Unable to verify account type. Using cached information.');
+                // Try to use cached type
+                const cached = await loadCachedUserType();
+                if (cached.type) {
+                  setUserType(cached.type);
+                  setVenueBusinessAccount(cached.account);
+                } else {
+                  // Default to customer as last resort
+                  setUserType('customer');
+                  setVenueBusinessAccount(null);
                 }
               }
             } else {
@@ -253,17 +335,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           console.log('ℹ️ No session to restore - user needs to log in');
         }
 
-        // Ensure minimum splash screen duration
+        // Ensure we don't exceed maximum splash duration
         const elapsedTime = Date.now() - startTime;
-        const remainingTime = Math.max(0, MINIMUM_SPLASH_DURATION - elapsedTime);
+        const remainingTime = Math.max(0, MAX_SPLASH_DURATION - elapsedTime);
         
         if (remainingTime > 0) {
-          console.log(`⏱️ Showing splash screen for ${remainingTime}ms more to reach minimum duration`);
+          console.log(`⏱️ Waiting ${remainingTime}ms to reach minimum splash duration`);
           await new Promise<void>(resolve => setTimeout(resolve, remainingTime));
+        } else {
+          console.log(`⚡ Splash screen shown for ${elapsedTime}ms (under ${MAX_SPLASH_DURATION}ms limit)`);
         }
         
       } catch (error) {
         console.error('❌ Error initializing auth:', error);
+        setAuthError('Failed to initialize. Please restart the app.');
         if (mounted) {
           setSession(null);
           setUser(null);
@@ -288,6 +373,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const signIn = async (email: string, password: string) => {
     setLoading(true);
+    setAuthError(null);
     try {
       console.log('🔐 Signing in...');
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -305,50 +391,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         accessToken: data.session?.access_token ? 'present' : 'missing'
       });
 
-      // Determine user type after successful sign in with timeout and retry
+      // Determine user type after successful sign in with improved error handling
       if (data.user?.id) {
         console.log('🔍 Determining user type after sign in...');
-        let attempts = 0;
-        const maxAttempts = 3;
-        let success = false;
-        
-        while (attempts < maxAttempts && !success) {
-          try {
-            attempts++;
-            console.log(`🔄 User type determination attempt ${attempts}/${maxAttempts}`);
-            
-            // Add timeout to prevent hanging (10 seconds per attempt)
-            const determineUserTypePromise = determineUserType(data.user.id);
-            const timeoutPromise = new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('User type determination timeout')), 10000)
-            );
-            
-            await Promise.race([determineUserTypePromise, timeoutPromise]);
-            console.log('✅ User type determined successfully');
-            success = true;
-          } catch (typeError) {
-            console.error(`❌ Attempt ${attempts} failed:`, typeError);
-            
-            if (attempts < maxAttempts) {
-              console.log(`⏳ Retrying in 1 second...`);
-              await new Promise(resolve => setTimeout(resolve, 1000));
-            } else {
-              console.error('❌ All attempts failed, defaulting to customer');
-              // Only default to customer after all retries fail
-              setUserType('customer');
-              setVenueBusinessAccount(null);
-            }
-          }
+        try {
+          // Try with 5-second timeout
+          const determinePromise = determineUserType(data.user.id, true);
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('User type determination timeout')), 5000)
+          );
+          
+          await Promise.race([determinePromise, timeoutPromise]);
+          console.log('✅ User type determined successfully');
+        } catch (typeError) {
+          console.error('❌ Error determining user type:', typeError);
+          // Set error state instead of silent fallback
+          setAuthError('Unable to load account information. Please check your connection and try again.');
+          // Still set a default to allow app usage
+          setUserType('customer');
+          setVenueBusinessAccount(null);
         }
       }
-
-      // Check if session was persisted
-      setTimeout(async () => {
-        const keys = await AsyncStorage.getAllKeys();
-        const supabaseKeys = keys.filter((key: string) => key.includes('supabase'));
-        console.log('🔑 Supabase keys after sign in:', supabaseKeys);
-      }, 1000);
     } catch (error) {
+      setAuthError(error instanceof Error ? error.message : 'Sign in failed');
       setLoading(false);
       throw error;
     } finally {
@@ -410,6 +475,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signOut = async () => {
     console.log('🚪 Sign out initiated...');
     setLoading(true);
+    setAuthError(null);
     try {
       // Get current FCM token before signing out
       const currentToken = await FCMTokenService.getCurrentToken();
@@ -444,9 +510,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       console.log('✅ Supabase sign out successful');
       
-      // Clear user type data on sign out
+      // Clear user type data and cache on sign out
       setUserType(null);
       setVenueBusinessAccount(null);
+      await clearCachedUserType();
       
       // Verify session is cleared from AsyncStorage
       try {
@@ -470,6 +537,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log('✅ Sign out complete');
     } catch (error) {
       console.error('❌ Sign out failed:', error);
+      setAuthError(error instanceof Error ? error.message : 'Sign out failed');
       setLoading(false);
       throw error;
     }
@@ -492,11 +560,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     venueBusinessAccount,
     loading,
     initializing,
+    authError,
     signIn,
     signUp,
     signOut,
     resetPassword,
     refreshUserType,
+    clearAuthError,
   };
 
   return (
