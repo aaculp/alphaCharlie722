@@ -340,10 +340,10 @@ export class ReviewService {
         .from('reviews')
         .select(`
           *,
-          profiles:user_id (
+          profiles!reviews_user_id_fkey (
             id,
-            display_name,
-            profile_picture_url
+            name,
+            avatar_url
           )
         `, { count: 'exact' })
         .eq('venue_id', venueId);
@@ -400,8 +400,8 @@ export class ReviewService {
         updated_at: item.updated_at,
         reviewer: item.profiles ? {
           id: item.profiles.id,
-          display_name: item.profiles.display_name,
-          profile_picture_url: item.profiles.profile_picture_url,
+          display_name: item.profiles.name || 'Anonymous',
+          profile_picture_url: item.profiles.avatar_url,
         } : undefined,
         reviewer_stats: reviewerStats[item.user_id],
       }));
