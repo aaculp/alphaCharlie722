@@ -566,6 +566,163 @@ const VenueDashboardScreen: React.FC = () => {
                 </View>
               </View>
             </View>
+
+            {/* Recent Reviews */}
+            {analytics?.recentReviews && analytics.recentReviews.length > 0 && (
+              <>
+                <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+                  Recent Reviews
+                </Text>
+                <View style={[
+                  styles.reviewsCard,
+                  { 
+                    backgroundColor: theme.colors.surface,
+                    shadowColor: theme.colors.shadow,
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: isDark ? 0 : 0.05,
+                    shadowRadius: 4,
+                    elevation: isDark ? 0 : 2,
+                    borderWidth: isDark ? 0 : 1,
+                    borderColor: theme.colors.border,
+                  }
+                ]}>
+                  {analytics.recentReviews.map((review, index) => (
+                    <View 
+                      key={review.id} 
+                      style={[
+                        styles.reviewItem,
+                        { borderBottomColor: theme.colors.border },
+                        index === analytics.recentReviews!.length - 1 && { borderBottomWidth: 0 }
+                      ]}
+                    >
+                      <View style={styles.reviewHeader}>
+                        <View style={styles.reviewerInfo}>
+                          {review.reviewer_picture ? (
+                            <View style={[styles.reviewerAvatar, { backgroundColor: theme.colors.primary + '20' }]}>
+                              <Text style={[styles.reviewerInitial, { color: theme.colors.primary }]}>
+                                {review.reviewer_name.charAt(0).toUpperCase()}
+                              </Text>
+                            </View>
+                          ) : (
+                            <View style={[styles.reviewerAvatar, { backgroundColor: theme.colors.primary + '20' }]}>
+                              <Icon name="person" size={20} color={theme.colors.primary} />
+                            </View>
+                          )}
+                          <View style={styles.reviewerDetails}>
+                            <Text style={[styles.reviewerName, { color: theme.colors.text }]}>
+                              {review.reviewer_name}
+                            </Text>
+                            <View style={styles.ratingRow}>
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <Icon
+                                  key={star}
+                                  name={star <= review.rating ? 'star' : 'star-outline'}
+                                  size={14}
+                                  color="#FFC107"
+                                />
+                              ))}
+                              <Text style={[styles.reviewTime, { color: theme.colors.textSecondary }]}>
+                                {' • '}{VenueAnalyticsService.getRelativeTime(review.created_at)}
+                              </Text>
+                            </View>
+                          </View>
+                        </View>
+                        {review.has_response && (
+                          <View style={[styles.responseBadge, { backgroundColor: '#4CAF50' + '20' }]}>
+                            <Icon name="checkmark-circle" size={16} color="#4CAF50" />
+                            <Text style={[styles.responseBadgeText, { color: '#4CAF50' }]}>
+                              Responded
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                      {review.review_text && (
+                        <Text 
+                          style={[styles.reviewText, { color: theme.colors.text }]}
+                          numberOfLines={3}
+                        >
+                          {review.review_text}
+                        </Text>
+                      )}
+                      {!review.has_response && (
+                        <TouchableOpacity 
+                          style={[styles.respondButton, { borderColor: theme.colors.primary }]}
+                          onPress={() => {
+                            // TODO: Open response modal
+                            showAlert('Coming Soon', 'Review response functionality is being developed');
+                          }}
+                        >
+                          <Icon name="chatbubble-outline" size={16} color={theme.colors.primary} />
+                          <Text style={[styles.respondButtonText, { color: theme.colors.primary }]}>
+                            Respond
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  ))}
+                </View>
+              </>
+            )}
+
+            {/* Rating Distribution */}
+            {analytics?.ratingDistribution && (
+              <>
+                <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+                  Rating Distribution
+                </Text>
+                <View style={[
+                  styles.distributionCard,
+                  { 
+                    backgroundColor: theme.colors.surface,
+                    shadowColor: theme.colors.shadow,
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: isDark ? 0 : 0.05,
+                    shadowRadius: 4,
+                    elevation: isDark ? 0 : 2,
+                    borderWidth: isDark ? 0 : 1,
+                    borderColor: theme.colors.border,
+                  }
+                ]}>
+                  {[5, 4, 3, 2, 1].map((rating) => {
+                    const count = analytics.ratingDistribution![rating as keyof typeof analytics.ratingDistribution];
+                    const total = Object.values(analytics.ratingDistribution!).reduce((sum, val) => sum + val, 0);
+                    const percentage = total > 0 ? (count / total) * 100 : 0;
+                    
+                    return (
+                      <TouchableOpacity
+                        key={rating}
+                        style={styles.distributionRow}
+                        onPress={() => {
+                          // TODO: Filter reviews by rating
+                          showAlert('Coming Soon', `Filter by ${rating}-star reviews is being developed`);
+                        }}
+                      >
+                        <View style={styles.distributionLabel}>
+                          <Text style={[styles.distributionRating, { color: theme.colors.text }]}>
+                            {rating}
+                          </Text>
+                          <Icon name="star" size={16} color="#FFC107" />
+                        </View>
+                        <View style={styles.distributionBarContainer}>
+                          <View 
+                            style={[
+                              styles.distributionBar,
+                              { 
+                                width: `${percentage}%`,
+                                backgroundColor: rating >= 4 ? '#4CAF50' : rating === 3 ? '#FF9800' : '#F44336'
+                              }
+                            ]} 
+                          />
+                        </View>
+                        <Text style={[styles.distributionCount, { color: theme.colors.textSecondary }]}>
+                          {count}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </>
+            )}
           </View>
         );
 
@@ -1838,6 +1995,131 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'Inter-Medium',
     marginTop: 4,
+  },
+  reviewsCard: {
+    borderRadius: 16,
+    marginBottom: 24,
+    overflow: 'hidden',
+  },
+  reviewItem: {
+    padding: 16,
+    borderBottomWidth: 1,
+  },
+  reviewHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  reviewerInfo: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    flex: 1,
+  },
+  reviewerAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  reviewerInitial: {
+    fontSize: 16,
+    fontWeight: '600',
+    fontFamily: 'Inter-SemiBold',
+  },
+  reviewerDetails: {
+    flex: 1,
+  },
+  reviewerName: {
+    fontSize: 15,
+    fontWeight: '600',
+    fontFamily: 'Inter-SemiBold',
+    marginBottom: 4,
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  reviewTime: {
+    fontSize: 12,
+    fontFamily: 'Inter-Regular',
+  },
+  responseBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+  },
+  responseBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+    fontFamily: 'Inter-SemiBold',
+  },
+  reviewText: {
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+    lineHeight: 20,
+    marginBottom: 12,
+  },
+  respondButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignSelf: 'flex-start',
+    gap: 6,
+  },
+  respondButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+    fontFamily: 'Inter-SemiBold',
+  },
+  distributionCard: {
+    padding: 20,
+    borderRadius: 16,
+    marginBottom: 24,
+  },
+  distributionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  distributionLabel: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: 50,
+    gap: 4,
+  },
+  distributionRating: {
+    fontSize: 16,
+    fontWeight: '600',
+    fontFamily: 'Inter-SemiBold',
+  },
+  distributionBarContainer: {
+    flex: 1,
+    height: 24,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 12,
+    marginHorizontal: 12,
+    overflow: 'hidden',
+  },
+  distributionBar: {
+    height: '100%',
+    borderRadius: 12,
+  },
+  distributionCount: {
+    fontSize: 14,
+    fontWeight: '500',
+    fontFamily: 'Inter-Medium',
+    width: 40,
+    textAlign: 'right',
   },
 });
 

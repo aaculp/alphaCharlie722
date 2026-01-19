@@ -277,6 +277,20 @@ export class NotificationHandler {
         }
         break;
 
+      case 'venue_response':
+        // Navigate to venue detail screen and scroll to reviews
+        if (params.venueId) {
+          DebugLogger.logNavigationEvent(type, 'VenueDetail', {
+            venueId: params.venueId,
+            scrollToReviews: params.scrollToReviews,
+          });
+          this.navigationHandler('VenueDetail', {
+            venueId: params.venueId,
+            scrollToReviews: params.scrollToReviews || true,
+          });
+        }
+        break;
+
       default:
         console.warn('⚠️ Unknown notification type:', type);
         DebugLogger.logError('NAVIGATION', `Unknown notification type: ${type}`);

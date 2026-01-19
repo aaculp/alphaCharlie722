@@ -56,6 +56,7 @@ export interface Database {
           website: string | null;
           rating: number;
           review_count: number;
+          aggregate_rating: number; // Average star rating from reviews (0.0 to 5.0)
           image_url: string | null;
           amenities: string[];
           hours: Record<string, string>;
@@ -85,6 +86,7 @@ export interface Database {
           website?: string | null;
           rating?: number;
           review_count?: number;
+          aggregate_rating?: number;
           image_url?: string | null;
           amenities?: string[];
           hours?: Record<string, string>;
@@ -114,6 +116,7 @@ export interface Database {
           website?: string | null;
           rating?: number;
           review_count?: number;
+          aggregate_rating?: number;
           image_url?: string | null;
           amenities?: string[];
           hours?: Record<string, string>;

@@ -18,3 +18,5 @@ export { ClaimService } from './flashOfferClaims';
 export { FlashOfferNotificationService } from './flashOfferNotifications';
 export { FlashOfferAnalyticsService } from './flashOfferAnalytics';
 export { NotificationPreferencesService } from './notificationPreferences';
+export { ReviewService } from './reviews';
+export { ReviewNotificationService } from './reviewNotifications';

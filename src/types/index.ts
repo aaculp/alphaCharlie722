@@ -167,3 +167,34 @@ export type {
   ClaimOfferResponse,
   RedeemClaimResponse,
 } from './flashOfferClaim.types';
+
+// Review types
+export type {
+  // Review
+  Review,
+  ReviewWithReviewer,
+  ReviewerStats,
+  VenueResponse,
+  HelpfulVote,
+  ReviewReport,
+  
+  // Parameters
+  SubmitReviewParams,
+  UpdateReviewParams,
+  GetVenueReviewsParams,
+  GetVenueReviewsResponse,
+  ReviewSortBy,
+  
+  // Venue Response
+  SubmitVenueResponseParams,
+  UpdateVenueResponseParams,
+  
+  // Reporting
+  ReportReviewParams,
+  
+  // Helpful Votes
+  ToggleHelpfulVoteResult,
+  
+  // Aggregate
+  AggregateRating,
+} from './review.types';

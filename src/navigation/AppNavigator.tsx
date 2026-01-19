@@ -22,6 +22,7 @@ import type { SocialNotification } from '../types/social.types';
 
 // Import screens
 import { HomeScreen, SearchScreen, VenueDetailScreen, SettingsScreen, FavoritesScreen, ProfileScreen, FlashOfferDetailScreen, ClaimConfirmationScreen } from '../screens/customer';
+import VenueReviewsScreen from '../screens/customer/VenueReviewsScreen';
 import MyClaimsScreen from '../screens/customer/MyClaimsScreen';
 import ClaimDetailScreen from '../screens/customer/ClaimDetailScreen';
 import NotificationSettingsScreen from '../screens/customer/NotificationSettingsScreen';
@@ -61,6 +62,13 @@ function HomeStackNavigator() {
       <HomeStack.Screen
         name="VenueDetail"
         component={VenueDetailScreen}
+        options={{
+          animation: 'slide_from_right',
+        }}
+      />
+      <HomeStack.Screen
+        name="VenueReviews"
+        component={VenueReviewsScreen}
         options={{
           animation: 'slide_from_right',
         }}

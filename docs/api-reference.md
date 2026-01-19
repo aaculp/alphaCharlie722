@@ -9,6 +9,7 @@ This document provides a comprehensive overview of all API services in the alpha
 - [Venue Service](#venue-service)
 - [Favorites Service](#favorites-service)
 - [User Feedback Service](#user-feedback-service)
+- [Review Service](#review-service) 🆕
 - [Type Definitions](#type-definitions)
 
 ---
@@ -600,6 +601,248 @@ Gets trending tags across all venues.
 
 ---
 
+## Review Service
+
+**Location:** `src/services/api/reviews.ts`
+
+Manages venue reviews, ratings, helpful votes, venue owner responses, and content moderation.
+
+### Methods
+
+#### `submitReview(params: SubmitReviewParams)`
+
+Submits a new review for a venue.
+
+**Parameters:**
+- `params` (SubmitReviewParams):
+  - `venueId` (string): Venue's unique identifier
+  - `userId` (string): User's unique identifier
+  - `rating` (number): Star rating (1-5)
+  - `reviewText` (string, optional): Written review (max 500 characters)
+
+**Returns:** `Promise<Review>`
+
+**Features:**
+- Validates rating (1-5)
+- Validates review text (max 500 chars, no whitespace-only)
+- Applies content moderation (profanity filtering)
+- Prevents duplicate reviews (one per user per venue)
+- Automatically sets verified status if user checked in
+
+**Throws:** Error if validation fails or user already reviewed venue
+
+---
+
+#### `updateReview(params: UpdateReviewParams)`
+
+Updates an existing review.
+
+**Parameters:**
+- `params` (UpdateReviewParams):
+  - `reviewId` (string): Review's unique identifier
+  - `userId` (string): User's unique identifier
+  - `rating` (number): New star rating (1-5)
+  - `reviewText` (string, optional): New review text
+
+**Returns:** `Promise<Review>`
+
+**Features:**
+- Validates ownership (users can only update their own reviews)
+- Updates `updated_at` timestamp
+- Triggers aggregate rating recalculation
+
+**Throws:** Error if user doesn't own the review
+
+---
+
+#### `deleteReview(reviewId: string, userId: string)`
+
+Deletes a review.
+
+**Parameters:**
+- `reviewId` (string): Review's unique identifier
+- `userId` (string): User's unique identifier
+
+**Returns:** `Promise<void>`
+
+**Features:**
+- Validates ownership (users can only delete their own reviews)
+- Triggers aggregate rating recalculation
+- Cascades to delete helpful votes and venue responses
+
+**Throws:** Error if user doesn't own the review
+
+---
+
+#### `getVenueReviews(params: GetVenueReviewsParams)`
+
+Gets reviews for a venue with sorting, filtering, and pagination.
+
+**Parameters:**
+- `params` (GetVenueReviewsParams):
+  - `venueId` (string): Venue's unique identifier
+  - `limit` (number, optional): Maximum results (default: 20)
+  - `offset` (number, optional): Pagination offset (default: 0)
+  - `sortBy` ('recent' | 'highest' | 'lowest' | 'helpful', optional): Sort order (default: 'recent')
+  - `filterRating` (1 | 2 | 3 | 4 | 5, optional): Filter by specific rating
+  - `verifiedOnly` (boolean, optional): Show only verified reviews
+
+**Returns:** `Promise<GetVenueReviewsResponse>`
+
+**Response:**
+```typescript
+{
+  reviews: ReviewWithReviewer[];
+  total: number;
+  hasMore: boolean;
+}
+```
+
+**Features:**
+- Includes reviewer profile information
+- Supports multiple sort options
+- Supports rating filtering
+- Supports verified-only filtering
+- Pagination support
+
+---
+
+#### `getUserReviewForVenue(userId: string, venueId: string)`
+
+Checks if a user has already reviewed a venue.
+
+**Parameters:**
+- `userId` (string): User's unique identifier
+- `venueId` (string): Venue's unique identifier
+
+**Returns:** `Promise<Review | null>`
+
+**Use Case:** Determine whether to show "Write a Review" or "Edit Your Review" button
+
+---
+
+#### `toggleHelpfulVote(reviewId: string, userId: string)`
+
+Toggles a helpful vote on a review.
+
+**Parameters:**
+- `reviewId` (string): Review's unique identifier
+- `userId` (string): User's unique identifier
+
+**Returns:** `Promise<ToggleHelpfulVoteResult>`
+
+**Response:**
+```typescript
+{
+  helpful: boolean;      // true if voted, false if removed
+  newCount: number;      // updated helpful count
+}
+```
+
+**Features:**
+- Prevents users from voting on their own reviews
+- Prevents duplicate votes
+- Automatically updates helpful_count via trigger
+
+**Throws:** Error if user tries to vote on their own review
+
+---
+
+#### `submitVenueResponse(params: SubmitVenueResponseParams)`
+
+Submits a venue owner response to a review.
+
+**Parameters:**
+- `params` (SubmitVenueResponseParams):
+  - `reviewId` (string): Review's unique identifier
+  - `venueId` (string): Venue's unique identifier
+  - `responseText` (string): Response text (max 300 characters)
+
+**Returns:** `Promise<VenueResponse>`
+
+**Features:**
+- Validates venue ownership (RLS policy)
+- Limits response to 300 characters
+- Sends notification to reviewer
+- Prevents duplicate responses (one per review)
+
+**Throws:** Error if not venue owner or response too long
+
+---
+
+#### `updateVenueResponse(params: UpdateVenueResponseParams)`
+
+Updates a venue owner response.
+
+**Parameters:**
+- `params` (UpdateVenueResponseParams):
+  - `responseId` (string): Response's unique identifier
+  - `venueId` (string): Venue's unique identifier
+  - `responseText` (string): New response text (max 300 characters)
+
+**Returns:** `Promise<VenueResponse>`
+
+**Features:**
+- Validates venue ownership
+- Updates `updated_at` timestamp
+
+**Throws:** Error if not venue owner
+
+---
+
+#### `deleteVenueResponse(responseId: string, venueId: string)`
+
+Deletes a venue owner response.
+
+**Parameters:**
+- `responseId` (string): Response's unique identifier
+- `venueId` (string): Venue's unique identifier
+
+**Returns:** `Promise<void>`
+
+**Features:**
+- Validates venue ownership
+
+**Throws:** Error if not venue owner
+
+---
+
+#### `reportReview(params: ReportReviewParams)`
+
+Reports a review as inappropriate.
+
+**Parameters:**
+- `params` (ReportReviewParams):
+  - `reviewId` (string): Review's unique identifier
+  - `userId` (string): User's unique identifier
+  - `reason` ('spam' | 'offensive' | 'fake' | 'other'): Report reason
+  - `details` (string, optional): Additional details
+
+**Returns:** `Promise<void>`
+
+**Features:**
+- Creates moderation ticket
+- Prevents duplicate reports (one per user per review)
+- Review remains visible during moderation
+
+**Throws:** Error if user already reported this review
+
+---
+
+#### `hasUserCheckedIn(userId: string, venueId: string)`
+
+Checks if a user has checked in to a venue (for verified badge).
+
+**Parameters:**
+- `userId` (string): User's unique identifier
+- `venueId` (string): Venue's unique identifier
+
+**Returns:** `Promise<boolean>`
+
+**Use Case:** Determine if review should be marked as verified
+
+---
+
 ## Type Definitions
 
 ### CheckIn
@@ -711,6 +954,92 @@ interface CreateTagRequest {
 }
 ```
 
+### Review 🆕
+
+```typescript
+interface Review {
+  id: string;
+  venue_id: string;
+  user_id: string;
+  rating: number;              // 1-5
+  review_text: string | null;  // Optional, max 500 chars
+  is_verified: boolean;        // User checked in before reviewing
+  helpful_count: number;
+  created_at: string;
+  updated_at: string;
+}
+```
+
+### ReviewWithReviewer 🆕
+
+```typescript
+interface ReviewWithReviewer extends Review {
+  reviewer?: {
+    id: string;
+    display_name: string;
+    profile_picture_url: string | null;
+  };
+  venue_response?: VenueResponse;
+  user_has_voted_helpful?: boolean;
+}
+```
+
+### VenueResponse 🆕
+
+```typescript
+interface VenueResponse {
+  id: string;
+  review_id: string;
+  venue_id: string;
+  response_text: string;  // Max 300 chars
+  created_at: string;
+  updated_at: string;
+}
+```
+
+### SubmitReviewParams 🆕
+
+```typescript
+interface SubmitReviewParams {
+  venueId: string;
+  userId: string;
+  rating: number;              // 1-5
+  reviewText?: string;         // Optional, max 500 chars
+}
+```
+
+### GetVenueReviewsParams 🆕
+
+```typescript
+interface GetVenueReviewsParams {
+  venueId: string;
+  limit?: number;              // Default: 20
+  offset?: number;             // Default: 0
+  sortBy?: 'recent' | 'highest' | 'lowest' | 'helpful';  // Default: 'recent'
+  filterRating?: 1 | 2 | 3 | 4 | 5;
+  verifiedOnly?: boolean;
+}
+```
+
+### GetVenueReviewsResponse 🆕
+
+```typescript
+interface GetVenueReviewsResponse {
+  reviews: ReviewWithReviewer[];
+  total: number;
+  hasMore: boolean;
+}
+```
+
+### ToggleHelpfulVoteResult 🆕
+
+```typescript
+interface ToggleHelpfulVoteResult {
+  helpful: boolean;    // true if voted, false if removed
+  newCount: number;    // updated helpful count
+}
+```
+
 ---
 
 ## Error Handling
@@ -743,12 +1072,22 @@ try {
 
 ### January 2026
 
+- 🆕 Added **Review Service** with full CRUD operations for venue reviews
+- 🆕 Added `submitReview()`, `updateReview()`, `deleteReview()` methods
+- 🆕 Added `getVenueReviews()` with sorting, filtering, and pagination
+- 🆕 Added `toggleHelpfulVote()` for marking reviews as helpful
+- 🆕 Added `submitVenueResponse()`, `updateVenueResponse()`, `deleteVenueResponse()` for venue owner responses
+- 🆕 Added `reportReview()` for content moderation
+- 🆕 Added content moderation with profanity filtering
+- 🆕 Added verified review badges for users who checked in
+- 🆕 Added `Review`, `ReviewWithReviewer`, `VenueResponse`, and related types
 - 🆕 Added `getUserCheckInHistory()` method to CheckInService
 - 🆕 Added `getUserVenueVisitCount()` method to CheckInService
 - 🆕 Added `getUserVenueVisitCounts()` method for batch visit count fetching
 - 🆕 Added `CheckInWithVenue`, `CheckInHistoryOptions`, and `CheckInHistoryResponse` types
 - ✨ Check-in history now supports 30-day filtering and pagination
 - ✨ Visit counts can be fetched individually or in batch for better performance
+- ✨ Reviews support aggregate rating calculation via database triggers
 
 ---
 

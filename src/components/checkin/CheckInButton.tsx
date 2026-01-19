@@ -11,7 +11,10 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { CheckInService } from '../../services/api/checkins';
+import { ReviewService } from '../../services/api/reviews';
 import CheckInModal from './CheckInModal';
+import ReviewPromptModal from '../venue/ReviewPromptModal';
+import ReviewSubmissionModal from '../venue/ReviewSubmissionModal';
 
 interface CheckInButtonProps {
   venueId: string;
@@ -46,6 +49,11 @@ const CheckInButton: React.FC<CheckInButtonProps> = ({
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState<'checkin' | 'checkout'>('checkin');
   const [currentVenue, setCurrentVenue] = useState<string | undefined>();
+  
+  // Review prompt state
+  const [showReviewPrompt, setShowReviewPrompt] = useState(false);
+  const [showFullReviewModal, setShowFullReviewModal] = useState(false);
+  const [hasShownReviewPrompt, setHasShownReviewPrompt] = useState(false);
 
   const sizeConfig = {
     small: {
@@ -164,12 +172,72 @@ const CheckInButton: React.FC<CheckInButtonProps> = ({
       await CheckInService.checkOut(checkInId, user.id);
       onCheckInChange(false, Math.max(0, activeCheckIns - 1));
       setShowModal(false); // Close modal after successful checkout
+      
+      // Requirement 2.1, 2.7, 2.8: Show review prompt after checkout
+      // Only show if user hasn't reviewed venue and hasn't seen prompt this session
+      if (!hasShownReviewPrompt) {
+        await checkAndShowReviewPrompt();
+      }
     } catch (error) {
       console.error('Error checking out:', error);
       Alert.alert('Error', `Failed to check out of ${venueName}. Please try again.`);
     } finally {
       setLoading(false);
     }
+  };
+
+  /**
+   * Check if user has already reviewed venue and show prompt if not
+   * Requirements:
+   * - 2.1: Show ReviewPromptModal after check-out
+   * - 2.7: Show only once per check-out
+   * - 2.8: Only show if user hasn't reviewed venue
+   */
+  const checkAndShowReviewPrompt = async () => {
+    if (!user?.id) return;
+
+    try {
+      // Check if user has already reviewed this venue
+      const existingReview = await ReviewService.getUserReviewForVenue(user.id, venueId);
+      
+      // Requirement 2.8: Only show if user hasn't reviewed venue
+      if (!existingReview) {
+        // Requirement 2.7: Show only once per check-out
+        setHasShownReviewPrompt(true);
+        setShowReviewPrompt(true);
+      }
+    } catch (error) {
+      console.error('Error checking review status:', error);
+      // Don't show prompt if there's an error
+    }
+  };
+
+  /**
+   * Handle quick rating submission from review prompt
+   */
+  const handleQuickRating = (rating: number, vibe?: string) => {
+    console.log('Quick rating submitted:', rating, vibe);
+    setShowReviewPrompt(false);
+    // Refresh parent component to show updated review
+    onCheckInChange(false, activeCheckIns);
+  };
+
+  /**
+   * Handle "Add written review" button from review prompt
+   * Requirements 2.4, 2.5: Open full review modal
+   */
+  const handleOpenFullReview = () => {
+    setShowReviewPrompt(false);
+    setShowFullReviewModal(true);
+  };
+
+  /**
+   * Handle full review submission success
+   */
+  const handleFullReviewSuccess = () => {
+    setShowFullReviewModal(false);
+    // Refresh parent component to show updated review
+    onCheckInChange(false, activeCheckIns);
   };
 
   const getButtonStyle = () => {
@@ -250,6 +318,25 @@ const CheckInButton: React.FC<CheckInButtonProps> = ({
         loading={loading}
         mode={modalMode}
         checkInDuration={modalMode === 'checkout' ? getCheckInDuration() : undefined}
+      />
+
+      {/* Review Prompt Modal - shown after checkout */}
+      <ReviewPromptModal
+        visible={showReviewPrompt}
+        onClose={() => setShowReviewPrompt(false)}
+        venueId={venueId}
+        venueName={venueName}
+        onQuickRating={handleQuickRating}
+        onFullReview={handleOpenFullReview}
+      />
+
+      {/* Full Review Submission Modal */}
+      <ReviewSubmissionModal
+        visible={showFullReviewModal}
+        onClose={() => setShowFullReviewModal(false)}
+        venueId={venueId}
+        venueName={venueName}
+        onSubmitSuccess={handleFullReviewSuccess}
       />
     </>
   );

@@ -422,7 +422,8 @@ export type NotificationType =
   | 'activity_like'
   | 'activity_comment'
   | 'friend_checkin_nearby'
-  | 'flash_offer';
+  | 'flash_offer'
+  | 'venue_response';
 
 // ============================================================================
 // Privacy Settings Types

@@ -10,10 +10,11 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useEngagementColor } from '../../hooks/useEngagementColor';
 import VenueCustomerCountChip from './VenueCustomerCountChip';
+import { AggregateRatingDisplay } from '../venue';
 import type { Venue } from '../../types';
 
 // Partial venue type for compact display
-type CompactVenue = Pick<Venue, 'id' | 'name' | 'category' | 'image_url'> & {
+type CompactVenue = Pick<Venue, 'id' | 'name' | 'category' | 'image_url' | 'aggregate_rating' | 'review_count'> & {
   max_capacity?: number | null;
 };
 
@@ -159,6 +160,16 @@ const CompactVenueCard: React.FC<CompactVenueCardProps> = ({
           </Text>
         </View>
 
+        {/* Aggregate Rating Display - Requirements 7.1, 7.4 */}
+        <View style={styles.ratingRow}>
+          <AggregateRatingDisplay
+            rating={venue.aggregate_rating || 0}
+            reviewCount={venue.review_count || 0}
+            size="small"
+            showCount={false}
+          />
+        </View>
+
         {/* Optional Engagement Stats */}
         {showEngagementStats && (
           <View style={styles.statsRow}>
@@ -222,6 +233,10 @@ const styles = StyleSheet.create({
   categoryText: {
     fontSize: 11,
     fontFamily: 'Inter-Regular',
+  },
+  ratingRow: {
+    marginTop: 4,
+    marginBottom: 6,
   },
   statsRow: {
     flexDirection: 'column',

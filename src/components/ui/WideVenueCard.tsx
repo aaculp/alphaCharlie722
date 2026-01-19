@@ -15,6 +15,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { VenueCustomerCountChip, VenueEngagementChip } from '../ui';
 import { CheckInButton, CheckInModal } from '../checkin';
+import { AggregateRatingDisplay } from '../venue';
 import { useEngagementColor } from '../../hooks/useEngagementColor';
 import { useSwipeGesture } from '../../hooks/useSwipeGesture';
 import { useHapticFeedback } from '../../hooks/useHapticFeedback';
@@ -406,7 +407,13 @@ const WideVenueCard: React.FC<WideVenueCardProps> = ({
 
   // Generate accessibility label based on current state (Requirement 10.2)
   const getAccessibilityLabel = () => {
-    const baseLabel = `${venue.name}, ${venue.location}. Rating ${venue.rating} stars with ${venue.review_count} reviews. ${localCheckInCount} people currently here.`;
+    const rating = venue.aggregate_rating || 0;
+    const reviewCount = venue.review_count || 0;
+    const ratingText = reviewCount > 0 
+      ? `Rating ${rating.toFixed(1)} stars with ${reviewCount} ${reviewCount === 1 ? 'review' : 'reviews'}`
+      : 'No reviews yet';
+    
+    const baseLabel = `${venue.name}, ${venue.location}. ${ratingText}. ${localCheckInCount} people currently here.`;
     
     if (enableSwipe) {
       if (isUserCheckedIn) {
@@ -496,9 +503,15 @@ const WideVenueCard: React.FC<WideVenueCardProps> = ({
                 </View>
               )}
             </View>
+            
+            {/* Aggregate Rating Display - Requirements 7.1, 7.4 */}
             <View style={styles.ratingRow}>
-              <Text style={[styles.rating, { color: isDark ? 'white' : '#000000' }]}>⭐ {venue.rating}</Text>
-              <Text style={[styles.reviewCount, { color: isDark ? 'rgba(255, 255, 255, 0.7)' : '#666666' }]}>({venue.review_count})</Text>
+              <AggregateRatingDisplay
+                rating={venue.aggregate_rating || 0}
+                reviewCount={venue.review_count || 0}
+                size="small"
+                showCount={true}
+              />
             </View>
             
             {/* Check-In Button */}
@@ -718,15 +731,7 @@ const styles = StyleSheet.create({
   ratingRow: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  rating: {
-    fontSize: 14,
-    marginRight: 6,
-    fontFamily: 'Inter-Medium',
-  },
-  reviewCount: {
-    fontSize: 12,
-    fontFamily: 'Inter-Regular',
+    marginTop: 4,
   },
   checkInButtonInline: {
     marginTop: 8,

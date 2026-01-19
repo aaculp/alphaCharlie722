@@ -71,6 +71,7 @@ const NOTIFICATION_TYPE_TO_PREFERENCE: Record<NotificationType, keyof import('..
   activity_comment: 'activity_comments',
   friend_checkin_nearby: 'friend_checkins_nearby',
   flash_offer: 'friend_requests', // Use friend_requests as default for now
+  venue_response: 'friend_requests', // Use friend_requests as default for now
 };
 
 export class PushNotificationService {
@@ -593,6 +594,9 @@ export class PushNotificationService {
       
       case 'friend_checkin_nearby':
         return 'checkins';
+      
+      case 'venue_response':
+        return 'reviews';
       
       default:
         return 'social';

@@ -21,6 +21,7 @@ import { useLocation } from '../../hooks/useLocation';
 import { LocationService } from '../../services/locationService';
 import { CheckInService } from '../../services/api/checkins';
 import { populateVenuesDatabase } from '../../utils/populateVenues';
+import { supabase } from '../../lib/supabase';
 import { WideVenueCard } from '../../components/ui';
 import { VenuesCarouselSection } from '../../components/ui';
 import { QuickPickChip } from '../../components/quickpicks';
@@ -212,6 +213,70 @@ const HomeScreen: React.FC = () => {
 
     fetchUserCheckIn();
   }, [user]);
+
+  // Requirement 7.7: Real-time rating updates
+  // Subscribe to venue updates (aggregate_rating and review_count changes)
+  useEffect(() => {
+    // Only subscribe if we have venues to monitor
+    if (venueIds.length === 0) {
+      return;
+    }
+
+    console.log('🔄 Setting up real-time venue updates subscription for', venueIds.length, 'venues');
+    
+    // Subscribe to changes in the venues table
+    const subscription = supabase
+      .channel('venue-ratings-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'venues',
+        },
+        (payload) => {
+          console.log('🔄 Venue updated:', payload);
+          
+          // Check if the updated venue is in our current list
+          const updatedVenueId = payload.new?.id;
+          if (updatedVenueId && venueIds.includes(updatedVenueId)) {
+            console.log('🔄 Venue rating updated for displayed venue:', updatedVenueId);
+            
+            // Refetch venues to get updated ratings
+            // This will trigger a re-render with new aggregate_rating and review_count
+            refetch();
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to INSERT, UPDATE, DELETE
+          schema: 'public',
+          table: 'reviews',
+        },
+        (payload) => {
+          console.log('🔄 Review changed:', payload);
+          
+          // Check if the review is for a venue in our current list
+          const venueId = payload.new?.venue_id || payload.old?.venue_id;
+          if (venueId && venueIds.includes(venueId)) {
+            console.log('🔄 Review changed for displayed venue:', venueId);
+            
+            // Refetch venues to get updated ratings
+            // The database trigger will have already updated aggregate_rating and review_count
+            refetch();
+          }
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscription on unmount
+    return () => {
+      console.log('🔄 Cleaning up real-time venue updates subscription');
+      subscription.unsubscribe();
+    };
+  }, [venueIds, refetch]);
 
   // Handle database population if no venues found
   useEffect(() => {

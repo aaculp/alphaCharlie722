@@ -35,6 +35,13 @@ export type {
   ComplianceCheckResult,
 } from './compliance/ComplianceService';
 
+export { ContentModerationService } from './compliance/ContentModerationService';
+export type {
+  ProfanitySeverity,
+  ContentModerationResult,
+  ReviewTextValidationResult,
+} from './compliance/ContentModerationService';
+
 // Monitoring exports
 export { 
   trackSuccess, 

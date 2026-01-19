@@ -50,6 +50,25 @@ export interface VenueAnalytics {
     icon: string;
     color: string;
   }>;
+
+  // Reviews Analytics (NEW)
+  recentReviews?: Array<{
+    id: string;
+    user_id: string;
+    rating: number;
+    review_text?: string;
+    created_at: string;
+    reviewer_name: string;
+    reviewer_picture?: string;
+    has_response: boolean;
+  }>;
+  ratingDistribution?: {
+    5: number;
+    4: number;
+    3: number;
+    2: number;
+    1: number;
+  };
 }
 
 export class VenueAnalyticsService {
@@ -74,7 +93,9 @@ export class VenueAnalyticsService {
         peakHours,
         customerInsights,
         profileStats,
-        recentActivities
+        recentActivities,
+        recentReviews,
+        ratingDistribution
       ] = await Promise.all([
         this.getTodayStats(venueId),
         this.getWeeklyStats(venueId),
@@ -82,7 +103,9 @@ export class VenueAnalyticsService {
         this.getPeakHours(venueId),
         this.getCustomerInsights(venueId),
         this.getProfileStats(venueId),
-        this.getRecentActivities(venueId)
+        this.getRecentActivities(venueId),
+        this.getRecentReviews(venueId),
+        this.getRatingDistribution(venueId)
       ]);
 
       const analytics: VenueAnalytics = {
@@ -92,7 +115,9 @@ export class VenueAnalyticsService {
         peakHours,
         ...customerInsights,
         ...profileStats,
-        recentActivities
+        recentActivities,
+        recentReviews,
+        ratingDistribution
       };
 
       console.log('✅ Venue analytics fetched successfully');
@@ -113,45 +138,49 @@ export class VenueAnalyticsService {
     const today = new Date();
     const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     
-    try {
-      // Get today's check-ins
-      const { data: todayCheckIns, error: checkInError } = await supabase
-        .from('check_ins')
-        .select('user_id')
-        .eq('venue_id', venueId)
-        .gte('checked_in_at', startOfDay.toISOString());
+    // Get today's check-ins
+    const { data: todayCheckIns, error: checkInError } = await supabase
+      .from('check_ins')
+      .select('user_id')
+      .eq('venue_id', venueId)
+      .gte('checked_in_at', startOfDay.toISOString());
 
-      if (checkInError) throw checkInError;
+    if (checkInError) throw checkInError;
 
-      // Get unique users who checked in today (new customers approximation)
-      const uniqueUsers = new Set(todayCheckIns?.map(c => c.user_id) || []);
+    // Get unique users who checked in today (new customers approximation)
+    const uniqueUsers = new Set(todayCheckIns?.map(c => c.user_id) || []);
+    
+    // Get today's reviews for rating
+    const { data: todayReviews, error: reviewError } = await supabase
+      .from('reviews')
+      .select('rating')
+      .eq('venue_id', venueId)
+      .gte('created_at', startOfDay.toISOString());
+
+    if (reviewError) throw reviewError;
+
+    // Get overall rating if no reviews today
+    let avgRating = 0;
+    if (todayReviews && todayReviews.length > 0) {
+      avgRating = todayReviews.reduce((sum, r) => sum + r.rating, 0) / todayReviews.length;
+    } else {
+      // Fetch overall venue rating
+      const { data: venue, error: venueError } = await supabase
+        .from('venues')
+        .select('aggregate_rating')
+        .eq('id', venueId)
+        .single();
       
-      // Get today's reviews for rating
-      const { data: todayReviews, error: reviewError } = await supabase
-        .from('reviews')
-        .select('rating')
-        .eq('venue_id', venueId)
-        .gte('created_at', startOfDay.toISOString());
-
-      if (reviewError) throw reviewError;
-
-      const avgRating = todayReviews?.length 
-        ? todayReviews.reduce((sum, r) => sum + r.rating, 0) / todayReviews.length
-        : 4.8; // Default if no reviews today
-
-      return {
-        todayCheckIns: todayCheckIns?.length || 0,
-        todayNewCustomers: Math.floor(uniqueUsers.size * 0.3), // Estimate 30% are new
-        todayRating: Math.round(avgRating * 10) / 10
-      };
-    } catch (error) {
-      console.warn('Using mock data for today stats:', error);
-      return {
-        todayCheckIns: 47,
-        todayNewCustomers: 12,
-        todayRating: 4.8
-      };
+      if (!venueError && venue) {
+        avgRating = venue.aggregate_rating || 0;
+      }
     }
+
+    return {
+      todayCheckIns: todayCheckIns?.length || 0,
+      todayNewCustomers: Math.floor(uniqueUsers.size * 0.3), // Estimate 30% are new
+      todayRating: Math.round(avgRating * 10) / 10
+    };
   }
 
   /**
@@ -161,53 +190,56 @@ export class VenueAnalyticsService {
     const weekAgo = new Date();
     weekAgo.setDate(weekAgo.getDate() - 7);
     
-    try {
-      // Get week's check-ins
-      const { data: weeklyCheckIns, error: checkInError } = await supabase
-        .from('check_ins')
-        .select('user_id')
-        .eq('venue_id', venueId)
-        .gte('checked_in_at', weekAgo.toISOString());
+    // Get week's check-ins
+    const { data: weeklyCheckIns, error: checkInError } = await supabase
+      .from('check_ins')
+      .select('user_id')
+      .eq('venue_id', venueId)
+      .gte('checked_in_at', weekAgo.toISOString());
 
-      if (checkInError) throw checkInError;
+    if (checkInError) throw checkInError;
 
-      // Get week's reviews
-      const { data: weeklyReviews, error: reviewError } = await supabase
-        .from('reviews')
-        .select('rating')
-        .eq('venue_id', venueId)
-        .gte('created_at', weekAgo.toISOString());
+    // Get week's reviews
+    const { data: weeklyReviews, error: reviewError } = await supabase
+      .from('reviews')
+      .select('rating')
+      .eq('venue_id', venueId)
+      .gte('created_at', weekAgo.toISOString());
 
-      if (reviewError) throw reviewError;
+    if (reviewError) throw reviewError;
 
-      // Get week's favorites
-      const { data: weeklyFavorites, error: favError } = await supabase
-        .from('favorites')
-        .select('id')
-        .eq('venue_id', venueId)
-        .gte('created_at', weekAgo.toISOString());
+    // Get week's favorites
+    const { data: weeklyFavorites, error: favError } = await supabase
+      .from('favorites')
+      .select('id')
+      .eq('venue_id', venueId)
+      .gte('created_at', weekAgo.toISOString());
 
-      if (favError) throw favError;
+    if (favError) throw favError;
 
-      const avgRating = weeklyReviews?.length 
-        ? weeklyReviews.reduce((sum, r) => sum + r.rating, 0) / weeklyReviews.length
-        : 4.6;
-
-      return {
-        weeklyCheckIns: weeklyCheckIns?.length || 0,
-        weeklyAvgRating: Math.round(avgRating * 10) / 10,
-        weeklyNewFavorites: weeklyFavorites?.length || 0,
-        weeklyProfileViews: Math.floor((weeklyCheckIns?.length || 0) * 3.2) // Estimate based on check-ins
-      };
-    } catch (error) {
-      console.warn('Using mock data for weekly stats:', error);
-      return {
-        weeklyCheckIns: 284,
-        weeklyAvgRating: 4.6,
-        weeklyNewFavorites: 38,
-        weeklyProfileViews: 156
-      };
+    // Calculate average rating for the week
+    let avgRating = 0;
+    if (weeklyReviews && weeklyReviews.length > 0) {
+      avgRating = weeklyReviews.reduce((sum, r) => sum + r.rating, 0) / weeklyReviews.length;
+    } else {
+      // Fetch overall venue rating if no reviews this week
+      const { data: venue, error: venueError } = await supabase
+        .from('venues')
+        .select('aggregate_rating')
+        .eq('id', venueId)
+        .single();
+      
+      if (!venueError && venue) {
+        avgRating = venue.aggregate_rating || 0;
+      }
     }
+
+    return {
+      weeklyCheckIns: weeklyCheckIns?.length || 0,
+      weeklyAvgRating: Math.round(avgRating * 10) / 10,
+      weeklyNewFavorites: weeklyFavorites?.length || 0,
+      weeklyProfileViews: Math.floor((weeklyCheckIns?.length || 0) * 3.2) // Estimate based on check-ins
+    };
   }
 
   /**
@@ -820,9 +852,9 @@ export class VenueAnalyticsService {
   }
 
   /**
-   * Helper function to get relative time
+   * Helper function to get relative time (public for use in components)
    */
-  private static getRelativeTime(dateString: string): string {
+  static getRelativeTime(dateString: string): string {
     const now = new Date();
     const date = new Date(dateString);
     const diffMs = now.getTime() - date.getTime();
@@ -853,6 +885,95 @@ export class VenueAnalyticsService {
       case 'hour': return value * 60;
       case 'day': return value * 60 * 24;
       default: return 999999;
+    }
+  }
+
+  /**
+   * Get recent reviews for venue dashboard
+   * 
+   * Requirements:
+   * - 11.5: Show 5 most recent reviews
+   * - 9.1: Display with venue owner response options
+   */
+  private static async getRecentReviews(venueId: string) {
+    try {
+      const { data: reviews, error } = await supabase
+        .from('reviews')
+        .select(`
+          id,
+          user_id,
+          rating,
+          review_text,
+          created_at,
+          profiles:user_id (
+            display_name,
+            profile_picture_url
+          ),
+          venue_responses (
+            id
+          )
+        `)
+        .eq('venue_id', venueId)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (error) throw error;
+
+      return (reviews || []).map((review: any) => ({
+        id: review.id,
+        user_id: review.user_id,
+        rating: review.rating,
+        review_text: review.review_text,
+        created_at: review.created_at,
+        reviewer_name: review.profiles?.display_name || 'Anonymous',
+        reviewer_picture: review.profiles?.profile_picture_url,
+        has_response: review.venue_responses && review.venue_responses.length > 0
+      }));
+    } catch (error) {
+      console.warn('Error fetching recent reviews:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get rating distribution for venue dashboard
+   * 
+   * Requirements:
+   * - 11.6: Show counts for 5★, 4★, 3★, 2★, 1★
+   */
+  private static async getRatingDistribution(venueId: string) {
+    try {
+      const { data: reviews, error } = await supabase
+        .from('reviews')
+        .select('rating')
+        .eq('venue_id', venueId);
+
+      if (error) throw error;
+
+      const distribution = {
+        5: 0,
+        4: 0,
+        3: 0,
+        2: 0,
+        1: 0
+      };
+
+      (reviews || []).forEach((review: any) => {
+        if (review.rating >= 1 && review.rating <= 5) {
+          distribution[review.rating as keyof typeof distribution]++;
+        }
+      });
+
+      return distribution;
+    } catch (error) {
+      console.warn('Error fetching rating distribution:', error);
+      return {
+        5: 0,
+        4: 0,
+        3: 0,
+        2: 0,
+        1: 0
+      };
     }
   }
 

@@ -101,4 +101,5 @@ export const CACHE_TTL = {
   PRIVACY_SETTINGS: 10 * 60 * 1000, // 10 minutes
   FRIEND_REQUESTS: 1 * 60 * 1000, // 1 minute (more dynamic)
   SOCIAL_PROFILE: 5 * 60 * 1000, // 5 minutes
+  VENUE_REVIEWS: 5 * 60 * 1000, // 5 minutes (Requirement 14.5)
 } as const;

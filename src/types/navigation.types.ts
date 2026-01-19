@@ -27,6 +27,7 @@ export type SettingsStackParamList = {
 export type HomeStackParamList = {
   HomeList: undefined;
   VenueDetail: { venueId: string; venueName: string };
+  VenueReviews: { venueId: string; venueName: string };
   FlashOfferDetail: { offerId: string; venueName?: string };
   ClaimConfirmation: { 
     claim: any; // FlashOfferClaim type
