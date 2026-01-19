@@ -11,6 +11,8 @@ export class VenueBusinessService {
    */
   static async getBusinessAccount(userId: string): Promise<VenueBusinessAccount | null> {
     try {
+      console.log('🔍 VenueBusinessService: Fetching business account for user:', userId);
+      
       const { data, error } = await supabase
         .from('venue_business_accounts')
         .select(`
@@ -34,16 +36,18 @@ export class VenueBusinessService {
 
       if (error) {
         if (error.code === 'PGRST116') {
-          // No business account found
+          // No business account found - this is normal for regular customers
+          console.log('ℹ️ VenueBusinessService: No business account found (user is customer)');
           return null;
         }
-        console.error('❌ Error fetching business account:', error);
+        console.error('❌ VenueBusinessService: Error fetching business account:', error);
         return null;
       }
 
+      console.log('✅ VenueBusinessService: Business account found:', data?.id);
       return data;
     } catch (error) {
-      console.error('❌ Unexpected error fetching business account:', error);
+      console.error('❌ VenueBusinessService: Unexpected error fetching business account:', error);
       return null;
     }
   }

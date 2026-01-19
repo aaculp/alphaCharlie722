@@ -213,7 +213,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             const { data: { session: currentSession } } = await supabase.auth.getSession();
             if (currentSession?.user?.id) {
               console.log('🔍 Determining user type after initialization...');
-              await determineUserType(currentSession.user.id);
+              try {
+                // Add timeout to prevent hanging
+                const determineUserTypePromise = determineUserType(currentSession.user.id);
+                const timeoutPromise = new Promise((_, reject) => 
+                  setTimeout(() => reject(new Error('User type determination timeout')), 5000)
+                );
+                
+                await Promise.race([determineUserTypePromise, timeoutPromise]);
+                console.log('✅ User type determined successfully');
+              } catch (typeError) {
+                console.error('❌ Error determining user type:', typeError);
+                // Default to customer if determination fails
+                console.log('🔄 Defaulting to customer due to error');
+                setUserType('customer');
+                setVenueBusinessAccount(null);
+              }
             } else {
               console.warn('⚠️ No user ID found in session after initialization');
             }
@@ -274,10 +289,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         accessToken: data.session?.access_token ? 'present' : 'missing'
       });
 
-      // Determine user type after successful sign in
+      // Determine user type after successful sign in with timeout
       if (data.user?.id) {
         console.log('🔍 Determining user type after sign in...');
-        await determineUserType(data.user.id);
+        try {
+          // Add timeout to prevent hanging
+          const determineUserTypePromise = determineUserType(data.user.id);
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('User type determination timeout')), 5000)
+          );
+          
+          await Promise.race([determineUserTypePromise, timeoutPromise]);
+          console.log('✅ User type determined successfully');
+        } catch (typeError) {
+          console.error('❌ Error determining user type:', typeError);
+          // Default to customer if determination fails
+          console.log('🔄 Defaulting to customer due to error');
+          setUserType('customer');
+          setVenueBusinessAccount(null);
+        }
       }
 
       // Check if session was persisted
