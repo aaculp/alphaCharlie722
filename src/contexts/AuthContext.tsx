@@ -213,21 +213,37 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             const { data: { session: currentSession } } = await supabase.auth.getSession();
             if (currentSession?.user?.id) {
               console.log('🔍 Determining user type after initialization...');
-              try {
-                // Add timeout to prevent hanging
-                const determineUserTypePromise = determineUserType(currentSession.user.id);
-                const timeoutPromise = new Promise((_, reject) => 
-                  setTimeout(() => reject(new Error('User type determination timeout')), 5000)
-                );
-                
-                await Promise.race([determineUserTypePromise, timeoutPromise]);
-                console.log('✅ User type determined successfully');
-              } catch (typeError) {
-                console.error('❌ Error determining user type:', typeError);
-                // Default to customer if determination fails
-                console.log('🔄 Defaulting to customer due to error');
-                setUserType('customer');
-                setVenueBusinessAccount(null);
+              let attempts = 0;
+              const maxAttempts = 3;
+              let success = false;
+              
+              while (attempts < maxAttempts && !success) {
+                try {
+                  attempts++;
+                  console.log(`🔄 User type determination attempt ${attempts}/${maxAttempts}`);
+                  
+                  // Add timeout to prevent hanging (10 seconds per attempt)
+                  const determineUserTypePromise = determineUserType(currentSession.user.id);
+                  const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('User type determination timeout')), 10000)
+                  );
+                  
+                  await Promise.race([determineUserTypePromise, timeoutPromise]);
+                  console.log('✅ User type determined successfully');
+                  success = true;
+                } catch (typeError) {
+                  console.error(`❌ Attempt ${attempts} failed:`, typeError);
+                  
+                  if (attempts < maxAttempts) {
+                    console.log(`⏳ Retrying in 1 second...`);
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                  } else {
+                    console.error('❌ All attempts failed, defaulting to customer');
+                    // Only default to customer after all retries fail
+                    setUserType('customer');
+                    setVenueBusinessAccount(null);
+                  }
+                }
               }
             } else {
               console.warn('⚠️ No user ID found in session after initialization');
@@ -289,24 +305,40 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         accessToken: data.session?.access_token ? 'present' : 'missing'
       });
 
-      // Determine user type after successful sign in with timeout
+      // Determine user type after successful sign in with timeout and retry
       if (data.user?.id) {
         console.log('🔍 Determining user type after sign in...');
-        try {
-          // Add timeout to prevent hanging
-          const determineUserTypePromise = determineUserType(data.user.id);
-          const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('User type determination timeout')), 5000)
-          );
-          
-          await Promise.race([determineUserTypePromise, timeoutPromise]);
-          console.log('✅ User type determined successfully');
-        } catch (typeError) {
-          console.error('❌ Error determining user type:', typeError);
-          // Default to customer if determination fails
-          console.log('🔄 Defaulting to customer due to error');
-          setUserType('customer');
-          setVenueBusinessAccount(null);
+        let attempts = 0;
+        const maxAttempts = 3;
+        let success = false;
+        
+        while (attempts < maxAttempts && !success) {
+          try {
+            attempts++;
+            console.log(`🔄 User type determination attempt ${attempts}/${maxAttempts}`);
+            
+            // Add timeout to prevent hanging (10 seconds per attempt)
+            const determineUserTypePromise = determineUserType(data.user.id);
+            const timeoutPromise = new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('User type determination timeout')), 10000)
+            );
+            
+            await Promise.race([determineUserTypePromise, timeoutPromise]);
+            console.log('✅ User type determined successfully');
+            success = true;
+          } catch (typeError) {
+            console.error(`❌ Attempt ${attempts} failed:`, typeError);
+            
+            if (attempts < maxAttempts) {
+              console.log(`⏳ Retrying in 1 second...`);
+              await new Promise(resolve => setTimeout(resolve, 1000));
+            } else {
+              console.error('❌ All attempts failed, defaulting to customer');
+              // Only default to customer after all retries fail
+              setUserType('customer');
+              setVenueBusinessAccount(null);
+            }
+          }
         }
       }
 
