@@ -78,7 +78,13 @@ export class VenueService {
       console.log('📊 Query result:', { 
         success: !error, 
         count: data?.length || 0,
-        error: error?.message 
+        error: error?.message,
+        sampleVenue: data?.[0] ? {
+          id: data[0].id,
+          name: data[0].name,
+          review_count: data[0].review_count,
+          aggregate_rating: data[0].aggregate_rating
+        } : null
       });
 
       if (error) {
@@ -210,6 +216,8 @@ export class VenueService {
       firstVenue: data?.[0] ? { 
         id: data[0].id, 
         name: data[0].name,
+        review_count: data[0].review_count,
+        aggregate_rating: data[0].aggregate_rating,
         business_account: data[0].venue_business_accounts 
       } : null
     });

@@ -518,34 +518,34 @@ const HomeScreen: React.FC = () => {
         )}
 
         {/* Friends' Favorites Section */}
-        {user && (
+        {/* {user && (
           <View style={styles.socialSection}>
             <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Friends' Favorites</Text>
             <Text style={[styles.comingSoonText, { color: theme.colors.textSecondary }]}>
               See what venues your friends love - coming soon!
             </Text>
           </View>
-        )}
+        )} */}
 
         {/* Shared Collections Section */}
-        {user && (
+        {/* {user && (
           <View style={styles.socialSection}>
             <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Shared Collections</Text>
             <Text style={[styles.comingSoonText, { color: theme.colors.textSecondary }]}>
               Discover curated venue collections from friends - coming soon!
             </Text>
           </View>
-        )}
+        )} */}
 
         {/* Friend Activity Feed Section */}
-        {user && (
+        {/* {user && (
           <View style={styles.socialSection}>
             <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Friend Activity</Text>
             <Text style={[styles.comingSoonText, { color: theme.colors.textSecondary }]}>
               Stay updated with your friends' check-ins and favorites - coming soon!
             </Text>
           </View>
-        )}
+        )} */}
 
         {filteredVenues.length > 0 ? (
           <View style={styles.venueList}>
