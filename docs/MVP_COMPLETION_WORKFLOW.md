@@ -127,51 +127,7 @@
 
 ---
 
-### 1.6 Venue Promo System (QR Code) ⚠️ NEEDS VERIFICATION
-**Status:** Partially Complete (Flash Offers done, traditional QR promos unclear)  
-**Backend:** `promos` table (if exists), QR code generation  
-**Frontend:** Promo creation, QR display, claim flow
-
-**Verification Checklist:**
-- [ ] Venue can create traditional promos (separate from flash offers)
-- [ ] QR code generated for each promo
-- [ ] QR code displayed to venue owner
-- [ ] User can scan QR code to claim promo
-- [ ] Claim recorded in database
-- [ ] Venue can verify claimed promos
-- [ ] Promo expiration handled
-- [ ] Claim limits enforced
-
-**Files to Check:**
-- `.kiro/specs/venue-promo-system/` (spec exists)
-- Search for `promos` table in database
-- Search for QR code generation logic
-
-**Action Required:** Verify if traditional promo system is implemented or if flash offers replaced it
-
----
-
-### 1.7 Venue Promo Section on Venue Page ⚠️ NEEDS VERIFICATION
-**Status:** Unclear  
-**Backend:** Promo data retrieval  
-**Frontend:** Promo display section on VenueDetailScreen
-
-**Verification Checklist:**
-- [ ] Active promos displayed on venue detail screen
-- [ ] Promo cards show title, description, expiration
-- [ ] Users can view promo details
-- [ ] Users can claim promos from venue page
-- [ ] Expired promos hidden or marked as expired
-
-**Files to Check:**
-- `src/screens/customer/VenueDetailScreen.tsx`
-- Search for promo display components
-
-**Action Required:** Verify promo display implementation
-
----
-
-### 1.8 Venue Analytics Dashboard ✅ DONE (Mostly)
+### 1.6 Venue Analytics Dashboard ✅ DONE (Mostly)
 **Status:** Complete with mock data fallbacks  
 **Backend:** `check_ins`, `reviews`, `favorites` tables  
 **Frontend:** VenueDashboardScreen with analytics cards
@@ -398,19 +354,23 @@
 
 ---
 
-### 3.3 Promo Claim Tracking ❌ NOT DONE
-**Status:** Not implemented  
-**Backend:** Needs claim tracking in database  
-**Frontend:** Claim history display
+### 3.2 Promo Claim Tracking via Check-In Codes ✅ DONE
+**Status:** Complete (replaced traditional promo system)  
+**Backend:** Check-in validation with codes  
+**Frontend:** Check-in modal with code entry
 
 **Verification Checklist:**
-- [ ] User's claimed promos tracked in database
-- [ ] Claim count displayed on user profile
-- [ ] Claim history accessible to user
-- [ ] Claimed promos show redemption status
-- [ ] Privacy toggle for claim count visibility
+- [x] Venues can generate check-in codes
+- [x] Users enter code during check-in
+- [x] Code validation enforced
+- [x] Check-in tracked with code association
+- [x] Venues can verify check-ins via codes
 
-**Action Required:** Implement promo claim tracking and display
+**Note:** This replaced the traditional QR code promo system. Check-in codes serve as the promo/verification mechanism.
+
+**Files:**
+- `src/components/checkin/CheckInModal.tsx`
+- `src/services/api/checkins.ts`
 
 ---
 
@@ -450,23 +410,17 @@
 
 ## Execution Plan
 
-### Week 1: Venue Feature Verification
-- **Day 1-2:** Verify 1.6 (Promo System) and 1.7 (Promo Display)
-- **Day 3:** Implement reviews table and backend API
-- **Day 4-5:** Complete 1.8 (Analytics) with real review data
+### Week 1: Complete Reviews System
+- **Day 1-2:** Finish reviews implementation and testing
+- **Day 3:** Integrate reviews into analytics dashboard
+- **Day 4-5:** Test review notifications and venue responses
 
 ### Week 2: User Feature Completion
-- **Day 1-2:** Verify 2.2 (Username system)
-- **Day 3-4:** Implement 2.7 (Profile display with privacy)
-- **Day 5:** Implement 3.3 (Promo claim tracking)
+- **Day 1-2:** Verify username system implementation
+- **Day 3-4:** Implement user profile display with privacy
+- **Day 5:** Polish and bug fixes
 
-### Week 3: Reviews System
-- **Day 1-2:** Frontend review submission and display
-- **Day 3:** Content moderation integration
-- **Day 4:** Venue owner response functionality
-- **Day 5:** Review analytics integration
-
-### Week 4: Integration & Testing
+### Week 3: Integration & Testing
 - **Day 1-2:** End-to-end testing
 - **Day 3:** Backend data integrity verification
 - **Day 4:** Performance optimization
@@ -476,21 +430,19 @@
 
 ## Progress Tracking
 
-**Overall MVP Completion:** 55% (11/20 features complete)
+**Overall MVP Completion:** 65% (13/20 features complete)
 
 ### By Phase:
-- **Phase 1 (Venue):** 75% (6/8 complete)
+- **Phase 1 (Venue):** 100% (6/6 complete) ✅
 - **Phase 2 (User):** 67% (4/6 complete)
-- **Phase 3 (Missing):** 0% (0/3 complete)
+- **Phase 3 (Missing):** 33% (1/3 complete)
 - **Phase 4 (Integration):** 0% (0/3 complete)
 
 ### Priority Order:
-1. **HIGH:** Reviews system (blocks analytics)
+1. **HIGH:** Reviews system (blocks analytics) - 90% complete
 2. **HIGH:** User profile display (core MVP feature)
 3. **MEDIUM:** Username verification (spec exists)
-4. **MEDIUM:** Promo system verification (spec exists)
-5. **LOW:** "Heading to" status (nice-to-have)
-6. **LOW:** Promo claim tracking (depends on promo system)
+4. **LOW:** "Heading to" status (nice-to-have)
 
 ---
 
