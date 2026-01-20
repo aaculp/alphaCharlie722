@@ -1081,7 +1081,7 @@ const styles = StyleSheet.create({
     height: 50,
   },
   accordionContent: {
-    backgroundColor: 'rgba(0, 0, 0, 0.03)', // Slightly darker
+    backgroundColor: '#E8E8E8', // Solid color for light theme
   },
   gridLayoutOption: {
     flexDirection: 'row',

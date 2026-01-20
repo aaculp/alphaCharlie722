@@ -481,7 +481,7 @@ const WideVenueCard: React.FC<WideVenueCardProps> = ({
         {
           backgroundColor: isDark
             ? 'rgba(20, 20, 20, 0.8)'
-            : 'rgba(245, 245, 245, 0.95)', // Less transparent, darker background
+            : '#F5F5F5', // Solid color for light theme
           borderColor: engagementColor.borderColor,
           borderWidth: 2,
         }
@@ -762,7 +762,7 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   loadingSpinner: {
-    backgroundColor: 'rgba(245, 245, 245, 0.95)', // Less transparent, darker background
+    backgroundColor: '#F5F5F5', // Solid color for light theme
     paddingHorizontal: 24,
     paddingVertical: 16,
     borderRadius: 12,

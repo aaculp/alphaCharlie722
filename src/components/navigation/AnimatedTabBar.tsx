@@ -313,7 +313,7 @@ const AnimatedTabBar: React.FC<AnimatedTabBarProps> = ({
       { 
         paddingBottom: insets.bottom,
         backgroundColor: isDark ? theme.colors.surface : '#ffffff',
-        borderTopColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.15)', // Darker border
+        borderTopColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#B0B0B0', // Solid border for light theme
       }
     ]}>
       <GestureDetector gesture={panGesture}>

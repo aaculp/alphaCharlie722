@@ -328,7 +328,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
-    backgroundColor: 'rgba(0, 0, 0, 0.08)', // Darker background
+    backgroundColor: '#E0E0E0', // Solid color for light theme
   },
   instructionText: {
     fontSize: 14,
