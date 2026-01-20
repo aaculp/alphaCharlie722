@@ -235,16 +235,26 @@ const HomeScreen: React.FC = () => {
           table: 'venues',
         },
         (payload) => {
-          console.log('🔄 Venue updated:', payload);
+          console.log('🔄 Venue updated:', {
+            event: payload.eventType,
+            venueId: payload.new?.id,
+            venueName: payload.new?.name,
+            oldRating: payload.old?.aggregate_rating,
+            newRating: payload.new?.aggregate_rating,
+            oldCount: payload.old?.review_count,
+            newCount: payload.new?.review_count
+          });
           
           // Check if the updated venue is in our current list
           const updatedVenueId = payload.new?.id;
           if (updatedVenueId && venueIds.includes(updatedVenueId)) {
-            console.log('🔄 Venue rating updated for displayed venue:', updatedVenueId);
+            console.log('🔄 Venue rating updated for displayed venue, refetching...', updatedVenueId);
             
             // Refetch venues to get updated ratings
             // This will trigger a re-render with new aggregate_rating and review_count
             refetch();
+          } else {
+            console.log('🔄 Venue updated for non-displayed venue:', updatedVenueId);
           }
         }
       )
@@ -256,16 +266,24 @@ const HomeScreen: React.FC = () => {
           table: 'reviews',
         },
         (payload) => {
-          console.log('🔄 Review changed:', payload);
+          console.log('🔄 Review changed:', {
+            event: payload.eventType,
+            venueId: payload.new?.venue_id || payload.old?.venue_id,
+            reviewId: payload.new?.id || payload.old?.id,
+            newRating: payload.new?.rating,
+            oldRating: payload.old?.rating
+          });
           
           // Check if the review is for a venue in our current list
           const venueId = payload.new?.venue_id || payload.old?.venue_id;
           if (venueId && venueIds.includes(venueId)) {
-            console.log('🔄 Review changed for displayed venue:', venueId);
+            console.log('🔄 Review changed for displayed venue, refetching...', venueId);
             
             // Refetch venues to get updated ratings
             // The database trigger will have already updated aggregate_rating and review_count
             refetch();
+          } else {
+            console.log('🔄 Review changed for non-displayed venue:', venueId);
           }
         }
       )
