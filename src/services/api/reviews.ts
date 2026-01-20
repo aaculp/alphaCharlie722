@@ -119,17 +119,14 @@ export class ReviewService {
         processedText = moderation.filtered;
       }
 
-      // Insert review into database
-      const { data, error } = await supabase
-        .from('reviews')
-        .insert({
-          venue_id: venueId,
-          user_id: userId,
-          rating,
-          review_text: processedText,
-        })
-        .select()
-        .single();
+      // Use RPC function to submit review and update venue rating atomically
+      // This ensures the venue's aggregate_rating is updated immediately
+      const { data, error } = await supabase.rpc('submit_review_and_update_venue', {
+        p_venue_id: venueId,
+        p_user_id: userId,
+        p_rating: rating,
+        p_review_text: processedText,
+      });
 
       if (error) {
         // Handle duplicate review error
@@ -139,7 +136,7 @@ export class ReviewService {
         throw new Error(`Failed to submit review: ${error.message}`);
       }
 
-      console.log('✅ Review submitted successfully:', data);
+      console.log('✅ Review submitted successfully via RPC:', data);
 
       // Requirement 14.6: Invalidate cache on new review submission
       this.invalidateVenueReviewsCache(venueId);
@@ -178,21 +175,6 @@ export class ReviewService {
     try {
       const { reviewId, userId, rating, reviewText } = params;
 
-      // Validate ownership
-      const { data: existingReview, error: fetchError } = await supabase
-        .from('reviews')
-        .select('user_id')
-        .eq('id', reviewId)
-        .single();
-
-      if (fetchError) {
-        throw new Error(`Failed to fetch review: ${fetchError.message}`);
-      }
-
-      if (existingReview.user_id !== userId) {
-        throw new Error('You can only edit your own reviews');
-      }
-
       // Validate rating
       if (!rating || rating < 1 || rating > 5) {
         throw new Error('Rating must be between 1 and 5');
@@ -218,29 +200,20 @@ export class ReviewService {
         }
       }
 
-      // Update review
-      const updateData: any = {
-        rating,
-        updated_at: new Date().toISOString(),
-      };
-
-      if (reviewText !== undefined) {
-        updateData.review_text = processedText;
-      }
-
-      const { data, error } = await supabase
-        .from('reviews')
-        .update(updateData)
-        .eq('id', reviewId)
-        .eq('user_id', userId)
-        .select()
-        .single();
+      // Use RPC function to update review and venue rating atomically
+      // This ensures the venue's aggregate_rating is updated immediately
+      const { data, error } = await supabase.rpc('update_review_and_venue_rating', {
+        p_review_id: reviewId,
+        p_user_id: userId,
+        p_rating: rating,
+        p_review_text: processedText,
+      });
 
       if (error) {
         throw new Error(`Failed to update review: ${error.message}`);
       }
 
-      console.log('✅ Review updated successfully:', data);
+      console.log('✅ Review updated successfully via RPC:', data);
 
       // Requirement 14.6: Invalidate cache on review update
       this.invalidateVenueReviewsCache(data.venue_id);
@@ -257,43 +230,30 @@ export class ReviewService {
    * 
    * Requirements:
    * - 6.5: Delete review
-   * - 6.6: Trigger aggregate rating recalculation (handled by database trigger)
+   * - 6.6: Trigger aggregate rating recalculation (handled by RPC function)
    * 
    * @param reviewId - Review ID to delete
    * @param userId - User ID (for ownership validation)
    */
   static async deleteReview(reviewId: string, userId: string): Promise<void> {
     try {
-      // Validate ownership and get venue_id for cache invalidation
-      const { data: existingReview, error: fetchError } = await supabase
-        .from('reviews')
-        .select('user_id, venue_id')
-        .eq('id', reviewId)
-        .single();
-
-      if (fetchError) {
-        throw new Error(`Failed to fetch review: ${fetchError.message}`);
-      }
-
-      if (existingReview.user_id !== userId) {
-        throw new Error('You can only delete your own reviews');
-      }
-
-      // Delete review
-      const { error } = await supabase
-        .from('reviews')
-        .delete()
-        .eq('id', reviewId)
-        .eq('user_id', userId);
+      // Use RPC function to delete review and update venue rating atomically
+      // This ensures the venue's aggregate_rating is updated immediately
+      const { data, error } = await supabase.rpc('delete_review_and_update_venue', {
+        p_review_id: reviewId,
+        p_user_id: userId,
+      });
 
       if (error) {
         throw new Error(`Failed to delete review: ${error.message}`);
       }
 
-      console.log('✅ Review deleted successfully');
+      console.log('✅ Review deleted successfully via RPC');
 
       // Requirement 14.6: Invalidate cache on review deletion
-      this.invalidateVenueReviewsCache(existingReview.venue_id);
+      if (data && data.venue_id) {
+        this.invalidateVenueReviewsCache(data.venue_id);
+      }
     } catch (error) {
       console.error('Error deleting review:', error);
       throw error;
