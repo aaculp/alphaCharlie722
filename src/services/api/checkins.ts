@@ -311,7 +311,9 @@ export class CheckInService {
             rating,
             latitude,
             longitude,
-            max_capacity
+            max_capacity,
+            review_count,
+            aggregate_rating
           )
         `, { count: 'exact' })
         .eq('user_id', userId)
@@ -344,7 +346,9 @@ export class CheckInService {
           rating: item.venues.rating,
           latitude: item.venues.latitude,
           longitude: item.venues.longitude,
-          max_capacity: item.venues.max_capacity
+          max_capacity: item.venues.max_capacity,
+          review_count: item.venues.review_count,
+          aggregate_rating: item.venues.aggregate_rating
         }
       }));
 
