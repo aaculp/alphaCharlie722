@@ -481,7 +481,7 @@ const WideVenueCard: React.FC<WideVenueCardProps> = ({
         {
           backgroundColor: isDark
             ? 'rgba(20, 20, 20, 0.8)'
-            : 'rgba(255, 255, 255, 0.8)',
+            : 'rgba(245, 245, 245, 0.95)', // Less transparent, darker background
           borderColor: engagementColor.borderColor,
           borderWidth: 2,
         }
@@ -493,8 +493,8 @@ const WideVenueCard: React.FC<WideVenueCardProps> = ({
               {venue.name}
             </Text>
             <View style={styles.locationRow}>
-              <Icon name="location-outline" size={14} color={isDark ? 'rgba(255, 255, 255, 0.7)' : '#666666'} />
-              <Text style={[styles.venueLocation, { color: isDark ? 'rgba(255, 255, 255, 0.7)' : '#666666' }]} numberOfLines={1}>
+              <Icon name="location-outline" size={14} color={isDark ? 'rgba(255, 255, 255, 0.7)' : '#4A4A4A'} />
+              <Text style={[styles.venueLocation, { color: isDark ? 'rgba(255, 255, 255, 0.7)' : '#4A4A4A' }]} numberOfLines={1}>
                 {venue.location}
               </Text>
               {distance && (
@@ -762,7 +762,7 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   loadingSpinner: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: 'rgba(245, 245, 245, 0.95)', // Less transparent, darker background
     paddingHorizontal: 24,
     paddingVertical: 16,
     borderRadius: 12,

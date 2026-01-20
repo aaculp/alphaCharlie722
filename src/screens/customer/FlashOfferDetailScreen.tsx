@@ -700,7 +700,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderTopWidth: 1,
     borderBottomWidth: 1,
-    borderColor: 'rgba(0,0,0,0.1)',
+    borderColor: 'rgba(0,0,0,0.15)', // Darker border
   },
   timerText: {
     fontSize: 32,

@@ -200,10 +200,10 @@ const NewFloatingTabBar: React.FC<NewFloatingTabBarProps> = ({
           {
             backgroundColor: isDark 
               ? 'rgba(20, 20, 20, 0.8)' 
-              : 'rgba(255, 255, 255, 0.8)',
+              : 'rgba(245, 245, 245, 0.95)', // Less transparent, darker background
             borderColor: isDark 
               ? 'rgba(255, 255, 255, 0.1)' 
-              : 'rgba(0, 0, 0, 0.1)',
+              : 'rgba(0, 0, 0, 0.15)', // Darker border
             width: TAB_BAR_WIDTH,
           }
         ]}
