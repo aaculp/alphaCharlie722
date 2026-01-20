@@ -55,19 +55,19 @@ export interface Theme {
 
 const lightTheme: Theme = {
   colors: {
-    primary: '#007AFF',
-    background: '#f5f5f5',
-    surface: '#ffffff',
-    text: '#333333',
-    textSecondary: '#666666',
-    border: '#d1d5db', // Made darker for better visibility in light mode
-    card: '#ffffff',
-    notification: '#ff3b30',
-    error: '#ff3b30',
-    success: '#34c759',
-    warning: '#ff9500',
-    tabBarActive: '#007AFF',
-    tabBarInactive: 'gray',
+    primary: '#0066CC', // Darker blue for better contrast
+    background: '#E8E8E8', // Darker background (was #f5f5f5)
+    surface: '#F5F5F5', // Slightly darker surface (was #ffffff)
+    text: '#1A1A1A', // Much darker text (was #333333)
+    textSecondary: '#4A4A4A', // Darker secondary text (was #666666)
+    border: '#B0B0B0', // Darker border (was #d1d5db)
+    card: '#F5F5F5', // Slightly darker cards (was #ffffff)
+    notification: '#D32F2F', // Darker red
+    error: '#D32F2F', // Darker red
+    success: '#2E7D32', // Darker green
+    warning: '#E65100', // Darker orange
+    tabBarActive: '#0066CC', // Match primary
+    tabBarInactive: '#757575', // Darker gray
     shadow: '#000000',
     // OTW Logo Colors
     logoRed: '#DC2626',
