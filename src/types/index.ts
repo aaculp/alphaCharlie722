@@ -14,6 +14,7 @@ export type {
   VenueInsert,
   VenueUpdate,
   VenueQueryOptions,
+  VenueWithStats,
 } from './venue.types';
 
 // User types

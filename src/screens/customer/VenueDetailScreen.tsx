@@ -19,6 +19,7 @@ import { useCheckInStats, useCollections, useFriends } from '../../hooks';
 import { ModernVenueCards } from '../../components/venue/VenueInfoComponents';
 import { VenueCustomerCountChip } from '../../components/ui';
 import { UserFeedback } from '../../components/checkin';
+import { CheckInButton } from '../../components/checkin';
 import { QuickShareButton, CollectionManager, MutualFavoritesIndicator } from '../../components/social';
 import { AggregateRatingDisplay, ReviewSubmissionModal, ReviewCard } from '../../components/venue';
 import { ReviewService } from '../../services/api/reviews';
@@ -447,6 +448,29 @@ const VenueDetailScreen: React.FC = () => {
               />
             )}
             
+            {/* Check-In Button */}
+            {user && (
+              <View style={styles.checkInButtonContainer}>
+                <CheckInButton
+                  venueId={venue.id}
+                  venueName={venue.name}
+                  venueImage={venue.image_url}
+                  isCheckedIn={checkInStats?.user_is_checked_in || false}
+                  checkInId={checkInStats?.user_checkin_id}
+                  checkInTime={checkInStats?.user_checkin_time}
+                  activeCheckIns={checkInStats?.active_checkins || 0}
+                  maxCapacity={venue.max_capacity}
+                  size="medium"
+                  showModalForCheckout={true}
+                  onCheckInChange={async (isCheckedIn) => {
+                    // Refetch check-in stats after check-in/out
+                    // This will update the customer count chip
+                    console.log('Check-in status changed:', isCheckedIn);
+                  }}
+                />
+              </View>
+            )}
+            
             {/* Engagement Row - Activity Level and Customer Count */}
             <View style={styles.engagementRow}>
               {/* Activity Level Chip */}
@@ -711,6 +735,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     marginLeft: 12,
+  },
+  checkInButtonContainer: {
+    marginVertical: 12,
   },
   engagementRow: {
     flexDirection: 'row',

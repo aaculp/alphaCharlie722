@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -7,9 +7,11 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '../../contexts/ThemeContext';
-import type { Venue } from '../../types/venue.types';
+import { useAuth } from '../../contexts/AuthContext';
+import type { Venue, VenueCheckInStats } from '../../types/venue.types';
 import { CarouselSkeleton } from '../social/SkeletonLoaders';
 import { calculateDaysSinceSignup, formatSignupText } from '../../utils/formatting/venue';
+import { CheckInService } from '../../services/api/checkins';
 import CompactVenueCard from './CompactVenueCard';
 
 interface VenuesCarouselSectionProps {
@@ -45,6 +47,35 @@ const VenuesCarouselSection: React.FC<VenuesCarouselSectionProps> = ({
   showNewBadge = true,
 }) => {
   const { theme } = useTheme();
+  const { user } = useAuth();
+
+  // State for check-in stats
+  const [checkInStats, setCheckInStats] = useState<Map<string, VenueCheckInStats>>(new Map());
+  const [loadingStats, setLoadingStats] = useState<boolean>(false);
+
+  // Extract venue IDs for fetching stats
+  const venueIds = useMemo(() => {
+    return venues.map(venue => venue.id);
+  }, [venues]);
+
+  // Fetch check-in stats for all venues
+  useEffect(() => {
+    const fetchStats = async () => {
+      if (venueIds.length === 0) return;
+
+      try {
+        setLoadingStats(true);
+        const stats = await CheckInService.getMultipleVenueStats(venueIds, user?.id);
+        setCheckInStats(stats);
+      } catch (error) {
+        console.error('Error fetching venue stats for carousel:', error);
+      } finally {
+        setLoadingStats(false);
+      }
+    };
+
+    fetchStats();
+  }, [venueIds, user?.id]);
 
   // Return null if there's an error (graceful degradation)
   if (error) {
@@ -103,6 +134,9 @@ const VenuesCarouselSection: React.FC<VenuesCarouselSectionProps> = ({
       ? formatSignupText(daysSinceSignup)
       : null;
 
+    // Get check-in stats for this venue
+    const stats = checkInStats.get(venue.id);
+
     return (
       <View style={styles.cardWrapper}>
         <CompactVenueCard
@@ -114,7 +148,7 @@ const VenuesCarouselSection: React.FC<VenuesCarouselSectionProps> = ({
           } : undefined}
           subtitle={signupText || undefined}
           showEngagementStats={true}
-          checkInCount={0}
+          checkInCount={stats?.active_checkins || 0}
           maxCapacity={venue.max_capacity || 100}
         />
       </View>
