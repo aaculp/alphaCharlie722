@@ -216,6 +216,7 @@ const HomeScreen: React.FC = () => {
 
   // Requirement 7.7: Real-time rating updates
   // Subscribe to venue updates (aggregate_rating and review_count changes)
+  // OPTIMIZED: Only subscribe to displayed venues with debouncing
   useEffect(() => {
     // Only subscribe if we have venues to monitor
     if (venueIds.length === 0) {
@@ -224,7 +225,19 @@ const HomeScreen: React.FC = () => {
 
     console.log('🔄 Setting up real-time venue updates subscription for', venueIds.length, 'venues');
     
-    // Subscribe to changes in the venues table
+    // Debounce refetch to prevent rapid successive queries
+    let refetchTimeout: NodeJS.Timeout | null = null;
+    const debouncedRefetch = () => {
+      if (refetchTimeout) {
+        clearTimeout(refetchTimeout);
+      }
+      refetchTimeout = setTimeout(() => {
+        console.log('🔄 Executing debounced refetch');
+        refetch();
+      }, 2000); // Wait 2 seconds before refetching
+    };
+    
+    // Subscribe to changes in the venues table - FILTERED to only displayed venues
     const subscription = supabase
       .channel('venue-ratings-updates')
       .on(
@@ -233,6 +246,7 @@ const HomeScreen: React.FC = () => {
           event: 'UPDATE',
           schema: 'public',
           table: 'venues',
+          filter: `id=in.(${venueIds.join(',')})`, // OPTIMIZATION: Only subscribe to displayed venues
         },
         (payload) => {
           console.log('🔄 Venue updated:', {
@@ -245,17 +259,8 @@ const HomeScreen: React.FC = () => {
             newCount: payload.new?.review_count
           });
           
-          // Check if the updated venue is in our current list
-          const updatedVenueId = payload.new?.id;
-          if (updatedVenueId && venueIds.includes(updatedVenueId)) {
-            console.log('🔄 Venue rating updated for displayed venue, refetching...', updatedVenueId);
-            
-            // Refetch venues to get updated ratings
-            // This will trigger a re-render with new aggregate_rating and review_count
-            refetch();
-          } else {
-            console.log('🔄 Venue updated for non-displayed venue:', updatedVenueId);
-          }
+          console.log('🔄 Venue rating updated for displayed venue, scheduling refetch...');
+          debouncedRefetch();
         }
       )
       .on(
@@ -264,6 +269,7 @@ const HomeScreen: React.FC = () => {
           event: '*', // Listen to INSERT, UPDATE, DELETE
           schema: 'public',
           table: 'reviews',
+          filter: `venue_id=in.(${venueIds.join(',')})`, // OPTIMIZATION: Only subscribe to reviews for displayed venues
         },
         (payload) => {
           console.log('🔄 Review changed:', {
@@ -274,17 +280,8 @@ const HomeScreen: React.FC = () => {
             oldRating: payload.old?.rating
           });
           
-          // Check if the review is for a venue in our current list
-          const venueId = payload.new?.venue_id || payload.old?.venue_id;
-          if (venueId && venueIds.includes(venueId)) {
-            console.log('🔄 Review changed for displayed venue, refetching...', venueId);
-            
-            // Refetch venues to get updated ratings
-            // The database trigger will have already updated aggregate_rating and review_count
-            refetch();
-          } else {
-            console.log('🔄 Review changed for non-displayed venue:', venueId);
-          }
+          console.log('🔄 Review changed for displayed venue, scheduling refetch...');
+          debouncedRefetch();
         }
       )
       .subscribe();
@@ -292,6 +289,9 @@ const HomeScreen: React.FC = () => {
     // Cleanup subscription on unmount
     return () => {
       console.log('🔄 Cleaning up real-time venue updates subscription');
+      if (refetchTimeout) {
+        clearTimeout(refetchTimeout);
+      }
       subscription.unsubscribe();
     };
   }, [venueIds, refetch]);
