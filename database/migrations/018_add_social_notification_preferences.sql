@@ -6,6 +6,7 @@
 ALTER TABLE notification_preferences
   ADD COLUMN IF NOT EXISTS friend_requests BOOLEAN DEFAULT true,
   ADD COLUMN IF NOT EXISTS venue_shares BOOLEAN DEFAULT true,
+  ADD COLUMN IF NOT EXISTS collection_follows BOOLEAN DEFAULT true,
   ADD COLUMN IF NOT EXISTS collection_updates BOOLEAN DEFAULT false,
   ADD COLUMN IF NOT EXISTS activity_likes BOOLEAN DEFAULT false,
   ADD COLUMN IF NOT EXISTS activity_comments BOOLEAN DEFAULT true,
@@ -16,6 +17,7 @@ ALTER TABLE notification_preferences
 -- Add comments for new columns
 COMMENT ON COLUMN notification_preferences.friend_requests IS 'Receive notifications for friend requests';
 COMMENT ON COLUMN notification_preferences.venue_shares IS 'Receive notifications when friends share venues';
+COMMENT ON COLUMN notification_preferences.collection_follows IS 'Receive notifications when someone follows your collection';
 COMMENT ON COLUMN notification_preferences.collection_updates IS 'Receive notifications for collection updates from followed users';
 COMMENT ON COLUMN notification_preferences.activity_likes IS 'Receive notifications when someone likes your activity';
 COMMENT ON COLUMN notification_preferences.activity_comments IS 'Receive notifications for comments on your activity';
