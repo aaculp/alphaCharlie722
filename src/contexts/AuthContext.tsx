@@ -313,22 +313,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 await Promise.race([determinePromise, timeoutPromise]);
                 console.log('✅ User type determined successfully');
               } catch (typeError) {
-                console.error('❌ Error determining user type:', typeError);
-                // Set error but allow app to continue with cached or default type
-                setAuthError('Unable to verify account type. Using cached information.');
-                // Try to use cached type
+                console.error('❌ Error determining user type during init:', typeError);
+                // Try to use cached type first
                 const cached = await loadCachedUserType();
                 if (cached.type) {
+                  console.log('✅ Using cached user type:', cached.type);
                   setUserType(cached.type);
                   setVenueBusinessAccount(cached.account);
                 } else {
-                  // Default to customer as last resort
+                  // Default to customer as last resort to unblock UI
+                  console.log('⚠️ No cached type, defaulting to customer');
                   setUserType('customer');
                   setVenueBusinessAccount(null);
                 }
+                // Clear error after setting fallback type
+                setAuthError(null);
               }
             } else {
               console.warn('⚠️ No user ID found in session after initialization');
+              // Set default type to unblock UI
+              setUserType('customer');
             }
           }
         } else {

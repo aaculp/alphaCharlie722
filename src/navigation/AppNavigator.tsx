@@ -585,6 +585,7 @@ function MainTabNavigator() {
 // Main App Navigator with Authentication
 function AppNavigator() {
   const { session, loading, initializing, user, userType } = useAuth();
+  const [waitingForUserType, setWaitingForUserType] = useState(false);
 
   console.log('🧭 AppNavigator render:', {
     hasSession: !!session,
@@ -593,29 +594,56 @@ function AppNavigator() {
     userId: user?.id,
     userEmail: user?.email,
     userType,
+    waitingForUserType,
     timestamp: new Date().toISOString()
   });
 
-  // Show splash screen while initializing OR while determining user type
+  // Safety timeout: if we're stuck waiting for userType, default to customer after 5 seconds
+  useEffect(() => {
+    if (session && userType === null && !initializing) {
+      console.log('⏱️ Starting safety timeout for userType determination');
+      setWaitingForUserType(true);
+      
+      const timeout = setTimeout(() => {
+        console.warn('⚠️ UserType determination timed out, defaulting to customer view');
+        // The AuthContext should handle this, but if it doesn't, we'll proceed anyway
+        setWaitingForUserType(false);
+      }, 5000);
+
+      return () => {
+        clearTimeout(timeout);
+        setWaitingForUserType(false);
+      };
+    } else {
+      setWaitingForUserType(false);
+    }
+  }, [session, userType, initializing]);
+
+  // Show splash screen while initializing
   if (initializing) {
     console.log('🎬 AppNavigator: Showing splash screen (initializing)');
     return <SplashScreen />;
   }
 
-  // If we have a session but userType is still null, keep showing splash
-  // This prevents flashing the wrong screen while determining user type
-  if (session && userType === null) {
+  // If we have a session but userType is still null, keep showing splash briefly
+  // But only if we haven't exceeded the safety timeout
+  if (session && userType === null && waitingForUserType) {
     console.log('🎬 AppNavigator: Showing splash screen (determining user type)');
     return <SplashScreen />;
   }
 
   // Determine which screen to show based on auth state
   const shouldShowMainApp = !!session;
+  
+  // If we have a session but no userType after timeout, default to customer
+  const effectiveUserType = userType || 'customer';
+  
   console.log('🎯 AppNavigator: Navigation decision:', {
     shouldShowMainApp,
     userType,
+    effectiveUserType,
     component: shouldShowMainApp
-      ? (userType === 'venue_owner' ? 'VenueNavigator' : 'MainTabNavigator')
+      ? (effectiveUserType === 'venue_owner' ? 'VenueNavigator' : 'MainTabNavigator')
       : 'AuthScreen'
   });
 
@@ -626,7 +654,7 @@ function AppNavigator() {
   }
 
   // Show venue dashboard for venue owners
-  if (userType === 'venue_owner') {
+  if (effectiveUserType === 'venue_owner') {
     console.log('🏢 AppNavigator: Showing venue dashboard (venue owner)');
     return <VenueStackNavigator />;
   }
