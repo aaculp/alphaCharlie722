@@ -371,89 +371,83 @@ const VenueDetailScreen: React.FC = () => {
         />
 
         <View style={[styles.content, { backgroundColor: theme.colors.surface }]}>
-          <View style={styles.header}>
-            <View style={styles.headerTop}>
-              <View style={styles.headerLeft}>
-                <Text style={[styles.venueName, { color: theme.colors.text }]}>{venue.name}</Text>
-                {/* Aggregate Rating Display - Moved here */}
-                {venue.aggregate_rating !== undefined && venue.review_count !== undefined && (
-                  <View style={styles.aggregateRatingContainer}>
-                    <AggregateRatingDisplay
-                      rating={venue.aggregate_rating}
-                      reviewCount={venue.review_count}
-                      size="medium"
-                      showCount={true}
-                    />
-                  </View>
-                )}
-                <Text style={[styles.category, { color: theme.colors.textSecondary }]}>{venue.category} • {venue.price_range}</Text>
-                <Text style={[styles.description, { color: theme.colors.textSecondary }]}>{venue.description}</Text>
-              </View>
-
-              {/* Check-In Button - Inline with venue name */}
-              {user && (
-                <CheckInButton
-                  venueId={venue.id}
-                  venueName={venue.name}
-                  venueImage={venue.image_url}
-                  isCheckedIn={checkInStats?.user_is_checked_in || false}
-                  checkInId={checkInStats?.user_checkin_id}
-                  checkInTime={checkInStats?.user_checkin_time}
-                  activeCheckIns={checkInStats?.active_checkins || 0}
-                  maxCapacity={venue.max_capacity}
-                  size="medium"
-                  showModalForCheckout={true}
-                  onCheckInChange={async (isCheckedIn) => {
-                    // Refetch check-in stats after check-in/out
-                    // This will update the customer count chip
-                    console.log('Check-in status changed:', isCheckedIn);
-                  }}
-                />
-              )}
+          {/* Row 1: Venue Name + Check-In Button */}
+          <View style={styles.nameRow}>
+            <View style={styles.nameContainer}>
+              <Text style={[styles.venueName, { color: theme.colors.text }]}>{venue.name}</Text>
             </View>
-
-            {/* Mutual Favorites Indicator */}
             {user && (
-              <MutualFavoritesIndicator
-                friends={[]}
-                onFriendPress={(friendId) => {
-                  console.log('Show friend profile:', friendId);
+              <CheckInButton
+                venueId={venue.id}
+                venueName={venue.name}
+                venueImage={venue.image_url || undefined}
+                isCheckedIn={checkInStats?.user_is_checked_in || false}
+                checkInId={checkInStats?.user_checkin_id || undefined}
+                checkInTime={checkInStats?.user_checkin_time || undefined}
+                activeCheckIns={checkInStats?.active_checkins || 0}
+                maxCapacity={venue.max_capacity || undefined}
+                size="medium"
+                showModalForCheckout={true}
+                onCheckInChange={async (isCheckedIn) => {
+                  console.log('Check-in status changed:', isCheckedIn);
                 }}
               />
             )}
+          </View>
 
-            {/* Engagement Row - Activity Level and Customer Count */}
-            <View style={styles.engagementRow}>
-              {/* Activity Level Chip */}
-              {venue.max_capacity && checkInStats ? (
-                (() => {
-                  const activityLevel = getActivityLevel(checkInStats.active_checkins, venue.max_capacity);
-                  return (
-                    <View style={[styles.activityChip, { backgroundColor: activityLevel.color + '20', borderColor: activityLevel.color + '40' }]}>
-                      <Text style={styles.activityEmoji}>{activityLevel.emoji}</Text>
-                      <Text style={[styles.activityText, { color: activityLevel.color }]}>
-                        {activityLevel.level}
-                      </Text>
-                    </View>
-                  );
-                })()
-              ) : (
-                <View style={[styles.activityChip, { backgroundColor: '#10B981' + '20', borderColor: '#10B981' + '40' }]}>
-                  <Text style={styles.activityEmoji}>😌</Text>
-                  <Text style={[styles.activityText, { color: '#10B981' }]}>
-                    Low-key
-                  </Text>
-                </View>
-              )}
-
-              {/* Customer Count */}
-              {checkInStats && (
-                <VenueCustomerCountChip
-                  count={checkInStats.active_checkins}
-                  size="medium"
-                />
-              )}
+          {/* Row 2: Ratings */}
+          {venue.aggregate_rating !== undefined && venue.review_count !== undefined && (
+            <View style={styles.ratingsRow}>
+              <AggregateRatingDisplay
+                rating={venue.aggregate_rating}
+                reviewCount={venue.review_count}
+                size="medium"
+                showCount={true}
+              />
             </View>
+          )}
+
+          {/* Row 3: Category */}
+          <Text style={[styles.category, { color: theme.colors.textSecondary }]}>
+            {venue.category} • {venue.price_range}
+          </Text>
+
+          {/* Row 4: Description */}
+          <Text style={[styles.description, { color: theme.colors.textSecondary }]}>
+            {venue.description}
+          </Text>
+
+          {/* Row 5: Engagement Row - Activity + Customer Count */}
+          <View style={styles.engagementRow}>
+            {/* Activity Level Chip */}
+            {venue.max_capacity && checkInStats ? (
+              (() => {
+                const activityLevel = getActivityLevel(checkInStats.active_checkins, venue.max_capacity);
+                return (
+                  <View style={[styles.activityChip, { backgroundColor: activityLevel.color + '20', borderColor: activityLevel.color + '40' }]}>
+                    <Text style={styles.activityEmoji}>{activityLevel.emoji}</Text>
+                    <Text style={[styles.activityText, { color: activityLevel.color }]}>
+                      {activityLevel.level}
+                    </Text>
+                  </View>
+                );
+              })()
+            ) : (
+              <View style={[styles.activityChip, { backgroundColor: '#10B981' + '20', borderColor: '#10B981' + '40' }]}>
+                <Text style={styles.activityEmoji}>😌</Text>
+                <Text style={[styles.activityText, { color: '#10B981' }]}>
+                  Low-key
+                </Text>
+              </View>
+            )}
+
+            {/* Customer Count */}
+            {checkInStats && (
+              <VenueCustomerCountChip
+                count={checkInStats.active_checkins}
+                size="medium"
+              />
+            )}
           </View>
         </View>
 
@@ -636,7 +630,25 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingHorizontal: 20,
     paddingTop: 20,
-    paddingBottom: 10,
+    paddingBottom: 20,
+    gap: 12,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  nameContainer: {
+    flex: 1,
+  },
+  ratingsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  engagementRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   modernContentContainer: {
     marginHorizontal: 15,
@@ -652,22 +664,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
-  },
-  header: {},
-  headerTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: 12,
-  },
-  headerLeft: {
-    flex: 1,
-  },
-  engagementRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginVertical: 12,
   },
   activityChip: {
     flexDirection: 'row',
@@ -686,24 +682,18 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontFamily: 'Inter-SemiBold',
   },
-  aggregateRatingContainer: {
-    marginTop: 4,
-  },
   venueName: {
     fontSize: 28,
-    fontFamily: 'Poppins-Bold',
-    marginBottom: 5,
+    fontFamily: 'Poppins-Bold'
   },
   category: {
     fontSize: 16,
     fontFamily: 'Inter-Medium',
-    marginBottom: 10,
   },
   description: {
     fontSize: 16,
     fontFamily: 'Inter-Regular',
     lineHeight: 24,
-    marginBottom: 20,
     width: '100%',
   },
   reviewButton: {
@@ -714,8 +704,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     borderRadius: 8,
     gap: 5,
-    marginTop: 10,
-    marginBottom: 20,
   },
   reviewButtonText: {
     fontSize: 13,
