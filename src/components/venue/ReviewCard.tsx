@@ -316,28 +316,28 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
                 [
                   ...(isOwnReview && onEdit
                     ? [
-                        {
-                          text: 'Edit Review',
-                          onPress: onEdit,
-                        },
-                      ]
+                      {
+                        text: 'Edit Review',
+                        onPress: onEdit,
+                      },
+                    ]
                     : []),
                   ...(isOwnReview && onDelete
                     ? [
-                        {
-                          text: 'Delete Review',
-                          onPress: handleDelete,
-                          style: 'destructive' as const,
-                        },
-                      ]
+                      {
+                        text: 'Delete Review',
+                        onPress: handleDelete,
+                        style: 'destructive' as const,
+                      },
+                    ]
                     : []),
                   ...(!isOwnReview && onReport
                     ? [
-                        {
-                          text: 'Report Review',
-                          onPress: onReport,
-                        },
-                      ]
+                      {
+                        text: 'Report Review',
+                        onPress: onReport,
+                      },
+                    ]
                     : []),
                   {
                     text: 'Cancel',

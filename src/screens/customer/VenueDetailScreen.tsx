@@ -15,12 +15,12 @@ import type { SearchStackParamList, HomeStackParamList, Venue } from '../../type
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { VenueService } from '../../services/api/venues';
-import { useCheckInStats, useCollections, useFriends } from '../../hooks';
+import { useCheckInStats } from '../../hooks';
 import { ModernVenueCards } from '../../components/venue/VenueInfoComponents';
 import { VenueCustomerCountChip } from '../../components/ui';
 import { UserFeedback } from '../../components/checkin';
 import { CheckInButton } from '../../components/checkin';
-import { QuickShareButton, CollectionManager, MutualFavoritesIndicator } from '../../components/social';
+import { MutualFavoritesIndicator } from '../../components/social';
 import { AggregateRatingDisplay, ReviewSubmissionModal, ReviewCard } from '../../components/venue';
 import { ReviewService } from '../../services/api/reviews';
 import { getActivityLevel } from '../../utils/formatting';
@@ -174,36 +174,22 @@ const VenueDetailScreen: React.FC = () => {
   const [loadingReviews, setLoadingReviews] = useState(false);
 
   // Use useCheckInStats hook for check-in statistics
-  const { stats } = useCheckInStats({ 
+  const { stats } = useCheckInStats({
     venueIds: venueId,
-    enabled: !!venueId 
+    enabled: !!venueId
   });
-  
+
   const checkInStats = stats.get(venueId) || null;
-
-  // Use useCollections hook for collection management
-  const {
-    collections,
-    loading: collectionsLoading,
-    createCollection,
-    addVenue: addVenueToCollection,
-  } = useCollections();
-
-  // Use useFriends hook for friend management
-  const {
-    friends,
-    loading: friendsLoading,
-  } = useFriends();
 
   // Fetch venue details (try Supabase first, fallback to mock data)
   useEffect(() => {
     const fetchVenueDetails = async () => {
       try {
         setLoading(true);
-        
+
         // Try to fetch from Supabase first
         const supabaseVenue = await VenueService.getVenueById(venueId);
-        
+
         if (supabaseVenue) {
           setVenue(supabaseVenue);
         } else {
@@ -228,7 +214,7 @@ const VenueDetailScreen: React.FC = () => {
   useEffect(() => {
     const fetchUserReview = async () => {
       if (!user?.id || !venueId) return;
-      
+
       try {
         setLoadingUserReview(true);
         const review = await ReviewService.getUserReviewForVenue(user.id, venueId);
@@ -247,7 +233,7 @@ const VenueDetailScreen: React.FC = () => {
   useEffect(() => {
     const fetchRecentReviews = async () => {
       if (!venueId) return;
-      
+
       try {
         setLoadingReviews(true);
         const response = await ReviewService.getVenueReviews({
@@ -267,30 +253,6 @@ const VenueDetailScreen: React.FC = () => {
     fetchRecentReviews();
   }, [venueId]);
 
-  // Collection handlers
-  const handleAddToCollections = async (collectionIds: string[]) => {
-    // Add venue to selected collections
-    const promises = collectionIds.map(collectionId => 
-      addVenueToCollection(collectionId, venueId)
-    );
-    await Promise.all(promises);
-  };
-
-  const handleCreateCollection = async (name: string, privacyLevel: any) => {
-    const collection = await createCollection({
-      name,
-      privacy_level: privacyLevel,
-      description: '',
-    });
-    return collection?.id || '';
-  };
-
-  // Share handler
-  const handleShare = async (friendIds: string[], message?: string) => {
-    // TODO: Implement venue sharing functionality
-    console.log('Sharing venue with friends:', { friendIds, message, venueId });
-  };
-
   // Review handlers
   const handleOpenReviewModal = () => {
     setReviewModalVisible(true);
@@ -302,7 +264,7 @@ const VenueDetailScreen: React.FC = () => {
 
   const handleReviewSubmitSuccess = async () => {
     console.log('📝 Review submitted, refreshing data...');
-    
+
     // Refresh user's review
     if (user?.id) {
       try {
@@ -313,7 +275,7 @@ const VenueDetailScreen: React.FC = () => {
         console.error('Error refreshing user review:', error);
       }
     }
-    
+
     // Refresh venue details to get updated aggregate rating and review_count
     try {
       const supabaseVenue = await VenueService.getVenueById(venueId);
@@ -324,7 +286,7 @@ const VenueDetailScreen: React.FC = () => {
     } catch (error) {
       console.error('Error refreshing venue details:', error);
     }
-    
+
     // Refresh recent reviews
     try {
       const response = await ReviewService.getVenueReviews({
@@ -396,61 +358,40 @@ const VenueDetailScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-      <ScrollView 
+      <ScrollView
         ref={scrollViewRef}
-        style={styles.scrollView} 
+        style={styles.scrollView}
         showsVerticalScrollIndicator={false}
       >
-        <Image 
-          source={{ 
-            uri: venue.image_url || 'https://via.placeholder.com/400x250' 
-          }} 
-          style={styles.heroImage} 
+        <Image
+          source={{
+            uri: venue.image_url || 'https://via.placeholder.com/400x250'
+          }}
+          style={styles.heroImage}
         />
-        
+
         <View style={[styles.content, { backgroundColor: theme.colors.surface }]}>
           <View style={styles.header}>
             <View style={styles.headerTop}>
               <View style={styles.headerLeft}>
                 <Text style={[styles.venueName, { color: theme.colors.text }]}>{venue.name}</Text>
+                {/* Aggregate Rating Display - Moved here */}
+                {venue.aggregate_rating !== undefined && venue.review_count !== undefined && (
+                  <View style={styles.aggregateRatingContainer}>
+                    <AggregateRatingDisplay
+                      rating={venue.aggregate_rating}
+                      reviewCount={venue.review_count}
+                      size="medium"
+                      showCount={true}
+                    />
+                  </View>
+                )}
                 <Text style={[styles.category, { color: theme.colors.textSecondary }]}>{venue.category} • {venue.price_range}</Text>
+                <Text style={[styles.description, { color: theme.colors.textSecondary }]}>{venue.description}</Text>
               </View>
-              
-              {/* Social Action Buttons */}
+
+              {/* Check-In Button - Inline with venue name */}
               {user && (
-                <View style={styles.socialActions}>
-                  <QuickShareButton 
-                    venueId={venue.id}
-                    venueName={venue.name}
-                    friends={friends}
-                    onShare={handleShare}
-                    loading={friendsLoading}
-                  />
-                  <CollectionManager 
-                    venueId={venue.id}
-                    venueName={venue.name}
-                    collections={collections}
-                    onAddToCollections={handleAddToCollections}
-                    onCreateCollection={handleCreateCollection}
-                    loading={collectionsLoading}
-                  />
-                </View>
-              )}
-            </View>
-            
-            {/* Mutual Favorites Indicator */}
-            {user && (
-              <MutualFavoritesIndicator 
-                friends={[]}
-                onFriendPress={(friendId) => {
-                  console.log('Show friend profile:', friendId);
-                }}
-              />
-            )}
-            
-            {/* Check-In Button */}
-            {user && (
-              <View style={styles.checkInButtonContainer}>
                 <CheckInButton
                   venueId={venue.id}
                   venueName={venue.name}
@@ -468,9 +409,19 @@ const VenueDetailScreen: React.FC = () => {
                     console.log('Check-in status changed:', isCheckedIn);
                   }}
                 />
-              </View>
+              )}
+            </View>
+
+            {/* Mutual Favorites Indicator */}
+            {user && (
+              <MutualFavoritesIndicator
+                friends={[]}
+                onFriendPress={(friendId) => {
+                  console.log('Show friend profile:', friendId);
+                }}
+              />
             )}
-            
+
             {/* Engagement Row - Activity Level and Customer Count */}
             <View style={styles.engagementRow}>
               {/* Activity Level Chip */}
@@ -494,137 +445,20 @@ const VenueDetailScreen: React.FC = () => {
                   </Text>
                 </View>
               )}
-              
+
               {/* Customer Count */}
               {checkInStats && (
-                <VenueCustomerCountChip 
+                <VenueCustomerCountChip
                   count={checkInStats.active_checkins}
                   size="medium"
                 />
               )}
             </View>
-            
-            {/* Aggregate Rating Display */}
-            {venue.aggregate_rating !== undefined && venue.review_count !== undefined && (
-              <View style={styles.aggregateRatingContainer}>
-                <AggregateRatingDisplay
-                  rating={venue.aggregate_rating}
-                  reviewCount={venue.review_count}
-                  size="medium"
-                  showCount={true}
-                />
-              </View>
-            )}
           </View>
-
-          <Text style={[styles.description, { color: theme.colors.textSecondary }]}>{venue.description}</Text>
-          
-          {/* Write/Edit Review Button */}
-          {user && (
-            <TouchableOpacity
-              style={[styles.reviewButton, { backgroundColor: theme.colors.primary }]}
-              onPress={handleOpenReviewModal}
-              disabled={loadingUserReview}
-            >
-              <Icon name={userReview ? "create-outline" : "star-outline"} size={20} color="white" />
-              <Text style={styles.reviewButtonText}>
-                {loadingUserReview ? 'Loading...' : userReview ? 'Edit Your Review' : 'Write a Review'}
-              </Text>
-            </TouchableOpacity>
-          )}
         </View>
 
         {/* Pulse Section - TOP PRIORITY */}
         <UserFeedback venue={venue} />
-
-        {/* Reviews Section */}
-        {((venue.review_count !== undefined && venue.review_count > 0) || recentReviews.length > 0) && (
-          <View style={[styles.reviewsSection, { backgroundColor: theme.colors.surface }]}>
-            <View style={styles.reviewsSectionHeader}>
-              <Text style={[styles.reviewsSectionTitle, { color: theme.colors.text }]}>
-                Reviews
-              </Text>
-              {venue.review_count > 3 && (
-                <TouchableOpacity onPress={handleSeeAllReviews}>
-                  <Text style={[styles.seeAllButton, { color: theme.colors.primary }]}>
-                    See All ({venue.review_count})
-                  </Text>
-                </TouchableOpacity>
-              )}
-            </View>
-            
-            {loadingReviews ? (
-              <View style={styles.reviewsLoading}>
-                <ActivityIndicator size="small" color={theme.colors.primary} />
-              </View>
-            ) : recentReviews.length > 0 ? (
-              <>
-                {recentReviews.map((review) => (
-                  <ReviewCard
-                    key={review.id}
-                    review={review}
-                    onHelpfulToggle={async (reviewId) => {
-                      if (user?.id) {
-                        try {
-                          await ReviewService.toggleHelpfulVote(reviewId, user.id);
-                          // Refresh reviews to show updated helpful count
-                          const response = await ReviewService.getVenueReviews({
-                            venueId,
-                            limit: 3,
-                            offset: 0,
-                            sortBy: 'recent',
-                          });
-                          setRecentReviews(response.reviews);
-                        } catch (error) {
-                          console.error('Error toggling helpful vote:', error);
-                        }
-                      }
-                    }}
-                    onEdit={
-                      user?.id && review.user_id === user.id
-                        ? () => {
-                            setUserReview(review);
-                            setReviewModalVisible(true);
-                          }
-                        : undefined
-                    }
-                    onDelete={
-                      user?.id && review.user_id === user.id
-                        ? async () => {
-                            try {
-                              await ReviewService.deleteReview(review.id, user.id);
-                              handleReviewSubmitSuccess();
-                            } catch (error) {
-                              console.error('Error deleting review:', error);
-                            }
-                          }
-                        : undefined
-                    }
-                    currentUserId={user?.id}
-                  />
-                ))}
-                
-                {venue.review_count > 3 && (
-                  <TouchableOpacity
-                    style={[styles.seeAllReviewsButton, { borderColor: theme.colors.border }]}
-                    onPress={handleSeeAllReviews}
-                  >
-                    <Text style={[styles.seeAllReviewsButtonText, { color: theme.colors.primary }]}>
-                      See All {venue.review_count} Reviews
-                    </Text>
-                    <Icon name="chevron-forward" size={20} color={theme.colors.primary} />
-                  </TouchableOpacity>
-                )}
-              </>
-            ) : (
-              <View style={styles.noReviews}>
-                <Text style={[styles.noReviewsText, { color: theme.colors.textSecondary }]}>
-                  No reviews yet. Be the first to review!
-                </Text>
-              </View>
-            )}
-          </View>
-        )}
 
         {/* Modern Square Cards */}
         <ModernVenueCards venue={venue} />
@@ -662,14 +496,115 @@ const VenueDetailScreen: React.FC = () => {
               ))}
             </View>
           )}
-
-
         </View>
-        
+
+
+        {/* Reviews Section */}
+        {((venue.review_count !== undefined && venue.review_count > 0) || recentReviews.length > 0) && (
+          <View style={[styles.reviewsSection, { backgroundColor: theme.colors.surface }]}>
+            <View style={styles.reviewsSectionHeader}>
+              <Text style={[styles.reviewsSectionTitle, { color: theme.colors.text }]}>
+                Reviews
+              </Text>
+              {venue.review_count > 3 && (
+                <TouchableOpacity onPress={handleSeeAllReviews}>
+                  <Text style={[styles.seeAllButton, { color: theme.colors.primary }]}>
+                    See All ({venue.review_count})
+                  </Text>
+                </TouchableOpacity>
+              )}
+              {/* Write/Edit Review Button */}
+              {user && (
+                <TouchableOpacity
+                  style={[styles.reviewButton, { backgroundColor: theme.colors.primary }]}
+                  onPress={handleOpenReviewModal}
+                  disabled={loadingUserReview}
+                >
+                  <Icon name={userReview ? "create-outline" : "star-outline"} size={20} color="white" />
+                  <Text style={styles.reviewButtonText}>
+                    {loadingUserReview ? 'Loading...' : userReview ? 'Edit Review' : 'Leave Review'}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {loadingReviews ? (
+              <View style={styles.reviewsLoading}>
+                <ActivityIndicator size="small" color={theme.colors.primary} />
+              </View>
+            ) : recentReviews.length > 0 ? (
+              <>
+                {recentReviews.map((review) => (
+                  <ReviewCard
+                    key={review.id}
+                    review={review}
+                    onHelpfulToggle={async (reviewId) => {
+                      if (user?.id) {
+                        try {
+                          await ReviewService.toggleHelpfulVote(reviewId, user.id);
+                          // Refresh reviews to show updated helpful count
+                          const response = await ReviewService.getVenueReviews({
+                            venueId,
+                            limit: 3,
+                            offset: 0,
+                            sortBy: 'recent',
+                          });
+                          setRecentReviews(response.reviews);
+                        } catch (error) {
+                          console.error('Error toggling helpful vote:', error);
+                        }
+                      }
+                    }}
+                    onEdit={
+                      user?.id && review.user_id === user.id
+                        ? () => {
+                          setUserReview(review);
+                          setReviewModalVisible(true);
+                        }
+                        : undefined
+                    }
+                    onDelete={
+                      user?.id && review.user_id === user.id
+                        ? async () => {
+                          try {
+                            await ReviewService.deleteReview(review.id, user.id);
+                            handleReviewSubmitSuccess();
+                          } catch (error) {
+                            console.error('Error deleting review:', error);
+                          }
+                        }
+                        : undefined
+                    }
+                    currentUserId={user?.id}
+                  />
+                ))}
+
+                {venue.review_count > 3 && (
+                  <TouchableOpacity
+                    style={[styles.seeAllReviewsButton, { borderColor: theme.colors.border }]}
+                    onPress={handleSeeAllReviews}
+                  >
+                    <Text style={[styles.seeAllReviewsButtonText, { color: theme.colors.primary }]}>
+                      See All {venue.review_count} Reviews
+                    </Text>
+                    <Icon name="chevron-forward" size={20} color={theme.colors.primary} />
+                  </TouchableOpacity>
+                )}
+              </>
+            ) : (
+              <View style={styles.noReviews}>
+                <Text style={[styles.noReviewsText, { color: theme.colors.textSecondary }]}>
+                  No reviews yet. Be the first to review!
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
+
         {/* Bottom spacing for floating tab bar */}
         <View style={{ height: 90 }} />
       </ScrollView>
-      
+
       {/* Review Submission Modal */}
       {user && venue && (
         <ReviewSubmissionModal
@@ -698,11 +633,10 @@ const styles = StyleSheet.create({
   },
   content: {
     marginTop: -20,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderRadius: 20,
     paddingHorizontal: 20,
     paddingTop: 20,
-    paddingBottom: 40,
+    paddingBottom: 10,
   },
   modernContentContainer: {
     marginHorizontal: 15,
@@ -719,25 +653,15 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
-  header: {
-    marginBottom: 20,
-  },
+  header: {},
   headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 12,
+    gap: 12,
   },
   headerLeft: {
     flex: 1,
-  },
-  socialActions: {
-    flexDirection: 'row',
-    gap: 8,
-    marginLeft: 12,
-  },
-  checkInButtonContainer: {
-    marginVertical: 12,
   },
   engagementRow: {
     flexDirection: 'row',
@@ -763,7 +687,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-SemiBold',
   },
   aggregateRatingContainer: {
-    marginTop: 8,
+    marginTop: 4,
   },
   venueName: {
     fontSize: 28,
@@ -780,19 +704,21 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Regular',
     lineHeight: 24,
     marginBottom: 20,
+    width: '100%',
   },
   reviewButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    gap: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    gap: 5,
     marginTop: 10,
+    marginBottom: 20,
   },
   reviewButtonText: {
-    fontSize: 16,
+    fontSize: 13,
     fontFamily: 'Inter-SemiBold',
     color: 'white',
   },
@@ -801,7 +727,7 @@ const styles = StyleSheet.create({
     marginVertical: 10,
     borderRadius: 20,
     paddingHorizontal: 20,
-    paddingVertical: 20,
+    // paddingVertical: 20,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -815,7 +741,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
   },
   reviewsSectionTitle: {
     fontSize: 20,

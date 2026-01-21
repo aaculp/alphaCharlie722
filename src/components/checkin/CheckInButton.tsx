@@ -57,18 +57,18 @@ const CheckInButton: React.FC<CheckInButtonProps> = ({
 
   const sizeConfig = {
     small: {
-      padding: { paddingHorizontal: 8, paddingVertical: 4 },
+      padding: { paddingHorizontal: 12, paddingVertical: 6 },
       iconSize: 14,
-      textSize: 11,
-      borderRadius: 12,
+      textSize: 12,
+      borderRadius: 18,
       minHeight: 44, // Requirement 10.5: Minimum touch target
       minWidth: 44,  // Requirement 10.5: Minimum touch target
     },
     medium: {
-      padding: { paddingHorizontal: 8, paddingVertical: 4 },
+      padding: { paddingHorizontal: 14, paddingVertical: 7 },
       iconSize: 16,
-      textSize: 12,
-      borderRadius: 16,
+      textSize: 13,
+      borderRadius: 20,
       minHeight: 44, // Requirement 10.5: Minimum touch target
       minWidth: 44,  // Requirement 10.5: Minimum touch target
     },
@@ -76,7 +76,7 @@ const CheckInButton: React.FC<CheckInButtonProps> = ({
       padding: { paddingHorizontal: 16, paddingVertical: 8 },
       iconSize: 18,
       textSize: 14,
-      borderRadius: 20,
+      borderRadius: 22,
       minHeight: 44, // Requirement 10.5: Minimum touch target
       minWidth: 44,  // Requirement 10.5: Minimum touch target
     },
@@ -243,15 +243,15 @@ const CheckInButton: React.FC<CheckInButtonProps> = ({
   const getButtonStyle = () => {
     if (isCheckedIn) {
       return {
-        backgroundColor: '#FF6B6B' + '20', // Red tint for leaving
-        borderColor: '#FF6B6B',
-        color: '#FF6B6B'
+        backgroundColor: '#FF6B6B' + '40', // Red for leaving
+        borderColor: '#FF6B6B' + '60',
+        color: 'white'
       };
     } else {
       return {
-        backgroundColor: theme.colors.primary + '15',
-        borderColor: theme.colors.primary + '40',
-        color: theme.colors.primary
+        backgroundColor: '#10B981' + '20', // Green background like activity chip
+        borderColor: '#10B981' + '40',
+        color: '#10B981' // Green text
       };
     }
   };
@@ -354,7 +354,8 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     fontFamily: 'Inter-SemiBold',
-    lineHeight: 16,
+    fontWeight: '600',
+    lineHeight: 14,
   },
 });
 
