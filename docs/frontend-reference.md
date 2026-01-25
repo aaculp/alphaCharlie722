@@ -1439,8 +1439,9 @@ const handleUserPress = (user: UserSearchResult) => {
 - Category filters (Fast Food, Fine Dining, Coffee Shops, etc.)
 - Price range filters ($, $$, $$$, $$$$)
 - Trending filters (Open Now, Highly Rated, Budget Friendly)
-- Text search across name, category, location, and description
+- Text search across name, category, location, and description (minimum 2 characters required)
 - Multi-select support for categories and price ranges
+- **Filter activation logic**: Filters are applied when search query has 2+ characters OR when any non-default filters are active (categories other than 'All', filters other than 'all', or price ranges other than 'all_prices')
 
 **User Search:**
 - Activated when search query has 2+ characters
@@ -1461,6 +1462,11 @@ const handleUserPress = (user: UserSearchResult) => {
 **Search Behavior:**
 - Venues are only fetched when there's an active search query
 - User search activates when query length >= 2 characters
+- Venue text search filtering requires minimum 2 characters to avoid matching too many results
+- **Filter application logic**: Venue filters are applied when search query has 2+ characters OR when any non-default filters are active
+  - This ensures filters work independently of search text
+  - Allows users to browse filtered results without typing a search query
+  - Prevents showing unfiltered results when search query is too short (< 2 characters) and no filters are active
 - Both result types can be displayed simultaneously
 - Debounced search (300ms) reduces API calls
 - Combined loading state shows when either query is loading

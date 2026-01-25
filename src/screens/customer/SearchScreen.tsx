@@ -160,7 +160,8 @@ const SearchScreen: React.FC = () => {
 
     // Filter by search query last - Multi-field search (Requirement 7.1)
     // Searches across name, category, location, and description fields
-    if (debouncedSearchQuery.trim() !== '') {
+    // Require at least 2 characters to avoid matching too many results
+    if (debouncedSearchQuery.trim() !== '' && debouncedSearchQuery.length >= 2) {
       const query = debouncedSearchQuery.toLowerCase();
       filtered = filtered.filter(venue =>
         venue.name.toLowerCase().includes(query) ||
@@ -180,12 +181,12 @@ const SearchScreen: React.FC = () => {
   }, [venues, selectedCategories, selectedFilters, selectedPriceRanges, debouncedSearchQuery]);
 
   // Filter venues when dependencies change
-  // Only filter when there's a search query or active filters
+  // Only filter when there's a search query (2+ chars) or active filters
   useEffect(() => {
-    if (searchQuery.length > 0 || !selectedCategories.includes('All') || !selectedFilters.includes('all') || !selectedPriceRanges.includes('all_prices')) {
+    if (searchQuery.length >= 2 || !selectedCategories.includes('All') || !selectedFilters.includes('all') || !selectedPriceRanges.includes('all_prices')) {
       filterVenues();
     } else {
-      // Clear filtered venues when no search query and no active filters
+      // Clear filtered venues when search query is too short and no active filters
       setFilteredVenues([]);
     }
   }, [filterVenues, searchQuery]);
@@ -747,7 +748,7 @@ const SearchScreen: React.FC = () => {
               <Text style={[styles.emptySubtext, { color: theme.colors.textSecondary }]}>
                 {searchQuery 
                   ? 'Try adjusting your search or filters' 
-                  : 'Type to search for venues and users'
+                  : 'Type at least 2 characters to search'
                 }
               </Text>
             </View>

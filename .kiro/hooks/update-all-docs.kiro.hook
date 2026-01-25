@@ -1,0 +1,15 @@
+{
+  "enabled": true,
+  "name": "Update All Documentation",
+  "description": "Comprehensive documentation update when user types 'update docs' - updates backend docs, frontend docs, and app overview in one consolidated response",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "If the user's message contains 'update docs', then perform a comprehensive documentation update:\n\n1. BACKEND DOCUMENTATION:\n   - Review all recent changes in database/**/*.sql, database/**/*.md, supabase/migrations/*.sql, and supabase/functions/**/*.ts\n   - Update or create backend documentation to reflect any new backend or architectural changes\n   - Ensure documentation is comprehensive and accurate as the main reference point for all backend code\n\n2. FRONTEND DOCUMENTATION:\n   - Review all recent changes in the src folder\n   - Update docs/frontend-reference.md to reflect any new components, hooks, services, types, or architectural changes\n   - Ensure documentation remains comprehensive and accurate as the main reference point for all frontend code\n\n3. APP OVERVIEW:\n   - Create or update ON_THE_WAY_OVERVIEW.md in the root directory\n   - Provide a brief overview of the On The Way app's main purpose\n   - Summarize key frontend features (React Native, screens, components, navigation)\n   - Summarize key backend features (Supabase, database schema, edge functions, authentication)\n   - List main functionalities (check-ins, flash offers, reviews/ratings, social features, notifications)\n   - Explain the tech stack and architecture\n   - Keep it concise and serve as an entry point for understanding the codebase\n   - Review existing documentation in /docs and README.md to extract relevant information\n\nProvide a single consolidated response summarizing all documentation updates. If the message does not contain 'update docs', ignore this hook and proceed normally."
+  },
+  "workspaceFolderName": "alphaCharlie722",
+  "shortName": "update-all-docs"
+}
