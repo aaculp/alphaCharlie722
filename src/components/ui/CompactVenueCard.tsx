@@ -12,6 +12,9 @@ import { useEngagementColor } from '../../hooks/useEngagementColor';
 import VenueCustomerCountChip from './VenueCustomerCountChip';
 import { AggregateRatingDisplay } from '../venue';
 import type { Venue } from '../../types';
+import { queryClient } from '../../lib/queryClient';
+import { queryKeys } from '../../lib/queryKeys';
+import { VenueService } from '../../services/api/venues';
 
 // Partial venue type for compact display
 type CompactVenue = Pick<Venue, 'id' | 'name' | 'category' | 'image_url' | 'aggregate_rating' | 'review_count'> & {
@@ -91,6 +94,16 @@ const CompactVenueCard: React.FC<CompactVenueCardProps> = ({
     ? engagementColor.borderColor 
     : theme.colors.border;
 
+  // Prefetch venue details when user starts pressing the card
+  // This improves perceived performance by loading data before navigation
+  const handlePressIn = () => {
+    queryClient.prefetchQuery({
+      queryKey: queryKeys.venues.detail(venue.id),
+      queryFn: () => VenueService.getVenueById(venue.id),
+      staleTime: 30000, // Use same stale time as default
+    });
+  };
+
   return (
     <TouchableOpacity
       style={[
@@ -102,6 +115,7 @@ const CompactVenueCard: React.FC<CompactVenueCardProps> = ({
         }
       ]}
       onPress={onPress}
+      onPressIn={handlePressIn}
       activeOpacity={0.7}
       accessibilityLabel={`${venue.name}, ${venue.category}`}
     >

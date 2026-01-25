@@ -22,6 +22,9 @@ import { useHapticFeedback } from '../../hooks/useHapticFeedback';
 import { CheckInService } from '../../services/api/checkins';
 import SwipeActionBackground from './SwipeActionBackground';
 import type { Venue } from '../../types';
+import { queryClient } from '../../lib/queryClient';
+import { queryKeys } from '../../lib/queryKeys';
+import { VenueService } from '../../services/api/venues';
 
 /**
  * Props for the WideVenueCard component
@@ -435,6 +438,16 @@ const WideVenueCard: React.FC<WideVenueCardProps> = ({
     }
   };
 
+  // Prefetch venue details when user starts pressing the card
+  // This improves perceived performance by loading data before navigation
+  const handlePressIn = () => {
+    queryClient.prefetchQuery({
+      queryKey: queryKeys.venues.detail(venue.id),
+      queryFn: () => VenueService.getVenueById(venue.id),
+      staleTime: 30000, // Use same stale time as default
+    });
+  };
+
   // Card content component
   const cardContent = (
     <TouchableOpacity
@@ -446,6 +459,7 @@ const WideVenueCard: React.FC<WideVenueCardProps> = ({
         }
       ]}
       onPress={onPress}
+      onPressIn={handlePressIn}
       activeOpacity={0.9}
       disabled={isLoading} // Requirement 9.4: Disable touch during loading
       // Requirement 10.2: Accessibility labels

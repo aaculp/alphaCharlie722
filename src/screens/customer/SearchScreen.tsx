@@ -18,7 +18,8 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { SearchStackParamList, Venue } from '../../types';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { useVenues, useFavorites, useDebounce } from '../../hooks';
+import { useVenuesQuery } from '../../hooks/queries/useVenuesQuery';
+import { useFavorites, useDebounce } from '../../hooks';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 type SearchScreenNavigationProp = NativeStackNavigationProp<
@@ -65,7 +66,9 @@ const SearchScreen: React.FC = () => {
   const { user } = useAuth();
 
   // Use custom hooks for data management
-  const { venues, loading } = useVenues({ limit: 50 });
+  const { data: venues = [], isLoading: loading } = useVenuesQuery({ 
+    filters: { limit: 50 } 
+  });
   const { toggleFavorite: toggleFavoriteHook, isFavorite } = useFavorites();
   
   // Debounce search query to optimize filtering

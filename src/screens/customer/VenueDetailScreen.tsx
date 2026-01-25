@@ -16,6 +16,8 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { VenueService } from '../../services/api/venues';
 import { useCheckInStats } from '../../hooks';
+import { useVenueQuery } from '../../hooks/queries/useVenueQuery';
+import { useCheckInMutation } from '../../hooks/mutations/useCheckInMutation';
 import { ModernVenueCards } from '../../components/venue/VenueInfoComponents';
 import { VenueCustomerCountChip } from '../../components/ui';
 import { UserFeedback } from '../../components/checkin';
@@ -165,8 +167,13 @@ const VenueDetailScreen: React.FC = () => {
   const { theme } = useTheme();
   const { user } = useAuth();
   const scrollViewRef = useRef<ScrollView>(null);
-  const [venue, setVenue] = useState<Venue | null>(null);
-  const [loading, setLoading] = useState(true);
+  
+  // Use React Query hooks for data management
+  const { venue, isLoading: loading, error: venueError, refetch: refetchVenue } = useVenueQuery({
+    venueId,
+    enabled: !!venueId
+  });
+  
   const [userReview, setUserReview] = useState<Review | null>(null);
   const [reviewModalVisible, setReviewModalVisible] = useState(false);
   const [loadingUserReview, setLoadingUserReview] = useState(false);
@@ -181,34 +188,15 @@ const VenueDetailScreen: React.FC = () => {
 
   const checkInStats = stats.get(venueId) || null;
 
-  // Fetch venue details (try Supabase first, fallback to mock data)
-  useEffect(() => {
-    const fetchVenueDetails = async () => {
-      try {
-        setLoading(true);
-
-        // Try to fetch from Supabase first
-        const supabaseVenue = await VenueService.getVenueById(venueId);
-
-        if (supabaseVenue) {
-          setVenue(supabaseVenue);
-        } else {
-          // Fallback to mock data for search screen
-          const mockVenue = getMockVenueDetails(venueId);
-          setVenue(mockVenue);
-        }
-      } catch (error) {
-        console.error('Error fetching venue details:', error);
-        // Fallback to mock data on error
-        const mockVenue = getMockVenueDetails(venueId);
-        setVenue(mockVenue);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchVenueDetails();
-  }, [venueId]);
+  // Use React Query mutation for check-ins
+  const checkInMutation = useCheckInMutation({
+    onSuccess: (checkIn) => {
+      console.log('Check-in successful:', checkIn);
+    },
+    onError: (error) => {
+      console.error('Check-in failed:', error);
+    }
+  });
 
   // Fetch user's existing review for this venue
   useEffect(() => {
@@ -276,16 +264,9 @@ const VenueDetailScreen: React.FC = () => {
       }
     }
 
-    // Refresh venue details to get updated aggregate rating and review_count
-    try {
-      const supabaseVenue = await VenueService.getVenueById(venueId);
-      if (supabaseVenue) {
-        console.log('✅ Venue refreshed - review_count:', supabaseVenue.review_count, 'aggregate_rating:', supabaseVenue.aggregate_rating);
-        setVenue(supabaseVenue);
-      }
-    } catch (error) {
-      console.error('Error refreshing venue details:', error);
-    }
+    // Refresh venue details using React Query refetch
+    await refetchVenue();
+    console.log('✅ Venue refreshed via React Query');
 
     // Refresh recent reviews
     try {

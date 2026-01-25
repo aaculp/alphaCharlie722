@@ -194,11 +194,12 @@ export class VenueService {
     
     console.log('📅 Date filter:', { thirtyDaysAgoISO });
 
-    const { data, error } = await supabase
+    // Try to fetch venues with business accounts first
+    const { data: venuesWithAccounts, error: accountError } = await supabase
       .from('venues')
       .select(`
         *,
-        venue_business_accounts!inner(
+        venue_business_accounts(
           created_at,
           account_status,
           verification_status
@@ -209,42 +210,62 @@ export class VenueService {
       .eq('venue_business_accounts.verification_status', 'verified')
       .limit(limit * 2); // Fetch more to account for sorting
 
-    console.log('📊 Raw query result:', { 
-      dataCount: data?.length || 0, 
-      hasError: !!error,
-      errorMessage: error?.message,
-      firstVenue: data?.[0] ? { 
-        id: data[0].id, 
-        name: data[0].name,
-        review_count: data[0].review_count,
-        aggregate_rating: data[0].aggregate_rating,
-        business_account: data[0].venue_business_accounts 
-      } : null
+    console.log('📊 Venues with business accounts:', { 
+      count: venuesWithAccounts?.length || 0, 
+      hasError: !!accountError,
+      errorMessage: accountError?.message
     });
 
-    if (error) {
-      throw new Error(`Failed to fetch new venues: ${error.message}`);
+    // If we have venues with business accounts, use those
+    if (venuesWithAccounts && venuesWithAccounts.length > 0) {
+      const venues = venuesWithAccounts.map(venue => ({
+        ...venue,
+        signup_date: venue.venue_business_accounts?.[0]?.created_at || null,
+        venue_business_accounts: undefined,
+      }));
+
+      console.log('✅ Using venues with business accounts:', { count: venues.length });
+
+      return venues
+        .sort((a, b) => {
+          const dateA = a.signup_date ? new Date(a.signup_date).getTime() : 0;
+          const dateB = b.signup_date ? new Date(b.signup_date).getTime() : 0;
+          return dateB - dateA;
+        })
+        .slice(0, limit);
     }
 
-    // Transform the data to include signup_date at the top level
-    const venues = (data || []).map(venue => ({
+    // Fallback: fetch recently created venues based on created_at
+    console.log('⚠️ No venues with business accounts found, falling back to created_at');
+    
+    const { data: recentVenues, error: recentError } = await supabase
+      .from('venues')
+      .select('*')
+      .gte('created_at', thirtyDaysAgoISO)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    console.log('📊 Recent venues by created_at:', { 
+      count: recentVenues?.length || 0, 
+      hasError: !!recentError,
+      errorMessage: recentError?.message
+    });
+
+    if (recentError) {
+      throw new Error(`Failed to fetch new venues: ${recentError.message}`);
+    }
+
+    // Add signup_date from created_at
+    const venues = (recentVenues || []).map(venue => ({
       ...venue,
-      signup_date: venue.venue_business_accounts?.created_at || null,
-      venue_business_accounts: undefined, // Remove nested object
+      signup_date: venue.created_at,
     }));
 
-    console.log('✅ Transformed venues:', { 
+    console.log('✅ Returning recent venues:', { 
       count: venues.length,
       venues: venues.map(v => ({ id: v.id, name: v.name, signup_date: v.signup_date }))
     });
 
-    // Sort by signup_date descending (newest first) and limit
-    return venues
-      .sort((a, b) => {
-        const dateA = a.signup_date ? new Date(a.signup_date).getTime() : 0;
-        const dateB = b.signup_date ? new Date(b.signup_date).getTime() : 0;
-        return dateB - dateA; // Descending order
-      })
-      .slice(0, limit);
+    return venues;
   }
 }

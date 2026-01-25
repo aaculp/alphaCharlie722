@@ -16,7 +16,8 @@ import type { Venue, HomeStackParamList } from '../../types';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useLocationContext } from '../../contexts/LocationContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { useVenues, useCheckInStats, useNewVenues, useFlashOffers } from '../../hooks';
+import { useCheckInStats, useNewVenues, useFlashOffers } from '../../hooks';
+import { useVenuesQuery } from '../../hooks/queries/useVenuesQuery';
 import { useLocation } from '../../hooks/useLocation';
 import { LocationService } from '../../services/locationService';
 import { CheckInService } from '../../services/api/checkins';
@@ -142,8 +143,11 @@ const HomeScreen: React.FC = () => {
     scrollEnabled: scrollEnabled.value,
   }));
 
-  // Use custom hooks for data management
-  const { venues, loading, error, refetch } = useVenues({ featured: true, limit: 10 });
+  // Use React Query hooks for data management
+  const { venues, isLoading: loading, error, refetch } = useVenuesQuery({ 
+    filters: { limit: 10 },
+    enabled: true 
+  });
   const { location, loading: locationLoading, error: locationError, refetch: refetchLocation } = useLocation();
   const { venues: newVenues, loading: newVenuesLoading, refetch: refetchNewVenues } = useNewVenues();
   const { 

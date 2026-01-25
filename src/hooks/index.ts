@@ -3,7 +3,39 @@
  * 
  * This module exports all custom React hooks used throughout the application.
  * These hooks encapsulate business logic and provide reusable functionality.
+ * 
+ * ## React Query Hooks
+ * 
+ * For data fetching and mutations, use React Query hooks:
+ * - Query hooks: `src/hooks/queries/`
+ * - Mutation hooks: `src/hooks/mutations/`
+ * 
+ * @see {@link ./queries/index.ts} for all query hooks
+ * @see {@link ./mutations/index.ts} for all mutation hooks
  */
+
+// ============================================================================
+// React Query Hooks (Recommended)
+// ============================================================================
+
+/**
+ * React Query Hooks - Modern data fetching with automatic caching
+ * 
+ * @example
+ * ```tsx
+ * import { useVenuesQuery } from './hooks/queries';
+ * import { useCheckInMutation } from './hooks/mutations';
+ * 
+ * const { data: venues, isLoading } = useVenuesQuery({ filters: { featured: true } });
+ * const { mutate: checkIn } = useCheckInMutation();
+ * ```
+ */
+export * from './queries';
+export * from './mutations';
+
+// ============================================================================
+// Legacy Hooks (Deprecated - Use React Query hooks instead)
+// ============================================================================
 
 // Utility Hooks
 export { useEngagementColor } from './useEngagementColor';
@@ -20,13 +52,25 @@ export type { EngagementColorResult } from './useEngagementColor';
 export { useDebounce } from './useDebounce';
 
 /**
+ * @deprecated Use `useVenuesQuery` from './queries/useVenuesQuery' instead
+ * 
  * useVenues - Fetches and manages venue data with search/filter support
+ * 
+ * This hook uses traditional state management. For better caching and performance,
+ * use the React Query version: `useVenuesQuery`
  * 
  * @example
  * ```tsx
+ * // Old way (deprecated)
  * const { venues, loading, error, refetch } = useVenues({
  *   featured: true,
  *   limit: 10
+ * });
+ * 
+ * // New way (recommended)
+ * import { useVenuesQuery } from './hooks/queries';
+ * const { data: venues, isLoading, error, refetch } = useVenuesQuery({
+ *   filters: { featured: true, limit: 10 }
  * });
  * ```
  */
@@ -61,13 +105,26 @@ export { useCheckInStats } from './useCheckInStats';
 export type { UseCheckInStatsOptions, UseCheckInStatsReturn } from './useCheckInStats';
 
 /**
+ * @deprecated Use `useCheckInMutation` from './mutations/useCheckInMutation' instead
+ * 
  * useCheckInActions - Provides check-in and check-out functionality
+ * 
+ * This hook uses traditional state management. For better optimistic updates and caching,
+ * use the React Query version: `useCheckInMutation`
  * 
  * @example
  * ```tsx
+ * // Old way (deprecated)
  * const { checkIn, checkOut, loading } = useCheckInActions({
  *   onCheckInSuccess: (checkIn) => console.log('Checked in!'),
  *   onCheckOutSuccess: () => console.log('Checked out!'),
+ *   onError: (error) => Alert.alert('Error', error.message)
+ * });
+ * 
+ * // New way (recommended)
+ * import { useCheckInMutation } from './hooks/mutations';
+ * const { mutate: checkIn, isPending } = useCheckInMutation({
+ *   onSuccess: (checkIn) => console.log('Checked in!'),
  *   onError: (error) => Alert.alert('Error', error.message)
  * });
  * ```
@@ -92,10 +149,16 @@ export type { UseCheckInHistoryOptions, UseCheckInHistoryReturn } from './useChe
 // Social Hooks
 
 /**
+ * @deprecated Use `useFriendsQuery` from './queries/useFriendsQuery' instead
+ * 
  * useFriends - Manages friends and friend requests
+ * 
+ * This hook uses traditional state management. For better caching and performance,
+ * use the React Query version: `useFriendsQuery` and `useAddFriendMutation`
  * 
  * @example
  * ```tsx
+ * // Old way (deprecated)
  * const {
  *   friends,
  *   closeFriends,
@@ -106,16 +169,28 @@ export type { UseCheckInHistoryOptions, UseCheckInHistoryReturn } from './useChe
  *   removeFriend,
  *   addCloseFriend,
  * } = useFriends();
+ * 
+ * // New way (recommended)
+ * import { useFriendsQuery } from './hooks/queries';
+ * import { useAddFriendMutation } from './hooks/mutations';
+ * const { data: friends, isLoading } = useFriendsQuery({ userId: user.id });
+ * const { mutate: addFriend } = useAddFriendMutation();
  * ```
  */
 export { useFriends } from './useFriends';
 export type { UseFriendsOptions, UseFriendsReturn } from './useFriends';
 
 /**
+ * @deprecated Use `useCollectionsQuery` from './queries/useCollectionsQuery' instead
+ * 
  * useCollections - Manages user collections of venues
+ * 
+ * This hook uses traditional state management. For better caching and performance,
+ * use the React Query version: `useCollectionsQuery` and collection mutation hooks
  * 
  * @example
  * ```tsx
+ * // Old way (deprecated)
  * const {
  *   collections,
  *   loading,
@@ -123,6 +198,13 @@ export type { UseFriendsOptions, UseFriendsReturn } from './useFriends';
  *   addVenue,
  *   deleteCollection,
  * } = useCollections();
+ * 
+ * // New way (recommended)
+ * import { useCollectionsQuery } from './hooks/queries';
+ * import { useCreateCollectionMutation, useAddVenueToCollectionMutation } from './hooks/mutations';
+ * const { data: collections, isLoading } = useCollectionsQuery({ userId: user.id });
+ * const { mutate: createCollection } = useCreateCollectionMutation();
+ * const { mutate: addVenue } = useAddVenueToCollectionMutation();
  * ```
  */
 export { useCollections } from './useCollections';

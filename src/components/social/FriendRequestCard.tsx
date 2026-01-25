@@ -13,6 +13,9 @@ import { useTheme } from '../../contexts/ThemeContext';
 import type { FriendRequest, SocialProfile } from '../../types/social.types';
 import { triggerLightHaptic, triggerSuccessHaptic, triggerMediumHaptic } from '../../utils/haptics';
 import { fadeIn, scaleIn } from '../../utils/animations';
+import { queryClient } from '../../lib/queryClient';
+import { queryKeys } from '../../lib/queryKeys';
+import { ProfileService } from '../../services/api/profile';
 
 interface FriendRequestCardProps {
   request: FriendRequest;
@@ -86,6 +89,15 @@ const FriendRequestCard: React.FC<FriendRequestCardProps> = ({
     }
   };
 
+  // Prefetch user profile when user starts pressing the card
+  const handlePressIn = () => {
+    queryClient.prefetchQuery({
+      queryKey: queryKeys.users.profile(fromUser.id),
+      queryFn: () => ProfileService.getProfile(fromUser.id),
+      staleTime: 30000,
+    });
+  };
+
   const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
     const now = new Date();
@@ -117,6 +129,7 @@ const FriendRequestCard: React.FC<FriendRequestCardProps> = ({
       <TouchableOpacity
         style={styles.userSection}
         onPress={handleUserPress}
+        onPressIn={handlePressIn}
         activeOpacity={onUserPress ? 0.7 : 1}
         disabled={!onUserPress}
       >

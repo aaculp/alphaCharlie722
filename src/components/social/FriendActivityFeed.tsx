@@ -12,6 +12,10 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { formatCheckInTime } from '../../utils/formatting/time';
 import type { ActivityFeedEntry } from '../../types/social.types';
 import { ActivityFeedSkeleton } from './SkeletonLoaders';
+import { queryClient } from '../../lib/queryClient';
+import { queryKeys } from '../../lib/queryKeys';
+import { ProfileService } from '../../services/api/profile';
+import { VenueService } from '../../services/api/venues';
 
 interface FriendActivityFeedProps {
   activities: ActivityFeedEntry[];
@@ -115,6 +119,27 @@ const FriendActivityFeed: React.FC<FriendActivityFeedProps> = ({
     const activityText = getActivityText(activity);
     const formattedTime = formatCheckInTime(activity.created_at);
 
+    // Prefetch user profile and venue details when user starts pressing
+    const handlePressIn = () => {
+      // Prefetch user profile
+      if (activity.user?.id) {
+        queryClient.prefetchQuery({
+          queryKey: queryKeys.users.profile(activity.user.id),
+          queryFn: () => ProfileService.getProfile(activity.user.id),
+          staleTime: 30000,
+        });
+      }
+      
+      // Prefetch venue details if activity is venue-related
+      if (activity.venue?.id) {
+        queryClient.prefetchQuery({
+          queryKey: queryKeys.venues.detail(activity.venue.id),
+          queryFn: () => VenueService.getVenueById(activity.venue.id),
+          staleTime: 30000,
+        });
+      }
+    };
+
     return (
       <TouchableOpacity
         style={[
@@ -125,6 +150,7 @@ const FriendActivityFeed: React.FC<FriendActivityFeedProps> = ({
           }
         ]}
         onPress={() => onActivityPress(activity)}
+        onPressIn={handlePressIn}
         activeOpacity={0.7}
       >
         {/* Friend Avatar */}

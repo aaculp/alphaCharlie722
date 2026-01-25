@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,8 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '../../contexts/ThemeContext';
-import { useFriends } from '../../hooks/useFriends';
+import { useAuth } from '../../contexts/AuthContext';
+import { FriendsService } from '../../services/api/friends';
 import FriendRequestCard from './FriendRequestCard';
 import type { FriendRequest, SocialProfile } from '../../types/social.types';
 
@@ -34,30 +35,42 @@ const FriendRequestModal: React.FC<FriendRequestModalProps> = ({
   initialRequestId,
 }) => {
   const { theme } = useTheme();
-  const {
-    friendRequests,
-    loading,
-    acceptRequest,
-    declineRequest,
-    refetch,
-  } = useFriends();
-
+  const { user } = useAuth();
+  const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([]);
+  const [loading, setLoading] = useState(false);
   const [processingRequests, setProcessingRequests] = useState<Set<string>>(new Set());
+
+  // Load friend requests
+  const loadFriendRequests = useCallback(async () => {
+    if (!user?.id) return;
+    
+    setLoading(true);
+    try {
+      const requests = await FriendsService.getFriendRequests(user.id);
+      setFriendRequests(requests);
+    } catch (error) {
+      console.error('Error loading friend requests:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.id]);
 
   // Refetch when modal opens
   useEffect(() => {
     if (visible) {
-      refetch();
+      loadFriendRequests();
     }
-  }, [visible, refetch]);
+  }, [visible, loadFriendRequests]);
 
   const handleAccept = async (requestId: string) => {
     setProcessingRequests(prev => new Set(prev).add(requestId));
     try {
-      const success = await acceptRequest(requestId);
-      if (success) {
-        console.log('✅ Friend request accepted:', requestId);
-      }
+      await FriendsService.acceptFriendRequest(requestId);
+      console.log('✅ Friend request accepted:', requestId);
+      // Reload requests to update the list
+      await loadFriendRequests();
+    } catch (error) {
+      console.error('Error accepting friend request:', error);
     } finally {
       setProcessingRequests(prev => {
         const next = new Set(prev);
@@ -70,10 +83,12 @@ const FriendRequestModal: React.FC<FriendRequestModalProps> = ({
   const handleDecline = async (requestId: string) => {
     setProcessingRequests(prev => new Set(prev).add(requestId));
     try {
-      const success = await declineRequest(requestId);
-      if (success) {
-        console.log('✅ Friend request declined:', requestId);
-      }
+      await FriendsService.declineFriendRequest(requestId);
+      console.log('✅ Friend request declined:', requestId);
+      // Reload requests to update the list
+      await loadFriendRequests();
+    } catch (error) {
+      console.error('Error declining friend request:', error);
     } finally {
       setProcessingRequests(prev => {
         const next = new Set(prev);

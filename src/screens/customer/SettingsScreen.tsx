@@ -15,7 +15,8 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useGridLayout, GridLayoutType } from '../../contexts/GridLayoutContext';
 import { useNavigationStyle, NavigationStyleType } from '../../contexts/NavigationStyleContext';
 import { useLocationContext } from '../../contexts/LocationContext';
-import { useFriends, useNotificationPreferences } from '../../hooks';
+import { useNotificationPreferences } from '../../hooks';
+import { useFriendsQuery } from '../../hooks/queries/useFriendsQuery';
 import { populateVenuesDatabase } from '../../utils/populateVenues';
 import { PushPermissionService, PermissionStatus } from '../../services/PushPermissionService';
 import { ClaimService } from '../../services/api/flashOfferClaims';
@@ -37,7 +38,10 @@ const SettingsScreen: React.FC = () => {
   const { gridLayout, setGridLayout } = useGridLayout();
   const { navigationStyle, setNavigationStyle } = useNavigationStyle();
   const { locationEnabled, setLocationEnabled } = useLocationContext();
-  const { friends, loading: friendsLoading } = useFriends();
+  const { data: friends = [], isLoading: friendsLoading } = useFriendsQuery({ 
+    userId: user?.id || '', 
+    enabled: !!user?.id 
+  });
   const { preferences, loading: prefsLoading, updatePreference } = useNotificationPreferences();
   const navigation = useNavigation<any>();
 
