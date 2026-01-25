@@ -2,13 +2,13 @@
 
 ## Overview
 
-The @ Search Feature enables users to search for other users within the app by typing `@` followed by a username or display name. This feature seamlessly integrates with the existing venue search functionality, providing a unified search experience with automatic mode detection.
+The Search Feature enables users to search for both venues AND users simultaneously in a unified search experience. Simply type in the search bar to find venues by name, category, or location, and users by username or display name - all in one place.
 
 ## Table of Contents
 
 1. [User Guide](#user-guide)
 2. [Username System](#username-system)
-3. [Search Modes](#search-modes)
+3. [Unified Search](#unified-search)
 4. [Technical Architecture](#technical-architecture)
 5. [API Reference](#api-reference)
 6. [Database Schema](#database-schema)
@@ -19,29 +19,29 @@ The @ Search Feature enables users to search for other users within the app by t
 
 ## User Guide
 
-### How to Search for Users
+### How to Search
 
 1. Navigate to the Search screen
 2. Tap the search bar
-3. Type `@` followed by the username or display name you're looking for
-4. Results will appear as you type (after 2+ characters)
-5. Tap any user to view their profile
+3. Start typing to search both venues and users
+4. Results appear as you type (after 2+ characters for users)
+5. Tap any result to view details
 
 ### Search Examples
 
-| Input | Result |
-|-------|--------|
-| `@john_doe` | Searches for users with username or display name matching "john_doe" |
-| `@sarah` | Searches for users with username or display name matching "sarah" |
-| `@user_123` | Searches for users with username or display name matching "user_123" |
-| `coffee shop` | Searches for venues (no @ prefix = venue search) |
+| Input | Results |
+|-------|---------|
+| `john` | Venues with "john" in name + Users with "john" in username/display name |
+| `coffee` | Coffee shops + Users with "coffee" in their name |
+| `downtown` | Venues in downtown + Users with "downtown" in their profile |
 
 ### Search Tips
 
-- **Minimum 2 characters**: You need to type at least 2 characters after `@` to see results
-- **Case doesn't matter**: Search is case-insensitive (`@John` = `@john`)
-- **Partial matches**: You don't need to type the full username
-- **Up to 20 results**: Search returns a maximum of 20 matching users
+- **Unified results**: See both venues and users in one list
+- **Minimum 2 characters**: User search requires at least 2 characters
+- **Case doesn't matter**: Search is case-insensitive
+- **Partial matches**: You don't need to type the full name
+- **Sectioned results**: Users appear first, then venues
 - **Real-time results**: Results update as you type (with 300ms debounce)
 
 ---
@@ -92,57 +92,58 @@ John Doe          ← Display Name (primary)
 
 ---
 
-## Search Modes
+## Unified Search
 
-The search screen operates in two distinct modes based on the search query:
+The search screen provides a unified experience that searches both users and venues simultaneously.
 
-### Venue Search Mode (Default)
+### How It Works
 
-**Trigger**: Any search query that doesn't start with `@`
+**Single Search Bar**: Type anything to search across:
+- **Venues**: By name, category, location, description
+- **Users**: By username or display name
 
-**Features**:
-- Searches venues by name, category, location, description
-- Supports filters (categories, price ranges, trending)
-- Shows venue cards with ratings, images, and details
-- Results sorted by rating (highest first)
+**Sectioned Results**:
+- Users section appears first (if any matches)
+- Venues section appears below (if any matches)
+- Each section has a clear header
 
-**Example Queries**:
-- `coffee shop`
-- `downtown`
-- `fine dining`
+**Smart Filtering**:
+- Venue filters (categories, price, ratings) only affect venues
+- User results are always shown if they match
+- Results counter shows both: "25 venues • 3 users"
 
-### User Search Mode (@ Prefix)
-
-**Trigger**: Search query starts with `@`
-
-**Features**:
-- Searches users by username and display name
-- Shows user avatars, display names, and usernames
-- Case-insensitive matching
-- Up to 20 results
-- Minimum 2 characters required
-
-**Example Queries**:
-- `@john`
-- `@sarah_smith`
-- `@user123`
-
-### Mode Switching
-
-The search mode switches automatically based on the presence of the `@` prefix:
+### Example Searches
 
 ```
-User types: "coffee"     → Venue Search Mode
-User types: "@"          → User Search Mode (no results yet)
-User types: "@jo"        → User Search Mode (shows results)
-User deletes "@"         → Venue Search Mode
+Search: "john"
+Results:
+  Users
+    - John Doe (@john_doe)
+    - Johnny Smith (@johnny_s)
+  
+  Venues
+    - John's Pizza
+    - St. John's Pub
 ```
 
-### Mode Indicator
+```
+Search: "coffee"
+Results:
+  Users
+    - Coffee Lover (@coffee_addict)
+  
+  Venues
+    - Starbucks Coffee
+    - Local Coffee Shop
+    - The Coffee Bean
+```
 
-A visual indicator shows the current search mode:
-- 🏢 "Searching venues" (venue mode)
-- 👤 "Searching users" (user mode)
+### Benefits
+
+- **Faster**: No need to switch modes or use special prefixes
+- **Comprehensive**: See all relevant results at once
+- **Intuitive**: Works like any modern search
+- **Flexible**: Filters still work for venues
 
 ---
 
@@ -152,13 +153,14 @@ A visual indicator shows the current search mode:
 
 ```
 SearchScreen
-├── SearchBar (with mode detection)
-├── ModeIndicator (shows current mode)
-├── FilterDrawer (venue search only)
-├── ResultsList
-│   ├── VenueResultItem (when mode = venue)
-│   └── UserResultItem (when mode = user)
-└── EmptyState (mode-specific messages)
+├── SearchBar
+├── FilterDrawer (affects venues only)
+├── ResultsList (unified)
+│   ├── Users Section Header
+│   ├── UserResultItem(s)
+│   ├── Venues Section Header
+│   └── VenueResultItem(s)
+└── EmptyState
 ```
 
 ### Data Flow
@@ -166,36 +168,19 @@ SearchScreen
 ```mermaid
 graph TD
     A[User types in search bar] --> B[Debounce 300ms]
-    B --> C[useSearchMode hook]
-    C --> D{Starts with @?}
-    D -->|Yes| E[User Search Mode]
-    D -->|No| F[Venue Search Mode]
-    E --> G[useUsersQuery hook]
-    F --> H[useVenuesQuery hook]
-    G --> I[Supabase profiles table]
-    H --> J[Supabase venues table]
-    I --> K[User Results]
-    J --> L[Venue Results]
-    K --> M[renderUserItem]
-    L --> N[renderVenueItem]
+    B --> C[Parallel Queries]
+    C --> D[useUsersQuery]
+    C --> E[useVenuesQuery]
+    D --> F[Supabase profiles table]
+    E --> G[Supabase venues table]
+    F --> H[User Results]
+    G --> I[Venue Results]
+    H --> J[Unified List]
+    I --> J
+    J --> K[Render Sections]
 ```
 
 ### Key Hooks
-
-#### useSearchMode
-
-Detects search mode and cleans the query.
-
-```typescript
-const { mode, cleanQuery } = useSearchMode(searchQuery);
-// mode: 'user' | 'venue'
-// cleanQuery: query with @ removed (if present)
-```
-
-**Implementation**:
-- Checks if query starts with `@`
-- Returns mode and cleaned query
-- Memoized to prevent unnecessary recalculations
 
 #### useUsersQuery
 
@@ -203,8 +188,8 @@ Fetches users matching the search query.
 
 ```typescript
 const { data, isLoading, error } = useUsersQuery({
-  searchQuery: cleanQuery,
-  enabled: mode === 'user',
+  searchQuery: debouncedSearchQuery,
+  enabled: debouncedSearchQuery.length >= 2,
 });
 ```
 
@@ -214,6 +199,24 @@ const { data, isLoading, error } = useUsersQuery({
 - Filters out users without usernames
 - Limits results to 20 users
 - 30-second stale time for caching
+- Runs in parallel with venue search
+
+#### useVenuesQuery
+
+Fetches venues matching filters and search query.
+
+```typescript
+const { data, isLoading } = useVenuesQuery({
+  filters: venueFilters,
+  enabled: true,
+});
+```
+
+**Features**:
+- Always enabled
+- Respects category, price, and rating filters
+- Searches name, category, location, description
+- Runs in parallel with user search
 
 #### useDebounce
 

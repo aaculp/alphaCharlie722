@@ -16,7 +16,9 @@ import { FavoriteService } from '../../services/api/favorites';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { FriendVenueCarousel } from '../../components/social';
+import { VenueSearchCard } from '../../components/venue';
 import Icon from 'react-native-vector-icons/Ionicons';
+import type { Venue } from '../../types';
 
 type FavoritesScreenNavigationProp = NativeStackNavigationProp<any>;
 
@@ -85,32 +87,38 @@ const FavoritesScreen: React.FC = () => {
     });
   };
 
-  const renderFavoriteItem = ({ item }: { item: FavoriteVenue }) => (
-    <TouchableOpacity
-      style={[styles.favoriteItem, { backgroundColor: theme.colors.surface }]}
-      onPress={() => handleVenuePress(item.venues)}
-    >
-      <Image 
-        source={{ uri: item.venues.image_url || 'https://via.placeholder.com/100x100' }} 
-        style={styles.venueImage} 
-      />
-      <View style={styles.venueInfo}>
-        <Text style={[styles.venueName, { color: theme.colors.text }]}>{item.venues.name}</Text>
-        <Text style={[styles.venueCategory, { color: theme.colors.primary }]}>{item.venues.category}</Text>
-        <Text style={[styles.venueLocation, { color: theme.colors.textSecondary }]}>{item.venues.location}</Text>
-        <View style={styles.venueDetails}>
-          <Text style={[styles.rating, { color: theme.colors.text }]}>⭐ {item.venues.rating}</Text>
-          <Text style={[styles.priceRange, { color: theme.colors.textSecondary }]}>{item.venues.price_range}</Text>
-        </View>
+  const renderFavoriteItem = ({ item }: { item: FavoriteVenue }) => {
+    // Transform FavoriteVenue to Venue type
+    const venue: Venue = {
+      id: item.venues.id,
+      name: item.venues.name,
+      description: item.venues.description,
+      category: item.venues.category,
+      location: item.venues.location,
+      address: item.venues.address,
+      rating: item.venues.rating,
+      review_count: item.venues.review_count,
+      image_url: item.venues.image_url,
+      price_range: item.venues.price_range,
+      hours: {} as any, // Not needed for display
+      latitude: 0, // Not needed for display
+      longitude: 0, // Not needed for display
+      created_at: '', // Not needed for display
+      updated_at: '', // Not needed for display
+    };
+
+    return (
+      <View style={styles.favoriteItemContainer}>
+        <VenueSearchCard
+          venue={venue}
+          onPress={() => handleVenuePress(item.venues)}
+          showFavoriteButton={true}
+          isFavorite={true}
+          onFavoritePress={() => removeFavorite(item.venue_id)}
+        />
       </View>
-      <TouchableOpacity 
-        style={styles.removeButton}
-        onPress={() => removeFavorite(item.venue_id)}
-      >
-        <Icon name="heart" size={24} color="#FF3B30" />
-      </TouchableOpacity>
-    </TouchableOpacity>
-  );
+    );
+  };
 
   if (loading) {
     return (
@@ -200,61 +208,8 @@ const styles = StyleSheet.create({
   favoritesList: {
     flex: 1,
   },
-  favoriteItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginHorizontal: 15,
-    marginVertical: 5,
-    padding: 15,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  venueImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 8,
-    marginRight: 15,
-  },
-  venueInfo: {
-    flex: 1,
-  },
-  venueName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 4,
-    fontFamily: 'Poppins-SemiBold',
-  },
-  venueCategory: {
-    fontSize: 14,
-    marginBottom: 2,
-    fontFamily: 'Inter-Medium',
-  },
-  venueLocation: {
-    fontSize: 14,
-    marginBottom: 4,
-    fontFamily: 'Inter-Regular',
-  },
-  venueDetails: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  rating: {
-    fontSize: 14,
-    fontFamily: 'Inter-Regular',
-  },
-  priceRange: {
-    fontSize: 14,
-    fontFamily: 'Inter-Regular',
-  },
-  removeButton: {
-    padding: 8,
+  favoriteItemContainer: {
+    paddingHorizontal: 15,
   },
   emptyContainer: {
     flex: 1,

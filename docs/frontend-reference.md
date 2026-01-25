@@ -1007,6 +1007,122 @@ interface VenueCardDialogProps {
 
 ---
 
+#### VenueSearchCard 🆕
+
+**Location:** `src/components/venue/VenueSearchCard.tsx`
+
+Reusable venue card component for search results and lists. Displays venue information in a compact, horizontal layout optimized for list views.
+
+**Props:**
+```typescript
+interface VenueSearchCardProps {
+  venue: Venue;
+  onPress: () => void;
+  showFavoriteButton?: boolean;
+  isFavorite?: boolean;
+  onFavoritePress?: () => void;
+}
+```
+
+**Usage:**
+```typescript
+import { VenueSearchCard } from '../../components/venue';
+
+// Basic usage
+<VenueSearchCard
+  venue={venue}
+  onPress={() => navigation.navigate('VenueDetail', { 
+    venueId: venue.id, 
+    venueName: venue.name 
+  })}
+/>
+
+// With favorite button
+<VenueSearchCard
+  venue={venue}
+  onPress={() => handleVenuePress(venue)}
+  showFavoriteButton={true}
+  isFavorite={isFavorite(venue.id)}
+  onFavoritePress={() => toggleFavorite(venue.id)}
+/>
+```
+
+**Features:**
+- **Horizontal Layout**: Compact card design with image on left, content in center, chevron on right
+- **Venue Image**: 80x80pt rounded image with fallback placeholder
+- **Category Badge**: Colored badge displaying venue category
+- **Location Display**: Icon + location text with truncation
+- **Rating Display**: Star icon + numeric rating (formatted to 1 decimal)
+- **Price Range**: Displays venue price range (e.g., "$", "$$", "$$$")
+- **Optional Favorite Button**: Toggleable heart icon overlay on image
+- **Navigation Chevron**: Right-pointing chevron indicating tappable card
+- **Theme Support**: Fully integrated with ThemeContext for light/dark mode
+- **Accessibility**: Proper touch targets and visual feedback
+
+**Conditional Rendering Logic:**
+The component includes robust defensive checks to handle missing or invalid data:
+- **Rating**: Only displays when `venue.rating != null && venue.rating > 0`
+  - Prevents showing "0.0" ratings or null values
+  - Ensures only meaningful ratings are displayed
+- **Price Range**: Only displays when `venue.price_range != null && venue.price_range !== ''`
+  - Handles null, undefined, and empty string values
+  - Prevents rendering empty price indicators
+
+**Layout Structure:**
+```
+┌─────────────────────────────────────────────────┐
+│ ┌────────┐  Venue Name          [Category]     │
+│ │        │  📍 Location                      ›  │
+│ │ Image  │  ⭐ 4.5  $$                          │
+│ │  [♥]   │                                      │
+│ └────────┘                                      │
+└─────────────────────────────────────────────────┘
+```
+
+**Styling:**
+- Container: 12pt padding, 12pt border radius, 1pt border
+- Image: 80x80pt, 8pt border radius
+- Favorite button: 24x24pt, positioned top-right of image with shadow
+- Category badge: 8pt horizontal padding, 3pt vertical padding
+- Metadata row: Items spaced with 12pt right margin (React Native compatible)
+- Metadata icons: 4pt right margin for spacing from text
+- Chevron: 20pt size, positioned at right edge
+
+**Theme Integration:**
+- Background: `theme.colors.surface`
+- Border: `theme.colors.border`
+- Text: `theme.colors.text` (primary), `theme.colors.textSecondary` (secondary)
+- Category badge: `theme.colors.primary` with 20% opacity background
+- Favorite icon: Red (#FF3B30) when active, `theme.colors.textSecondary` when inactive
+
+**Used In:**
+- `SearchScreen`: Venue search results with favorite button
+- `FavoritesScreen`: User's favorited venues list
+- Any screen requiring standardized venue list display
+
+**Benefits:**
+- Consistent venue display across the app
+- Reduces code duplication
+- Easier maintenance and updates
+- Standardized user experience
+- Reusable across multiple screens
+- React Native compatible styling (uses marginRight instead of gap for broader compatibility)
+
+**Implementation Notes:**
+- Uses `marginRight` for spacing instead of CSS `gap` property for React Native compatibility
+- Metadata items use 12pt right margin between elements
+- Icons within metadata items use 4pt right margin from text
+- This approach ensures consistent rendering across all React Native versions
+- **Defensive null checks**: Rating and price range use explicit null/empty checks (`!= null`, `!== ''`) to prevent rendering invalid data
+- **Type-safe conditionals**: Combines null checks with value validation (e.g., `rating > 0`) for robust data handling
+
+**Related Components:**
+- `TestVenueCard`: Alternative venue card with different layout
+- `VenueCardDialog`: Full-screen venue details dialog
+- `VenueEngagementChip`: Engagement level indicator
+
+---
+
 
 ### Navigation Components
 
@@ -1222,24 +1338,24 @@ Screen components compose hooks and components to create full-page experiences.
 
 **Location:** `src/screens/customer/SearchScreen.tsx`
 
-Unified search interface supporting both venue and user search with @ prefix detection.
+Unified search interface supporting simultaneous venue and user search.
 
 **Features:**
-- **Dual Search Modes**:
-  - Venue search (default): Search venues by name, category, location, or description
-  - User search (@ prefix): Search users by username or display name
-- **Mode Detection**: Automatically switches to user search when query starts with @
+- **Unified Search**: Fetches both venues and users when user is actively searching
+- **Smart Query Handling**: Venue search activates with any search query, user search only activates with 2+ characters
 - **Advanced Filtering**: Category, price range, and trending filters for venue search
 - **Filter Drawer**: Side drawer with comprehensive filter options
-- **Real-time Results**: Debounced search with instant mode switching
+- **Real-time Results**: Debounced search (300ms) to optimize performance
+- **Error Handling**: Comprehensive error tracking for both venue and user queries
+- **Debug Logging**: Console logging for venue data changes and error states
 - **Result Display**:
   - Venue results: Image, name, category, location, rating, price range
   - User results: Avatar, display name, username with @ prefix
 - **Navigation**:
   - Venue results navigate to VenueDetail screen
   - User results navigate to UserProfile screen
-- **Empty States**: Context-aware empty states for both search modes
-- **Loading States**: Mode-specific loading indicators
+- **Empty States**: Context-aware empty states for both result types
+- **Loading States**: Combined loading indicator for both queries
 
 **Hooks Used:**
 ```typescript
@@ -1248,33 +1364,42 @@ Unified search interface supporting both venue and user search with @ prefix det
 const venueFilters = useMemo(() => ({ limit: 50 }), []);
 
 // Debounce search query to optimize filtering and reduce API calls
-// 300ms delay ensures we don't query on every keystroke (Requirement 8.1)
+// 300ms delay ensures we don't query on every keystroke
 const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
-// Detect search mode based on @ prefix (Requirements 3.1, 3.2, 3.3)
-// - mode: 'user' if query starts with @, otherwise 'venue'
-// - cleanQuery: query with @ prefix removed for API calls
-const { mode, cleanQuery } = useSearchMode(debouncedSearchQuery);
-
-// Venue search query - only enabled when in venue mode (Requirement 7.1)
-const { data: venuesData, isLoading: loading } = useVenuesQuery({ 
+// Unified search: Always fetch both venues and users
+// Venue search query - only enabled when there's a search query
+const { data: venuesData, isLoading: venuesLoading, error: venuesError } = useVenuesQuery({ 
   filters: venueFilters,
-  enabled: mode === 'venue', // Conditional fetching prevents unnecessary API calls
+  enabled: debouncedSearchQuery.length > 0, // Only fetch when user is searching
 });
 
 // Memoize venues array to prevent new reference on every render
-// This optimization prevents unnecessary re-renders of child components
-const venues = useMemo(() => venuesData || [], [venuesData]);
+// Includes debug logging to track venue data changes
+const venues = useMemo(() => {
+  console.log('📊 Venues data:', venuesData?.length || 0, 'venues');
+  return venuesData || [];
+}, [venuesData]);
 
-// User search query - only enabled when in user mode (Requirements 2.1, 2.2, 2.3)
+// User search query - always enabled when there's a search query
 // Searches profiles table for matching usernames and display names
 const { data: usersData, isLoading: usersLoading, error: usersError } = useUsersQuery({
-  searchQuery: cleanQuery,
-  enabled: mode === 'user', // Conditional fetching based on search mode
+  searchQuery: debouncedSearchQuery,
+  enabled: debouncedSearchQuery.length >= 2, // Only search users with 2+ characters
 });
+
+// Log errors for debugging
+useEffect(() => {
+  if (venuesError) {
+    console.error('❌ Venues error:', venuesError);
+  }
+}, [venuesError]);
 
 // Favorites management
 const { toggleFavorite, isFavorite } = useFavorites();
+
+// Combined loading state - show loading if either query is loading
+const isLoading = venuesLoading || usersLoading;
 ```
 
 **State Management:**
@@ -1318,7 +1443,7 @@ const handleUserPress = (user: UserSearchResult) => {
 - Multi-select support for categories and price ranges
 
 **User Search:**
-- Triggered by @ prefix in search query
+- Activated when search query has 2+ characters
 - Case-insensitive matching on username and display_name
 - Results limited to 20 users
 - Displays avatar with fallback placeholder
@@ -1328,25 +1453,92 @@ const handleUserPress = (user: UserSearchResult) => {
 **UI Components:**
 - Search input with clear button
 - Filter button with active indicator badge
-- Mode indicator showing current search mode
 - Results counter (X venues/users found)
 - Animated filter drawer
 - FlatList with pull-to-refresh
-- Empty state with mode-specific messaging
+- Empty state with helpful messaging
 
-**Requirements:**
-- 3.1: Detect user search mode when query starts with @
-- 3.2: Use venue search mode when query doesn't start with @
-- 3.3: Remove @ prefix before sending query to API
-- 4.1: Display user avatar with fallback
-- 4.2: Display display_name or username as primary text
-- 4.3: Display @username as secondary text
-- 4.4: Add chevron icon for navigation affordance
-- 4.5: Show correct result count for current mode
-- 5.1: Navigate to UserProfile screen on user tap
-- 5.2: Pass userId parameter to UserProfile screen
-- 7.2: Show appropriate empty state for current mode
-- 7.3: Provide helpful empty state messages
+**Search Behavior:**
+- Venues are only fetched when there's an active search query
+- User search activates when query length >= 2 characters
+- Both result types can be displayed simultaneously
+- Debounced search (300ms) reduces API calls
+- Combined loading state shows when either query is loading
+- **Loading indicator is conditional**: Only displays when `searchQuery.length > 0` AND `isLoading` is true
+- **Results display is conditional**: FlatList only renders results when `searchQuery.length > 0`, showing an empty array otherwise
+- This prevents showing loading state or stale results when the search input is empty/cleared
+
+**Result Rendering Logic:**
+```typescript
+// Loading state only displays when actively searching
+// This prevents showing spinner when search input is empty
+{isLoading && searchQuery.length > 0 ? (
+  <View style={styles.loadingContainer}>
+    <ActivityIndicator size="large" color={theme.colors.primary} />
+    <Text style={[styles.loadingText, { color: theme.colors.textSecondary }]}>
+      Searching...
+    </Text>
+  </View>
+) : (
+  // FlatList data prop conditionally renders results based on search query
+  <FlatList
+    data={
+      searchQuery.length > 0
+        ? [
+            ...(usersData && usersData.length > 0 ? [{ type: 'section', title: 'Users' }] : []),
+            ...(usersData || []).map(user => ({ type: 'user', data: user })),
+            ...(filteredVenues.length > 0 ? [{ type: 'section', title: 'Venues' }] : []),
+            ...filteredVenues.map(venue => ({ type: 'venue', data: venue })),
+          ]
+        : [] // Empty array when no search query
+    }
+    // ... other FlatList props
+  />
+)}
+```
+
+**Benefits of Conditional Rendering:**
+- Prevents displaying outdated results after clearing search
+- Prevents showing loading spinner when search input is empty
+- Provides cleaner UX when user clears the search input
+- Ensures results list is always in sync with search query state
+- Reduces unnecessary rendering when no search is active
+- Improves perceived performance by only showing loading state during active searches
+
+**Debugging & Monitoring:**
+The SearchScreen includes built-in debugging capabilities to help track data flow and diagnose issues:
+
+```typescript
+// Venue data logging
+// Logs venue count whenever venuesData changes
+// Format: "📊 Venues data: X venues"
+const venues = useMemo(() => {
+  console.log('📊 Venues data:', venuesData?.length || 0, 'venues');
+  return venuesData || [];
+}, [venuesData]);
+
+// Error logging
+// Automatically logs venue query errors to console
+// Format: "❌ Venues error: [error details]"
+useEffect(() => {
+  if (venuesError) {
+    console.error('❌ Venues error:', venuesError);
+  }
+}, [venuesError]);
+```
+
+**Debug Output Examples:**
+- `📊 Venues data: 25 venues` - Successful venue fetch
+- `📊 Venues data: 0 venues` - Empty result set
+- `❌ Venues error: Network request failed` - Network error
+- `❌ Venues error: RLS policy violation` - Permission error
+
+**Monitoring Use Cases:**
+- Track when venue data updates occur
+- Identify query performance issues
+- Diagnose empty result problems
+- Debug filter application issues
+- Monitor error patterns in production
 
 ---
 

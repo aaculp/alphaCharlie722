@@ -21,8 +21,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useVenuesQuery } from '../../hooks/queries/useVenuesQuery';
 import { useUsersQuery } from '../../hooks/queries/useUsersQuery';
 import { useFavorites, useDebounce } from '../../hooks';
-import { useSearchMode } from '../../hooks/useSearchMode';
 import { getDisplayName } from '../../utils/displayName';
+import { VenueSearchCard } from '../../components/venue';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 type SearchScreenNavigationProp = NativeStackNavigationProp<
@@ -73,49 +73,45 @@ const SearchScreen: React.FC = () => {
   const venueFilters = useMemo(() => ({ limit: 50 }), []);
 
   // Debounce search query to optimize filtering and reduce API calls
-  // 300ms delay ensures we don't query on every keystroke (Requirement 8.1)
+  // 300ms delay ensures we don't query on every keystroke
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
-  // Detect search mode based on @ prefix (Requirements 3.1, 3.2, 3.3)
-  // - mode: 'user' if query starts with @, otherwise 'venue'
-  // - cleanQuery: query with @ prefix removed for API calls
-  const { mode, cleanQuery } = useSearchMode(debouncedSearchQuery);
-
-  // Use custom hooks for data management
-  // Venue search query - only enabled when in venue mode (Requirement 7.1)
-  const { data: venuesData, isLoading: loading } = useVenuesQuery({ 
+  // Unified search: Always fetch both venues and users
+  // Venue search query - only enabled when there's a search query
+  const { venues: venuesData, isLoading: venuesLoading, error: venuesError } = useVenuesQuery({ 
     filters: venueFilters,
-    enabled: mode === 'venue', // Conditional fetching prevents unnecessary API calls
+    enabled: debouncedSearchQuery.length > 0, // Only fetch when user is searching
   });
   
   // Memoize venues array to prevent new reference on every render
-  // This optimization prevents unnecessary re-renders of child components
-  const venues = useMemo(() => venuesData || [], [venuesData]);
+  const venues = useMemo(() => {
+    console.log('📊 Venues data:', venuesData?.length || 0, 'venues');
+    return venuesData || [];
+  }, [venuesData]);
   
-  // User search query - only enabled when in user mode (Requirements 2.1, 2.2, 2.3)
+  // User search query - only enabled when there's a search query
   // Searches profiles table for matching usernames and display names
   const { data: usersData, isLoading: usersLoading, error: usersError } = useUsersQuery({
-    searchQuery: cleanQuery,
-    enabled: mode === 'user', // Conditional fetching based on search mode
+    searchQuery: debouncedSearchQuery,
+    enabled: debouncedSearchQuery.length >= 2, // Only search users with 2+ characters
   });
+  
+  // Log errors
+  useEffect(() => {
+    if (venuesError) {
+      console.error('❌ Venues error:', venuesError);
+    }
+  }, [venuesError]);
   
   const { toggleFavorite: toggleFavoriteHook, isFavorite } = useFavorites();
   
-  // Determine loading state based on current mode (Requirement 8.3)
-  // Shows appropriate loading indicator for venue or user search
-  const isLoading = mode === 'venue' ? loading : usersLoading;
+  // Combined loading state - show loading if either query is loading
+  const isLoading = venuesLoading || usersLoading;
 
   // Animation for drawer
   const slideAnim = useRef(new Animated.Value(Dimensions.get('window').width * 0.4)).current;
 
   const filterVenues = useCallback(() => {
-    // Skip filtering if in user search mode (Requirement 3.1)
-    // User search is handled by the useUsersQuery hook
-    if (mode === 'user') {
-      setFilteredVenues([]);
-      return;
-    }
-
     console.log('🔍 Filtering venues:', {
       selectedCategories,
       selectedFilters,
@@ -126,13 +122,13 @@ const SearchScreen: React.FC = () => {
 
     let filtered = [...venues]; // Create a copy to avoid mutations
 
-    // Filter by categories (if not 'All') - Requirement 7.1
+    // Filter by categories (if not 'All')
     if (!selectedCategories.includes('All') && selectedCategories.length > 0) {
       filtered = filtered.filter(venue => selectedCategories.includes(venue.category));
       console.log(`📂 After category filter (${selectedCategories.join(', ')}):`, filtered.length);
     }
 
-    // Filter by price ranges (if not 'all_prices') - Requirement 7.1
+    // Filter by price ranges (if not 'all_prices')
     if (!selectedPriceRanges.includes('all_prices') && selectedPriceRanges.length > 0) {
       const priceValues = selectedPriceRanges
         .map(id => priceRanges.find(p => p.id === id)?.value)
@@ -144,7 +140,7 @@ const SearchScreen: React.FC = () => {
       }
     }
 
-    // Apply additional filters (skip 'all' filter) - Requirement 7.1
+    // Apply additional filters (skip 'all' filter)
     const activeFilters = selectedFilters.filter(f => f !== 'all');
     activeFilters.forEach(filter => {
       const beforeCount = filtered.length;
@@ -179,25 +175,30 @@ const SearchScreen: React.FC = () => {
     filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0));
 
     console.log('✅ Final filtered venues:', filtered.length);
+    console.log('📋 Filtered venues:', filtered.map(v => v.name).slice(0, 5));
     setFilteredVenues(filtered);
-  }, [venues, selectedCategories, selectedFilters, selectedPriceRanges, debouncedSearchQuery, mode]);
+  }, [venues, selectedCategories, selectedFilters, selectedPriceRanges, debouncedSearchQuery]);
 
   // Filter venues when dependencies change
+  // Only filter when there's a search query or active filters
   useEffect(() => {
-    filterVenues();
-  }, [filterVenues]);
+    if (searchQuery.length > 0 || !selectedCategories.includes('All') || !selectedFilters.includes('all') || !selectedPriceRanges.includes('all_prices')) {
+      filterVenues();
+    } else {
+      // Clear filtered venues when no search query and no active filters
+      setFilteredVenues([]);
+    }
+  }, [filterVenues, searchQuery]);
 
-  // Handle user search errors (Requirement 8.3)
+  // Handle user search errors
   // Display user-friendly error message when user search fails
   useEffect(() => {
-    if (usersError && mode === 'user') {
-      Alert.alert(
-        'Search Error',
-        'Unable to search users. Please check your connection and try again.',
-        [{ text: 'OK' }]
-      );
+    if (usersError) {
+      console.error('User search error:', usersError);
+      // Don't show alert for user search errors - just log them
+      // Users can still see venue results
     }
-  }, [usersError, mode]);
+  }, [usersError]);
 
   // Helper function to check if venue is open now (Requirement 7.1)
   // Parses venue hours and compares with current time
@@ -470,9 +471,7 @@ const SearchScreen: React.FC = () => {
               <Text style={[styles.drawerResultsText, { color: theme.colors.textSecondary }]}>
                 {isLoading 
                   ? 'Loading...' 
-                  : mode === 'venue' 
-                    ? `${filteredVenues.length} venues found`
-                    : `${usersData?.length || 0} users found`
+                  : `${filteredVenues.length} venues${usersData && usersData.length > 0 ? ` • ${usersData.length} users` : ''}`
                 }
               </Text>
             </View>
@@ -586,37 +585,13 @@ const SearchScreen: React.FC = () => {
   );
 
   const renderVenueItem = ({ item }: { item: Venue }) => (
-    <TouchableOpacity
-      style={[styles.venueItem, { backgroundColor: theme.colors.surface }]}
+    <VenueSearchCard
+      venue={item}
       onPress={() => handleVenuePress(item)}
-    >
-      <View style={styles.venueImageContainer}>
-        <Image
-          source={{ uri: item.image_url || 'https://via.placeholder.com/100x100' }}
-          style={styles.venueImage}
-        />
-        <TouchableOpacity
-          style={[styles.favoriteButtonSmall, { backgroundColor: theme.colors.surface + 'E6' }]}
-          onPress={() => handleToggleFavorite(item.id)}
-        >
-          <Icon
-            name={isFavorite(item.id) ? 'heart' : 'heart-outline'}
-            size={16}
-            color={isFavorite(item.id) ? '#FF3B30' : theme.colors.textSecondary}
-          />
-        </TouchableOpacity>
-      </View>
-      <View style={styles.venueInfo}>
-        <Text style={[styles.venueName, { color: theme.colors.text }]}>{item.name}</Text>
-        <Text style={[styles.venueCategory, { color: theme.colors.primary }]}>{item.category}</Text>
-        <Text style={[styles.venueLocation, { color: theme.colors.textSecondary }]}>{item.location}</Text>
-        <View style={styles.venueDetails}>
-          <Text style={[styles.rating, { color: theme.colors.text }]}>⭐ {item.rating}</Text>
-          <Text style={[styles.priceRange, { color: theme.colors.textSecondary }]}>{item.price_range}</Text>
-        </View>
-      </View>
-      <Icon name="chevron-forward" size={20} color={theme.colors.textSecondary} />
-    </TouchableOpacity>
+      showFavoriteButton={true}
+      isFavorite={isFavorite(item.id)}
+      onFavoritePress={() => handleToggleFavorite(item.id)}
+    />
   );
 
   // User result item renderer (Requirements 4.1, 4.2, 4.3, 4.4)
@@ -661,25 +636,6 @@ const SearchScreen: React.FC = () => {
     );
   };
 
-  // Mode indicator component (Requirement 3.5)
-  // Shows visual indicator of current search mode (user vs venue)
-  const renderModeIndicator = () => {
-    if (!searchQuery) return null;
-    
-    return (
-      <View style={styles.modeIndicator}>
-        <Icon 
-          name={mode === 'user' ? 'person' : 'business'} 
-          size={16} 
-          color={theme.colors.primary} 
-        />
-        <Text style={[styles.modeText, { color: theme.colors.textSecondary }]}>
-          Searching {mode === 'user' ? 'users' : 'venues'}
-        </Text>
-      </View>
-    );
-  };
-
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       {/* Search Bar with Filter Button */}
@@ -687,7 +643,7 @@ const SearchScreen: React.FC = () => {
         <Icon name="search" size={20} color={theme.colors.textSecondary} style={styles.searchIcon} />
         <TextInput
           style={[styles.searchInput, { color: theme.colors.text }]}
-          placeholder="Search venues, categories, locations..."
+          placeholder="Search venues, users, categories..."
           value={searchQuery}
           onChangeText={setSearchQuery}
           placeholderTextColor={theme.colors.textSecondary}
@@ -718,33 +674,62 @@ const SearchScreen: React.FC = () => {
       </View>
 
       {/* Results Counter */}
-      <View style={styles.resultsContainer}>
-        {renderModeIndicator()}
-        <Text style={[styles.resultsText, { color: theme.colors.textSecondary }]}>
-          {isLoading 
-            ? 'Loading...' 
-            : mode === 'venue' 
-              ? `${filteredVenues.length} venues found`
-              : `${usersData?.length || 0} users found`
-          }
-        </Text>
-      </View>
+      {searchQuery && (
+        <View style={styles.resultsContainer}>
+          <Text style={[styles.resultsText, { color: theme.colors.textSecondary }]}>
+            {isLoading 
+              ? 'Searching...' 
+              : `${filteredVenues.length} venues${usersData && usersData.length > 0 ? ` • ${usersData.length} users` : ''}`
+            }
+          </Text>
+        </View>
+      )}
 
-      {isLoading ? (
+      {isLoading && searchQuery.length > 0 ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
           <Text style={[styles.loadingText, { color: theme.colors.textSecondary }]}>
-            Loading {mode === 'user' ? 'users' : 'venues'}...
+            Searching...
           </Text>
         </View>
       ) : (
         <FlatList
-          data={mode === 'venue' ? filteredVenues : (usersData || [])}
-          renderItem={mode === 'venue' ? renderVenueItem : renderUserItem}
-          keyExtractor={item => item.id}
+          data={
+            searchQuery.length > 0
+              ? [
+                  ...(usersData && usersData.length > 0 ? [{ type: 'section', title: 'Users' }] : []),
+                  ...(usersData || []).map(user => ({ type: 'user', data: user })),
+                  ...(filteredVenues.length > 0 ? [{ type: 'section', title: 'Venues' }] : []),
+                  ...filteredVenues.map(venue => ({ type: 'venue', data: venue })),
+                ]
+              : [] // Empty array when no search query
+          }
+          renderItem={({ item }: any) => {
+            if (item.type === 'section') {
+              return (
+                <View style={styles.sectionHeader}>
+                  <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+                    {item.title}
+                  </Text>
+                </View>
+              );
+            } else if (item.type === 'user') {
+              return renderUserItem({ item: item.data });
+            } else {
+              return (
+                <View style={styles.venueItemContainer}>
+                  {renderVenueItem({ item: item.data })}
+                </View>
+              );
+            }
+          }}
+          keyExtractor={(item: any, index) => {
+            if (item.type === 'section') return `section-${item.title}`;
+            return item.data.id;
+          }}
           style={styles.venuesList}
           contentContainerStyle={
-            (mode === 'venue' ? filteredVenues.length : (usersData?.length || 0)) === 0 
+            searchQuery.length === 0 || (filteredVenues.length === 0 && (!usersData || usersData.length === 0))
               ? styles.emptyListContainer 
               : styles.listContent
           }
@@ -752,26 +737,17 @@ const SearchScreen: React.FC = () => {
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Icon 
-                name={usersError && mode === 'user' ? 'alert-circle-outline' : mode === 'user' ? 'person-outline' : 'search-outline'} 
+                name={searchQuery ? "search-outline" : "search"}
                 size={48} 
-                color={usersError && mode === 'user' ? '#FF3B30' : theme.colors.textSecondary} 
+                color={theme.colors.textSecondary} 
               />
-              <Text style={[styles.emptyText, { color: usersError && mode === 'user' ? '#FF3B30' : theme.colors.textSecondary }]}>
-                {usersError && mode === 'user' 
-                  ? 'Search Error' 
-                  : `No ${mode === 'user' ? 'users' : 'venues'} found`
-                }
+              <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
+                {searchQuery ? 'No results found' : 'Start searching'}
               </Text>
               <Text style={[styles.emptySubtext, { color: theme.colors.textSecondary }]}>
-                {usersError && mode === 'user'
-                  ? 'Unable to search users. Please check your connection.'
-                  : mode === 'user' && cleanQuery.length < 2
-                    ? 'Type at least 2 characters after @ to search users'
-                    : searchQuery 
-                      ? `Try adjusting your search${mode === 'user' ? ' or check the username' : ''}` 
-                      : mode === 'user' 
-                        ? 'Start typing with @ to search users' 
-                        : 'Start typing to search venues'
+                {searchQuery 
+                  ? 'Try adjusting your search or filters' 
+                  : 'Type to search for venues and users'
                 }
               </Text>
             </View>
@@ -948,21 +924,8 @@ const styles = StyleSheet.create({
   venuesList: {
     flex: 1,
   },
-  venueItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginHorizontal: 15,
-    marginVertical: 5,
-    padding: 15,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+  venueItemContainer: {
+    paddingHorizontal: 15,
   },
   userItem: {
     flexDirection: 'row',
@@ -999,64 +962,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Inter-Regular',
   },
-  venueImageContainer: {
-    position: 'relative',
-    marginRight: 15,
-  },
-  venueImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 8,
-  },
-  favoriteButtonSmall: {
-    position: 'absolute',
-    top: -4,
-    right: -4,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 1,
-    elevation: 2,
-  },
-  venueInfo: {
-    flex: 1,
-  },
-  venueName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 4,
-    fontFamily: 'Poppins-SemiBold', // Primary font for headings
-  },
-  venueCategory: {
-    fontSize: 14,
-    marginBottom: 2,
-    fontFamily: 'Inter-Medium', // Secondary font for UI elements
-  },
-  venueLocation: {
-    fontSize: 14,
-    marginBottom: 4,
-    fontFamily: 'Inter-Regular', // Secondary font for body text
-  },
-  venueDetails: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  rating: {
-    fontSize: 14,
-    fontFamily: 'Inter-Regular', // Secondary font for body text
-  },
-  priceRange: {
-    fontSize: 14,
-    fontFamily: 'Inter-Regular', // Secondary font for body text
-  },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -1082,6 +987,17 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingBottom: 100, // Space for floating tab bar
+  },
+  // Section Header Styles
+  sectionHeader: {
+    paddingHorizontal: 15,
+    paddingVertical: 12,
+    paddingTop: 20,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontFamily: 'Poppins-SemiBold',
+    fontWeight: '600',
   },
   // Drawer Styles
   drawerOverlay: {

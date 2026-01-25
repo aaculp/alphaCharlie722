@@ -960,7 +960,7 @@ See `database/mockdata/check-at-search-data.sql` for comprehensive validation.
 - [Database README](../database/README.md) - Database scripts and migrations
 - [Backend Enhancement Recommendations](../BACKEND_ENHANCEMENT_RECOMMENDATIONS.md) - Future improvements
 - [@ Search Feature Documentation](./at-search-feature.md) - @ search implementation details
-- [@ Search Validation Guide](../database/mockdata/README-AT-SEARCH-VALIDATION.md) - Data validation scripts
+- [@ Search Validation Guide](../database/mockdata/README-VALIDATION.md) - Data validation scripts and usage
 
 ---
 
