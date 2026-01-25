@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import { CheckInService } from '../services/api/checkins';
+import { queryKeys } from '../lib/queryKeys';
 import type { CheckInWithVenue } from '../types';
 
 export interface UseCheckInHistoryOptions {
@@ -21,7 +22,7 @@ export interface UseCheckInHistoryReturn {
 }
 
 /**
- * Custom hook for fetching user's check-in history
+ * Custom hook for fetching user's check-in history using React Query
  * 
  * @param options - Options including userId, enabled flag, and daysBack filter
  * @returns Check-in history data, loading states, and pagination functions
@@ -41,122 +42,53 @@ export function useCheckInHistory(options: UseCheckInHistoryOptions = {}): UseCh
   // Use provided userId or fall back to authenticated user
   const userId = providedUserId || user?.id;
   
-  const [checkIns, setCheckIns] = useState<CheckInWithVenue[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [refreshing, setRefreshing] = useState<boolean>(false);
-  const [loadingMore, setLoadingMore] = useState<boolean>(false);
-  const [error, setError] = useState<Error | null>(null);
-  const [hasMore, setHasMore] = useState<boolean>(false);
-  const [offset, setOffset] = useState<number>(0);
-
-  const fetchCheckIns = useCallback(async (isRefresh: boolean = false, isLoadMore: boolean = false) => {
-    if (!enabled || !userId) {
-      setLoading(false);
-      return;
-    }
-
-    try {
-      // Set appropriate loading state
-      if (isRefresh) {
-        setRefreshing(true);
-      } else if (isLoadMore) {
-        setLoadingMore(true);
-      } else {
-        setLoading(true);
+  // Use React Query for automatic cache invalidation
+  const {
+    data,
+    isLoading,
+    error,
+    refetch: queryRefetch,
+  } = useQuery({
+    queryKey: [...queryKeys.checkIns.byUser(userId || ''), { daysBack }],
+    queryFn: async () => {
+      if (!userId) {
+        return { checkIns: [], hasMore: false };
       }
-      
-      setError(null);
 
-      const currentOffset = isRefresh ? 0 : offset;
-      
       const response = await CheckInService.getUserCheckInHistory({
         userId,
         limit: 50,
-        offset: currentOffset,
+        offset: 0,
         daysBack
       });
 
-      if (isRefresh) {
-        // Replace all check-ins on refresh
-        setCheckIns(response.checkIns);
-        setOffset(response.checkIns.length);
-      } else if (isLoadMore) {
-        // Append check-ins on load more
-        setCheckIns(prev => [...prev, ...response.checkIns]);
-        setOffset(prev => prev + response.checkIns.length);
-      } else {
-        // Initial load
-        setCheckIns(response.checkIns);
-        setOffset(response.checkIns.length);
-      }
+      return {
+        checkIns: response.checkIns,
+        hasMore: response.hasMore,
+      };
+    },
+    enabled: enabled && !!userId,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 30, // 30 minutes (formerly cacheTime)
+  });
 
-      setHasMore(response.hasMore);
-    } catch (err) {
-      const fetchError = err instanceof Error ? err : new Error('Failed to fetch check-in history');
-      setError(fetchError);
-      console.error('Error fetching check-in history:', fetchError);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-      setLoadingMore(false);
-    }
-  }, [userId, enabled, daysBack, offset]);
+  const refetch = async () => {
+    await queryRefetch();
+  };
 
-  // Initial fetch
-  useEffect(() => {
-    if (!enabled || !userId) {
-      setLoading(false);
-      return;
-    }
-
-    const initialFetch = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const response = await CheckInService.getUserCheckInHistory({
-          userId,
-          limit: 50,
-          offset: 0,
-          daysBack
-        });
-
-        setCheckIns(response.checkIns);
-        setOffset(response.checkIns.length);
-        setHasMore(response.hasMore);
-      } catch (err) {
-        const fetchError = err instanceof Error ? err : new Error('Failed to fetch check-in history');
-        setError(fetchError);
-        console.error('Error fetching check-in history:', fetchError);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    initialFetch();
-  }, [userId, enabled, daysBack]);
-
-  // Refetch function for pull-to-refresh
-  const refetch = useCallback(async () => {
-    setOffset(0); // Reset offset
-    await fetchCheckIns(true, false);
-  }, [fetchCheckIns]);
-
-  // Load more function for pagination
-  const loadMore = useCallback(async () => {
-    if (!hasMore || loadingMore || loading) {
-      return;
-    }
-    await fetchCheckIns(false, true);
-  }, [hasMore, loadingMore, loading, fetchCheckIns]);
+  // Placeholder for pagination - can be enhanced later with infinite query
+  const loadMore = async () => {
+    // TODO: Implement pagination with useInfiniteQuery if needed
+    console.log('Load more not yet implemented with React Query');
+  };
 
   return {
-    checkIns,
-    loading,
-    refreshing,
-    loadingMore,
-    error,
-    hasMore,
+    checkIns: data?.checkIns || [],
+    loading: isLoading,
+    refreshing: false, // React Query handles this internally
+    loadingMore: false, // Not implemented yet
+    error: error as Error | null,
+    hasMore: data?.hasMore || false,
     loadMore,
     refetch,
   };

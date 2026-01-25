@@ -8,6 +8,9 @@
 export { useCheckInMutation } from './useCheckInMutation';
 export type { CheckInMutationData, UseCheckInMutationOptions } from './useCheckInMutation';
 
+export { useCheckOutMutation } from './useCheckOutMutation';
+export type { CheckOutMutationData, UseCheckOutMutationOptions } from './useCheckOutMutation';
+
 export { useUpdateProfileMutation } from './useUpdateProfileMutation';
 export type { UpdateProfileMutationData, UseUpdateProfileMutationOptions } from './useUpdateProfileMutation';
 

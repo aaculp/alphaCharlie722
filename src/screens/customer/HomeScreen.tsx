@@ -128,7 +128,6 @@ const HomeScreen: React.FC = () => {
   const [sortByDistance, setSortByDistance] = useState(false);
   const [userCheckIns, setUserCheckIns] = useState<Map<string, CheckInInfo>>(new Map());
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [checkInHistoryKey, setCheckInHistoryKey] = useState(0); // Key to force RecentCheckInsSection refetch
   const { theme } = useTheme();
   const { locationEnabled } = useLocationContext();
   const { user } = useAuth();
@@ -452,7 +451,6 @@ const HomeScreen: React.FC = () => {
         {/* Recent Check-Ins Section */}
         {user && (
           <RecentCheckInsSection
-            key={checkInHistoryKey}
             onVenuePress={(venueId, venueName) => {
               navigation.navigate('VenueDetail', {
                 venueId,
@@ -539,12 +537,10 @@ const HomeScreen: React.FC = () => {
                         console.error('Error fetching check-in after check-in:', error);
                       }
                       // Requirement 11.2: Trigger check-in history refetch after check-in
-                      setCheckInHistoryKey(prev => prev + 1);
                     } else {
                       // User checked out
                       setUserCheckIns(new Map());
                       // Requirement 11.2: Trigger check-in history refetch after check-out
-                      setCheckInHistoryKey(prev => prev + 1);
                     }
                     // Requirement 11.1: Refetch check-in stats to get accurate counts
                     refetchCheckInStats();

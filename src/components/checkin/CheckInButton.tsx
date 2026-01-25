@@ -12,6 +12,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { CheckInService } from '../../services/api/checkins';
 import { ReviewService } from '../../services/api/reviews';
+import { useCheckInMutation, useCheckOutMutation } from '../../hooks/mutations';
 import CheckInModal from './CheckInModal';
 import ReviewPromptModal from '../venue/ReviewPromptModal';
 import ReviewSubmissionModal from '../venue/ReviewSubmissionModal';
@@ -54,6 +55,34 @@ const CheckInButton: React.FC<CheckInButtonProps> = ({
   const [showReviewPrompt, setShowReviewPrompt] = useState(false);
   const [showFullReviewModal, setShowFullReviewModal] = useState(false);
   const [hasShownReviewPrompt, setHasShownReviewPrompt] = useState(false);
+
+  // React Query mutations
+  const checkInMutation = useCheckInMutation({
+    onSuccess: () => {
+      onCheckInChange(true, activeCheckIns + 1);
+      setShowModal(false);
+    },
+    onError: (error) => {
+      console.error('Error checking in:', error);
+      Alert.alert('Error', `Failed to check into ${venueName}. Please try again.`);
+    }
+  });
+
+  const checkOutMutation = useCheckOutMutation({
+    onSuccess: async () => {
+      onCheckInChange(false, Math.max(0, activeCheckIns - 1));
+      setShowModal(false);
+      
+      // Show review prompt after checkout
+      if (!hasShownReviewPrompt) {
+        await checkAndShowReviewPrompt();
+      }
+    },
+    onError: (error) => {
+      console.error('Error checking out:', error);
+      Alert.alert('Error', `Failed to check out of ${venueName}. Please try again.`);
+    }
+  });
 
   const sizeConfig = {
     small: {
@@ -112,7 +141,8 @@ const CheckInButton: React.FC<CheckInButtonProps> = ({
       return;
     }
 
-    if (loading || showModal) return; // Prevent multiple operations
+    const isLoading = checkInMutation.isPending || checkOutMutation.isPending;
+    if (isLoading || showModal) return; // Prevent multiple operations
 
     if (isCheckedIn && checkInId) {
       // Check out - show modal if requested, otherwise direct checkout
@@ -151,39 +181,20 @@ const CheckInButton: React.FC<CheckInButtonProps> = ({
   const performCheckIn = async () => {
     if (!user) return;
 
-    try {
-      setLoading(true);
-      await CheckInService.checkIn(venueId, user.id);
-      onCheckInChange(true, activeCheckIns + 1);
-      setShowModal(false);
-    } catch (error) {
-      console.error('Error checking in:', error);
-      Alert.alert('Error', `Failed to check into ${venueName}. Please try again.`);
-    } finally {
-      setLoading(false);
-    }
+    checkInMutation.mutate({
+      venueId,
+      userId: user.id,
+    });
   };
 
   const performCheckOut = async () => {
     if (!user || !checkInId) return;
 
-    try {
-      setLoading(true);
-      await CheckInService.checkOut(checkInId, user.id);
-      onCheckInChange(false, Math.max(0, activeCheckIns - 1));
-      setShowModal(false); // Close modal after successful checkout
-      
-      // Requirement 2.1, 2.7, 2.8: Show review prompt after checkout
-      // Only show if user hasn't reviewed venue and hasn't seen prompt this session
-      if (!hasShownReviewPrompt) {
-        await checkAndShowReviewPrompt();
-      }
-    } catch (error) {
-      console.error('Error checking out:', error);
-      Alert.alert('Error', `Failed to check out of ${venueName}. Please try again.`);
-    } finally {
-      setLoading(false);
-    }
+    checkOutMutation.mutate({
+      checkInId,
+      userId: user.id,
+      venueId,
+    });
   };
 
   /**
@@ -257,6 +268,7 @@ const CheckInButton: React.FC<CheckInButtonProps> = ({
   };
 
   const buttonStyle = getButtonStyle();
+  const isLoading = checkInMutation.isPending || checkOutMutation.isPending;
 
   return (
     <>
@@ -268,7 +280,7 @@ const CheckInButton: React.FC<CheckInButtonProps> = ({
             backgroundColor: buttonStyle.backgroundColor,
             borderColor: buttonStyle.borderColor,
             borderRadius: config.borderRadius,
-            opacity: (loading || showModal) ? 0.6 : 1,
+            opacity: (isLoading || showModal) ? 0.6 : 1,
             minHeight: config.minHeight, // Requirement 10.5: Minimum touch target
             minWidth: config.minWidth,   // Requirement 10.5: Minimum touch target
             justifyContent: 'center',
@@ -276,15 +288,15 @@ const CheckInButton: React.FC<CheckInButtonProps> = ({
           }
         ]}
         onPress={handleCheckInToggle}
-        disabled={loading || showModal}
+        disabled={isLoading || showModal}
         activeOpacity={0.7}
         // Requirement 10.5: Accessibility for touch targets
         accessible={true}
         accessibilityRole="button"
         accessibilityLabel={isCheckedIn ? `Check out from ${venueName}` : `Check in to ${venueName}`}
-        accessibilityState={{ disabled: loading || showModal }}
+        accessibilityState={{ disabled: isLoading || showModal }}
       >
-        {loading ? (
+        {isLoading ? (
           <ActivityIndicator size="small" color={buttonStyle.color} />
         ) : (
           <View style={styles.buttonContent}>
@@ -315,7 +327,7 @@ const CheckInButton: React.FC<CheckInButtonProps> = ({
         currentVenue={modalMode === 'checkin' ? currentVenue : undefined}
         activeCheckIns={activeCheckIns}
         maxCapacity={maxCapacity}
-        loading={loading}
+        loading={isLoading}
         mode={modalMode}
         checkInDuration={modalMode === 'checkout' ? getCheckInDuration() : undefined}
       />

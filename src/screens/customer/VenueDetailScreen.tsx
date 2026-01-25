@@ -19,7 +19,7 @@ import { useCheckInStats } from '../../hooks';
 import { useVenueQuery } from '../../hooks/queries/useVenueQuery';
 import { useCheckInMutation } from '../../hooks/mutations/useCheckInMutation';
 import { ModernVenueCards } from '../../components/venue/VenueInfoComponents';
-import { VenueCustomerCountChip } from '../../components/ui';
+import { VenueCustomerCountChip, VenueCategoryBadge } from '../../components/ui';
 import { UserFeedback } from '../../components/checkin';
 import { CheckInButton } from '../../components/checkin';
 import { MutualFavoritesIndicator } from '../../components/social';
@@ -417,8 +417,11 @@ const VenueDetailScreen: React.FC = () => {
             {venue.description}
           </Text>
 
-          {/* Row 5: Engagement Row - Activity + Customer Count */}
+          {/* Row 5: Engagement Row - Category + Activity + Customer Count */}
           <View style={styles.engagementRow}>
+            {/* Category Badge */}
+            <VenueCategoryBadge category={venue.category} size="large" />
+
             {/* Activity Level Chip */}
             {venue.max_capacity && checkInStats ? (
               (() => {

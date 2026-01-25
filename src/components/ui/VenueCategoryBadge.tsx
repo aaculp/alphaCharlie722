@@ -45,9 +45,9 @@ const VenueCategoryBadge: React.FC<VenueCategoryBadgeProps> = ({
       case 'large':
         return {
           paddingHorizontal: 12,
-          paddingVertical: 5,
+          paddingVertical: 6,
           fontSize: 12,
-          borderRadius: 10,
+          borderRadius: 16,
         };
       default: // medium
         return {

@@ -1,7 +1,7 @@
 /**
- * useCheckInMutation Hook
+ * useCheckOutMutation Hook
  * 
- * React Query mutation hook for check-in actions with optimistic updates.
+ * React Query mutation hook for check-out actions with optimistic updates.
  * 
  * Features:
  * - Optimistic UI updates before server confirmation
@@ -9,54 +9,53 @@
  * - Query invalidation on success
  * - Type-safe mutation interface
  * 
- * Validates Requirements: 3.1, 3.2, 3.3, 3.4
- * 
  * @example
  * ```tsx
- * const { mutate: checkIn, isPending } = useCheckInMutation({
- *   onSuccess: (checkIn) => {
- *     console.log('Checked in!', checkIn);
+ * const { mutate: checkOut, isPending } = useCheckOutMutation({
+ *   onSuccess: () => {
+ *     console.log('Checked out!');
  *   },
  *   onError: (error) => {
  *     Alert.alert('Error', error.message);
  *   }
  * });
  * 
- * // Check in to a venue
- * checkIn({ venueId: 'venue-123', userId: 'user-456' });
+ * // Check out from a venue
+ * checkOut({ checkInId: 'checkin-123', userId: 'user-456', venueId: 'venue-789' });
  * ```
  */
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { CheckInService } from '../../services/api/checkins';
 import { queryKeys } from '../../lib/queryKeys';
-import type { CheckIn, VenueWithStats } from '../../types';
+import type { VenueWithStats } from '../../types';
 
 /**
- * Check-in mutation data
+ * Check-out mutation data
  */
-export interface CheckInMutationData {
-  venueId: string;
+export interface CheckOutMutationData {
+  checkInId: string;
   userId: string;
+  venueId: string;
 }
 
 /**
- * Options for useCheckInMutation hook
+ * Options for useCheckOutMutation hook
  */
-export interface UseCheckInMutationOptions {
-  onSuccess?: (data: CheckIn) => void;
+export interface UseCheckOutMutationOptions {
+  onSuccess?: () => void;
   onError?: (error: Error) => void;
 }
 
 /**
  * Context returned from onMutate for rollback
  */
-interface CheckInMutationContext {
+interface CheckOutMutationContext {
   previousVenue?: VenueWithStats;
 }
 
 /**
- * Custom hook for check-in mutation with optimistic updates
+ * Custom hook for check-out mutation with optimistic updates
  * 
  * Implements optimistic update pattern:
  * 1. onMutate: Capture previous state and optimistically update UI
@@ -67,16 +66,16 @@ interface CheckInMutationContext {
  * @param options - Success and error callbacks
  * @returns React Query mutation result
  */
-export function useCheckInMutation(options?: UseCheckInMutationOptions) {
+export function useCheckOutMutation(options?: UseCheckOutMutationOptions) {
   const queryClient = useQueryClient();
 
-  return useMutation<CheckIn, Error, CheckInMutationData, CheckInMutationContext>({
-    mutationFn: async ({ venueId, userId }: CheckInMutationData) => {
-      return await CheckInService.checkIn(venueId, userId);
+  return useMutation<void, Error, CheckOutMutationData, CheckOutMutationContext>({
+    mutationFn: async ({ checkInId, userId }: CheckOutMutationData) => {
+      await CheckInService.checkOut(checkInId, userId);
     },
 
     // Optimistic update: Update UI before server confirmation
-    onMutate: async ({ venueId }: CheckInMutationData) => {
+    onMutate: async ({ venueId }: CheckOutMutationData) => {
       // Cancel any outgoing refetches to prevent them from overwriting our optimistic update
       await queryClient.cancelQueries({ 
         queryKey: queryKeys.venues.detail(venueId) 
@@ -97,11 +96,11 @@ export function useCheckInMutation(options?: UseCheckInMutationOptions) {
             return {
               ...old,
               stats: {
-                active_checkins: (old.stats?.active_checkins || 0) + 1,
-                recent_checkins: (old.stats?.recent_checkins || 0) + 1,
-                user_is_checked_in: true,
-                user_checkin_id: undefined, // Will be set by server response
-                user_checkin_time: new Date().toISOString(),
+                active_checkins: Math.max(0, (old.stats?.active_checkins || 0) - 1),
+                recent_checkins: old.stats?.recent_checkins || 0,
+                user_is_checked_in: false,
+                user_checkin_id: undefined,
+                user_checkin_time: undefined,
               },
             };
           }
@@ -129,7 +128,7 @@ export function useCheckInMutation(options?: UseCheckInMutationOptions) {
     // Success handler
     onSuccess: (data, variables, context) => {
       // Call user-provided success handler
-      options?.onSuccess?.(data);
+      options?.onSuccess?.();
     },
 
     // Always refetch after mutation (success or error) to ensure data consistency
@@ -137,16 +136,15 @@ export function useCheckInMutation(options?: UseCheckInMutationOptions) {
       // Invalidate venue detail query to refetch with server data
       queryClient.invalidateQueries({ 
         queryKey: queryKeys.venues.detail(venueId),
-        exact: true, // Only invalidate this specific venue, not all venue details
+        exact: true,
       });
 
       // Invalidate venue list queries to update check-in counts
-      // Note: We invalidate all list queries because check-in count affects sorting/filtering
       queryClient.invalidateQueries({ 
         queryKey: queryKeys.venues.lists(),
       });
 
-      // Invalidate user's check-in queries (including history with any daysBack filter)
+      // Invalidate user's check-in queries (this will trigger useCheckInHistory to refetch)
       queryClient.invalidateQueries({ 
         queryKey: queryKeys.checkIns.byUser(userId),
       });
