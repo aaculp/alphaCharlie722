@@ -18,7 +18,7 @@ import { useEngagementColor } from '../../hooks/useEngagementColor';
 interface VenueCustomerCountChipProps {
   count: number;
   maxCapacity?: number; // Added to support traffic light colors
-  size?: 'small' | 'medium' | 'large';
+  size?: 'xsmall' | 'small' | 'medium' | 'large';
   variant?: 'themed' | 'traffic' | 'primary' | 'success' | 'warning' | 'error';
 }
 
@@ -32,6 +32,13 @@ const VenueCustomerCountChip: React.FC<VenueCustomerCountChipProps> = ({
   const engagementColor = useEngagementColor(count, maxCapacity);
 
   const sizeConfig = {
+    xsmall: {
+      iconSize: 12,
+      textSize: 10,
+      padding: { paddingHorizontal: 8, paddingVertical: 4 },
+      borderRadius: 14,
+      minWidth: 50,
+    },
     small: {
       iconSize: 14,
       textSize: 12,

@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '../../contexts/ThemeContext';
+import { VenueEngagementChip, VenueCustomerCountChip, VenueCategoryBadge } from '../ui';
 import type { Venue } from '../../types';
 
 interface VenueSearchCardProps {
@@ -61,7 +62,7 @@ const VenueSearchCard: React.FC<VenueSearchCardProps> = ({
           }}
           style={styles.venueImage}
         />
-        
+
         {/* Optional Favorite Button */}
         {showFavoriteButton && onFavoritePress && (
           <TouchableOpacity
@@ -86,8 +87,8 @@ const VenueSearchCard: React.FC<VenueSearchCardProps> = ({
 
       {/* Content Section */}
       <View style={styles.content}>
-        {/* Venue Name and Category */}
-        <View style={styles.headerRow}>
+        <View style={styles.venueColumn}>
+          {/* Venue Name */}
           <Text
             style={[
               styles.venueName,
@@ -97,85 +98,91 @@ const VenueSearchCard: React.FC<VenueSearchCardProps> = ({
           >
             {venue.name || 'Unknown Venue'}
           </Text>
-          
-          {/* Category Badge */}
-          {venue.category && (
-            <View
-              style={[
-                styles.categoryBadge,
-                {
-                  backgroundColor: theme.colors.primary + '20',
-                  borderColor: theme.colors.primary + '40',
-                }
-              ]}
-            >
-              <Text
-                style={[
-                  styles.categoryText,
-                  { color: theme.colors.primary }
-                ]}
-              >
-                {venue.category}
-              </Text>
-            </View>
-          )}
-        </View>
 
-        {/* Location */}
-        {venue.location && (
-          <View style={styles.locationRow}>
-            <Icon
-              name="location-outline"
-              size={14}
-              color={theme.colors.textSecondary}
-            />
-            <Text
-              style={[
-                styles.locationText,
-                { color: theme.colors.textSecondary }
-              ]}
-              numberOfLines={1}
-            >
-              {venue.location}
-            </Text>
-          </View>
-        )}
-
-        {/* Rating and Price Range */}
-        <View style={styles.metadataRow}>
-          {/* Rating */}
-          {venue.rating != null && venue.rating > 0 && (
-            <View style={styles.metadataItem}>
+          {/* Location */}
+          {venue.location && (
+            <View style={styles.locationRow}>
               <Icon
-                name="star"
+                name="location-outline"
                 size={14}
-                color="#FFB800"
-                style={styles.metadataIcon}
+                color={theme.colors.textSecondary}
               />
               <Text
                 style={[
-                  styles.metadataText,
-                  { color: theme.colors.text }
+                  styles.locationText,
+                  { color: theme.colors.textSecondary }
                 ]}
+                numberOfLines={1}
               >
-                {venue.rating.toFixed(1)}
+                {venue.location}
               </Text>
             </View>
           )}
 
-          {/* Price Range */}
-          {venue.price_range != null && venue.price_range !== '' && (
-            <View style={styles.metadataItem}>
-              <Text
-                style={[
-                  styles.priceText,
-                  { color: theme.colors.textSecondary }
-                ]}
-              >
-                {venue.price_range}
-              </Text>
-            </View>
+          {/* Rating and Price Range Row */}
+          <View style={styles.metadataRow}>
+            {/* Rating */}
+            {venue.rating != null && venue.rating > 0 && (
+              <View style={styles.metadataItem}>
+                <Icon
+                  name="star"
+                  size={14}
+                  color="#FFB800"
+                  style={styles.metadataIcon}
+                />
+                <Text
+                  style={[
+                    styles.metadataText,
+                    { color: theme.colors.text }
+                  ]}
+                >
+                  {venue.rating.toFixed(1)}
+                </Text>
+              </View>
+            )}
+
+            {/* Price Range */}
+            {venue.price_range != null && venue.price_range !== '' && (
+              <View style={styles.metadataItem}>
+                <Text
+                  style={[
+                    styles.priceText,
+                    { color: theme.colors.textSecondary }
+                  ]}
+                >
+                  {venue.price_range}
+                </Text>
+              </View>
+            )}
+          </View>
+        </View>
+
+        {/* Chips Column */}
+        <View style={styles.chipsColumn}>
+          {/* Category Badge */}
+          {venue.category && (
+            <VenueCategoryBadge
+              category={venue.category}
+              size="small"
+              variant="primary"
+            />
           )}
+
+          {/* Engagement Chip */}
+          <VenueEngagementChip
+            currentCheckIns={venue.stats?.active_checkins || 0}
+            maxCapacity={venue.max_capacity || 100}
+            size="xsmall"
+            variant="traffic"
+          />
+
+          {/* Customer Count Chip */}
+          <VenueCustomerCountChip
+            count={venue.stats?.active_checkins || 0}
+            maxCapacity={venue.max_capacity || 100}
+            size="xsmall"
+            variant="traffic"
+          />
         </View>
       </View>
 
@@ -228,32 +235,18 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-  },
-  headerRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
+    justifyContent: 'space-between'
   },
   venueName: {
     fontSize: 16,
     fontFamily: 'Poppins-SemiBold',
-    flex: 1,
-    marginRight: 8,
-  },
-  categoryBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  categoryText: {
-    fontSize: 10,
-    fontFamily: 'Inter-SemiBold',
+    marginBottom: 4,
   },
   locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   locationText: {
     fontSize: 13,
@@ -264,6 +257,7 @@ const styles = StyleSheet.create({
   metadataRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 8,
   },
   metadataItem: {
     flexDirection: 'row',
@@ -280,6 +274,13 @@ const styles = StyleSheet.create({
   priceText: {
     fontSize: 13,
     fontFamily: 'Inter-SemiBold',
+  },
+  venueColumn: {
+    flexDirection: 'column',
+  },
+  chipsColumn: {
+    flexDirection: 'column',
+    gap: 6,
   },
   chevron: {
     marginLeft: 8,

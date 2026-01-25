@@ -19,7 +19,7 @@ import { useEngagementColor } from '../../hooks/useEngagementColor';
 interface VenueEngagementChipProps {
   currentCheckIns: number;
   maxCapacity: number;
-  size?: 'small' | 'medium' | 'large';
+  size?: 'xsmall' | 'small' | 'medium' | 'large';
   variant?: 'themed' | 'colored' | 'traffic' | 'primary' | 'success' | 'warning' | 'error';
 }
 
@@ -35,6 +35,13 @@ const VenueEngagementChip: React.FC<VenueEngagementChipProps> = ({
 
   const getSizeStyles = () => {
     switch (size) {
+      case 'xsmall':
+        return {
+          paddingHorizontal: 8,
+          paddingVertical: 4,
+          fontSize: 10,
+          minWidth: 50,
+        };
       case 'small':
         return {
           paddingHorizontal: 12,

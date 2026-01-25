@@ -76,7 +76,7 @@ const SearchScreen: React.FC = () => {
   // 300ms delay ensures we don't query on every keystroke
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
-  // Unified search: Always fetch both venues and users
+  // MVP: Venues-only search
   // Venue search query - only enabled when there's a search query
   const { venues: venuesData, isLoading: venuesLoading, error: venuesError } = useVenuesQuery({ 
     filters: venueFilters,
@@ -89,12 +89,15 @@ const SearchScreen: React.FC = () => {
     return venuesData || [];
   }, [venuesData]);
   
-  // User search query - only enabled when there's a search query
-  // Searches profiles table for matching usernames and display names
-  const { data: usersData, isLoading: usersLoading, error: usersError } = useUsersQuery({
-    searchQuery: debouncedSearchQuery,
-    enabled: debouncedSearchQuery.length >= 2, // Only search users with 2+ characters
-  });
+  // MVP: User search disabled for now
+  // TODO: Re-enable user search post-MVP
+  // const { data: usersData, isLoading: usersLoading, error: usersError } = useUsersQuery({
+  //   searchQuery: debouncedSearchQuery,
+  //   enabled: debouncedSearchQuery.length >= 2, // Only search users with 2+ characters
+  // });
+  const usersData = null;
+  const usersLoading = false;
+  const usersError = null;
   
   // Log errors
   useEffect(() => {
@@ -105,8 +108,8 @@ const SearchScreen: React.FC = () => {
   
   const { toggleFavorite: toggleFavoriteHook, isFavorite } = useFavorites();
   
-  // Combined loading state - show loading if either query is loading
-  const isLoading = venuesLoading || usersLoading;
+  // Loading state - venues only for MVP
+  const isLoading = venuesLoading;
 
   // Animation for drawer
   const slideAnim = useRef(new Animated.Value(Dimensions.get('window').width * 0.4)).current;
@@ -191,15 +194,15 @@ const SearchScreen: React.FC = () => {
     }
   }, [filterVenues, searchQuery]);
 
-  // Handle user search errors
-  // Display user-friendly error message when user search fails
-  useEffect(() => {
-    if (usersError) {
-      console.error('User search error:', usersError);
-      // Don't show alert for user search errors - just log them
-      // Users can still see venue results
-    }
-  }, [usersError]);
+  // MVP: User search errors disabled
+  // TODO: Re-enable post-MVP
+  // useEffect(() => {
+  //   if (usersError) {
+  //     console.error('User search error:', usersError);
+  //     // Don't show alert for user search errors - just log them
+  //     // Users can still see venue results
+  //   }
+  // }, [usersError]);
 
   // Helper function to check if venue is open now (Requirement 7.1)
   // Parses venue hours and compares with current time
@@ -355,19 +358,19 @@ const SearchScreen: React.FC = () => {
     });
   };
 
-  // Navigation handler for user profile (Requirements 5.1, 5.2)
-  // Validates user data before navigation to prevent errors
-  const handleUserPress = (user: any) => {
-    // Edge case: ensure user has valid ID before navigating
-    if (!user || !user.id) {
-      Alert.alert('Error', 'Unable to view this user profile.');
-      return;
-    }
-
-    navigation.navigate('UserProfile', {
-      userId: user.id,
-    });
-  };
+  // MVP: User profile navigation disabled
+  // TODO: Re-enable post-MVP
+  // const handleUserPress = (user: any) => {
+  //   // Edge case: ensure user has valid ID before navigating
+  //   if (!user || !user.id) {
+  //     Alert.alert('Error', 'Unable to view this user profile.');
+  //     return;
+  //   }
+  //
+  //   navigation.navigate('UserProfile', {
+  //     userId: user.id,
+  //   });
+  // };
 
   const renderPriceRangeFilter = useCallback(() => (
     <View style={styles.priceContainer}>
@@ -467,12 +470,12 @@ const SearchScreen: React.FC = () => {
               {renderFilterButtons()}
             </View>
 
-            {/* Results Counter */}
+            {/* Results Counter - MVP: Venues only */}
             <View style={styles.drawerResultsContainer}>
               <Text style={[styles.drawerResultsText, { color: theme.colors.textSecondary }]}>
                 {isLoading 
                   ? 'Loading...' 
-                  : `${filteredVenues.length} venues${usersData && usersData.length > 0 ? ` • ${usersData.length} users` : ''}`
+                  : `${filteredVenues.length} venues`
                 }
               </Text>
             </View>
@@ -595,47 +598,47 @@ const SearchScreen: React.FC = () => {
     />
   );
 
-  // User result item renderer (Requirements 4.1, 4.2, 4.3, 4.4)
-  // Displays user avatar, display name, and username with @ prefix
-  const renderUserItem = ({ item }: { item: any }) => {
-    // Handle edge case: user without username (shouldn't happen due to query filter, but defensive)
-    if (!item.username) {
-      return null;
-    }
-
-    // Determine avatar source with fallback (Requirement 4.3)
-    const avatarSource = item.avatar_url 
-      ? { uri: item.avatar_url }
-      : { uri: 'https://via.placeholder.com/50x50?text=User' };
-
-    return (
-      <TouchableOpacity
-        style={[styles.userItem, { backgroundColor: theme.colors.surface }]}
-        onPress={() => handleUserPress(item)}
-      >
-        <Image
-          source={avatarSource}
-          style={styles.userAvatar}
-          defaultSource={{ uri: 'https://via.placeholder.com/50x50?text=User' }}
-          onError={() => {
-            // Silently handle image load errors - fallback will be shown
-            console.log('Failed to load avatar for user:', item.username);
-          }}
-        />
-        <View style={styles.userInfo}>
-          {/* Display name with fallback to username (Requirement 10.1) */}
-          <Text style={[styles.displayName, { color: theme.colors.text }]}>
-            {getDisplayName(item)}
-          </Text>
-          {/* Username with @ prefix (Requirement 4.4) */}
-          <Text style={[styles.username, { color: theme.colors.textSecondary }]}>
-            @{item.username}
-          </Text>
-        </View>
-        <Icon name="chevron-forward" size={20} color={theme.colors.textSecondary} />
-      </TouchableOpacity>
-    );
-  };
+  // MVP: User item renderer disabled
+  // TODO: Re-enable post-MVP
+  // const renderUserItem = ({ item }: { item: any }) => {
+  //   // Handle edge case: user without username (shouldn't happen due to query filter, but defensive)
+  //   if (!item.username) {
+  //     return null;
+  //   }
+  //
+  //   // Determine avatar source with fallback (Requirement 4.3)
+  //   const avatarSource = item.avatar_url 
+  //     ? { uri: item.avatar_url }
+  //     : { uri: 'https://via.placeholder.com/50x50?text=User' };
+  //
+  //   return (
+  //     <TouchableOpacity
+  //       style={[styles.userItem, { backgroundColor: theme.colors.surface }]}
+  //       onPress={() => handleUserPress(item)}
+  //     >
+  //       <Image
+  //         source={avatarSource}
+  //         style={styles.userAvatar}
+  //         defaultSource={{ uri: 'https://via.placeholder.com/50x50?text=User' }}
+  //         onError={() => {
+  //           // Silently handle image load errors - fallback will be shown
+  //           console.log('Failed to load avatar for user:', item.username);
+  //         }}
+  //       />
+  //       <View style={styles.userInfo}>
+  //         {/* Display name with fallback to username (Requirement 10.1) */}
+  //         <Text style={[styles.displayName, { color: theme.colors.text }]}>
+  //           {getDisplayName(item)}
+  //         </Text>
+  //         {/* Username with @ prefix (Requirement 4.4) */}
+  //         <Text style={[styles.username, { color: theme.colors.textSecondary }]}>
+  //           @{item.username}
+  //         </Text>
+  //       </View>
+  //       <Icon name="chevron-forward" size={20} color={theme.colors.textSecondary} />
+  //     </TouchableOpacity>
+  //   );
+  // };
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -644,7 +647,7 @@ const SearchScreen: React.FC = () => {
         <Icon name="search" size={20} color={theme.colors.textSecondary} style={styles.searchIcon} />
         <TextInput
           style={[styles.searchInput, { color: theme.colors.text }]}
-          placeholder="Search venues, users, categories..."
+          placeholder="Search venues, categories..."
           value={searchQuery}
           onChangeText={setSearchQuery}
           placeholderTextColor={theme.colors.textSecondary}
@@ -674,13 +677,13 @@ const SearchScreen: React.FC = () => {
         </TouchableOpacity>
       </View>
 
-      {/* Results Counter */}
+      {/* Results Counter - MVP: Venues only */}
       {searchQuery && (
         <View style={styles.resultsContainer}>
           <Text style={[styles.resultsText, { color: theme.colors.textSecondary }]}>
             {isLoading 
               ? 'Searching...' 
-              : `${filteredVenues.length} venues${usersData && usersData.length > 0 ? ` • ${usersData.length} users` : ''}`
+              : `${filteredVenues.length} venues`
             }
           </Text>
         </View>
@@ -698,8 +701,9 @@ const SearchScreen: React.FC = () => {
           data={
             searchQuery.length > 0
               ? [
-                  ...(usersData && usersData.length > 0 ? [{ type: 'section', title: 'Users' }] : []),
-                  ...(usersData || []).map(user => ({ type: 'user', data: user })),
+                  // MVP: Venues only - user search disabled
+                  // ...(usersData && usersData.length > 0 ? [{ type: 'section', title: 'Users' }] : []),
+                  // ...(usersData || []).map(user => ({ type: 'user', data: user })),
                   ...(filteredVenues.length > 0 ? [{ type: 'section', title: 'Venues' }] : []),
                   ...filteredVenues.map(venue => ({ type: 'venue', data: venue })),
                 ]
@@ -714,9 +718,12 @@ const SearchScreen: React.FC = () => {
                   </Text>
                 </View>
               );
-            } else if (item.type === 'user') {
-              return renderUserItem({ item: item.data });
-            } else {
+            } 
+            // MVP: User rendering disabled
+            // else if (item.type === 'user') {
+            //   return renderUserItem({ item: item.data });
+            // } 
+            else {
               return (
                 <View style={styles.venueItemContainer}>
                   {renderVenueItem({ item: item.data })}
@@ -730,7 +737,7 @@ const SearchScreen: React.FC = () => {
           }}
           style={styles.venuesList}
           contentContainerStyle={
-            searchQuery.length === 0 || (filteredVenues.length === 0 && (!usersData || usersData.length === 0))
+            searchQuery.length === 0 || filteredVenues.length === 0
               ? styles.emptyListContainer 
               : styles.listContent
           }

@@ -133,14 +133,6 @@ const FavoritesScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-      <View style={[styles.header, { backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.border }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Icon name="arrow-back" size={24} color={theme.colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: theme.colors.text }]}>My Favorites</Text>
-        <View style={styles.placeholder} />
-      </View>
-
       <FlatList
         data={favorites}
         renderItem={renderFavoriteItem}
@@ -151,11 +143,17 @@ const FavoritesScreen: React.FC = () => {
         ListHeaderComponent={
           user && favorites.length > 0 ? (
             <View style={styles.sharedFavoritesSection}>
+              <Text style={[styles.myFavoritesTitle, { color: theme.colors.text }]}>My Favorites</Text>
+            </View>
+          ) : null
+        }
+        ListFooterComponent={
+          user && favorites.length > 0 ? (
+            <View style={styles.sharedFavoritesSection}>
               <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Shared with Friends</Text>
               <Text style={[styles.comingSoonText, { color: theme.colors.textSecondary }]}>
                 See venues you and your friends both love - coming soon!
               </Text>
-              <Text style={[styles.myFavoritesTitle, { color: theme.colors.text }]}>My Favorites</Text>
             </View>
           ) : null
         }
@@ -176,24 +174,6 @@ const FavoritesScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    borderBottomWidth: 1,
-  },
-  backButton: {
-    padding: 4,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontFamily: 'Poppins-SemiBold',
-  },
-  placeholder: {
-    width: 32,
   },
   loadingContainer: {
     flex: 1,
@@ -254,7 +234,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontFamily: 'Poppins-SemiBold',
     paddingHorizontal: 15,
-    marginTop: 20,
+    marginTop: 10,
     marginBottom: 10,
   },
   comingSoonText: {
