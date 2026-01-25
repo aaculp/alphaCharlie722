@@ -328,8 +328,10 @@ export const ModernVenueCards: React.FC<{ venue: Venue }> = ({ venue }) => {
   }, [loadContributions, loadUserContributions]);
 
   const handleIconPress = (cardType: 'wait_times' | 'mood' | 'popular' | 'amenities') => {
+    console.log('🎯 Card icon pressed:', cardType);
     setSelectedCardType(cardType);
     setDialogVisible(true);
+    console.log('🎯 Dialog should now be visible');
   };
 
   const handleBatchUpdate = async (toAdd: string[], toRemove: string[]) => {
@@ -428,9 +430,13 @@ export const ModernVenueCards: React.FC<{ venue: Venue }> = ({ venue }) => {
             }
           ]}>
             <TouchableOpacity
-              onPress={() => handleIconPress('wait_times')}
+              onPress={() => {
+                console.log('🎯 Wait Times card pressed!');
+                handleIconPress('wait_times');
+              }}
               style={styles.modernCardHeader}
               activeOpacity={0.7}
+              testID="wait-times-card-header"
             >
               <Text style={[styles.modernCardTitle, { color: '#FF69B4' }]}>Wait Times</Text>
               <View style={[styles.modernCardIcon, { backgroundColor: '#FF69B4' + '20' }]}>
@@ -482,9 +488,13 @@ export const ModernVenueCards: React.FC<{ venue: Venue }> = ({ venue }) => {
             }
           ]}>
             <TouchableOpacity
-              onPress={() => handleIconPress('mood')}
+              onPress={() => {
+                console.log('🎯 Mood card pressed!');
+                handleIconPress('mood');
+              }}
               style={styles.modernCardHeader}
               activeOpacity={0.7}
+              testID="mood-card-header"
             >
               <Text style={[styles.modernCardTitle, { color: '#6B73FF' }]}>Mood</Text>
               <View style={[styles.modernCardIcon, { backgroundColor: '#6B73FF' + '20' }]}>
@@ -539,9 +549,13 @@ export const ModernVenueCards: React.FC<{ venue: Venue }> = ({ venue }) => {
             }
           ]}>
             <TouchableOpacity
-              onPress={() => handleIconPress('popular')}
+              onPress={() => {
+                console.log('🎯 Popular card pressed!');
+                handleIconPress('popular');
+              }}
               style={styles.modernCardHeader}
               activeOpacity={0.7}
+              testID="popular-card-header"
             >
               <Text style={[styles.modernCardTitle, { color: '#5B9BFF' }]}>Popular</Text>
               <View style={[styles.modernCardIcon, { backgroundColor: '#5B9BFF' + '20' }]}>
@@ -593,9 +607,13 @@ export const ModernVenueCards: React.FC<{ venue: Venue }> = ({ venue }) => {
             }
           ]}>
             <TouchableOpacity
-              onPress={() => handleIconPress('amenities')}
+              onPress={() => {
+                console.log('🎯 Amenities card pressed!');
+                handleIconPress('amenities');
+              }}
               style={styles.modernCardHeader}
               activeOpacity={0.7}
+              testID="amenities-card-header"
             >
               <Text style={[styles.modernCardTitle, { color: '#52C41A' }]}>Amenities</Text>
               <View style={[styles.modernCardIcon, { backgroundColor: '#52C41A' + '20' }]}>

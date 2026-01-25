@@ -167,13 +167,13 @@ const VenueDetailScreen: React.FC = () => {
   const { theme } = useTheme();
   const { user } = useAuth();
   const scrollViewRef = useRef<ScrollView>(null);
-  
+
   // Use React Query hooks for data management
   const { venue, isLoading: loading, error: venueError, refetch: refetchVenue } = useVenueQuery({
     venueId,
     enabled: !!venueId
   });
-  
+
   const [userReview, setUserReview] = useState<Review | null>(null);
   const [reviewModalVisible, setReviewModalVisible] = useState(false);
   const [loadingUserReview, setLoadingUserReview] = useState(false);
@@ -344,12 +344,31 @@ const VenueDetailScreen: React.FC = () => {
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
       >
-        <Image
-          source={{
-            uri: venue.image_url || 'https://via.placeholder.com/400x250'
-          }}
-          style={styles.heroImage}
-        />
+        {/* Hero Image with Back Button Overlay */}
+        <View style={styles.heroImageContainer}>
+          <Image
+            source={{
+              uri: venue.image_url || 'https://via.placeholder.com/400x250'
+            }}
+            style={styles.heroImage}
+          />
+
+          {/* Back Button */}
+          <TouchableOpacity
+            style={[
+              styles.backButton,
+              {
+                backgroundColor: theme.isDark
+                  ? 'rgba(255, 255, 255, 0.15)'
+                  : 'rgba(0, 0, 0, 0.4)',
+              },
+            ]}
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.7}
+          >
+            <Icon name="arrow-back" size={24} color="white" />
+          </TouchableOpacity>
+        </View>
 
         <View style={[styles.content, { backgroundColor: theme.colors.surface }]}>
           {/* Row 1: Venue Name + Check-In Button */}
@@ -480,7 +499,7 @@ const VenueDetailScreen: React.FC = () => {
             <Text style={[styles.reviewsSectionTitle, { color: theme.colors.text }]}>
               Reviews {venue.review_count !== undefined && venue.review_count > 0 && `(${venue.review_count})`}
             </Text>
-            
+
             {/* Write/Edit Review Button - Inline with Title */}
             {user && (
               <TouchableOpacity
@@ -598,9 +617,32 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
+  heroImageContainer: {
+    position: 'relative',
+    width: '100%',
+    height: 250,
+  },
   heroImage: {
     width: '100%',
     height: 250,
+  },
+  backButton: {
+    position: 'absolute',
+    top: 16,
+    left: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   content: {
     marginTop: -20,
@@ -624,8 +666,9 @@ const styles = StyleSheet.create({
   },
   engagementRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
     alignItems: 'center',
+    gap: 10
   },
   modernContentContainer: {
     marginHorizontal: 15,

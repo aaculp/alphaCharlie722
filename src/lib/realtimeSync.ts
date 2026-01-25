@@ -9,6 +9,7 @@
  * - Venue changes (INSERT, UPDATE, DELETE) -> Invalidate venue queries
  * - Check-in changes (INSERT) -> Invalidate check-in and venue queries
  * - Flash offer changes (INSERT, UPDATE, DELETE) -> Invalidate flash offer queries
+ * - Review changes (INSERT, UPDATE, DELETE) -> Invalidate venue queries (for rating updates)
  * 
  * Usage:
  * ```typescript
@@ -189,12 +190,69 @@ function subscribeToFlashOfferUpdates(queryClient: QueryClient): RealtimeChannel
 }
 
 /**
+ * Subscribe to review table changes and invalidate affected queries
+ * 
+ * When reviews are added, updated, or deleted, the venue's aggregate_rating
+ * and review_count are automatically updated by database triggers.
+ * This subscription ensures the venue data is refreshed to show the new ratings.
+ * 
+ * Invalidates:
+ * - Venue detail query (to update aggregate_rating and review_count)
+ * - Venue list queries (to update ratings in lists)
+ * 
+ * @param queryClient - The React Query client instance
+ * @returns Supabase channel for cleanup
+ */
+function subscribeToReviewUpdates(queryClient: QueryClient): RealtimeChannel {
+  const channel = supabase
+    .channel('review-changes')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'reviews' },
+      (payload) => {
+        console.log('🔄 Real-time review change:', payload.eventType);
+        
+        let venueId: string | undefined;
+        
+        if (payload.eventType === 'DELETE') {
+          venueId = (payload.old as any)?.venue_id;
+        } else {
+          venueId = (payload.new as any)?.venue_id;
+        }
+        
+        if (venueId) {
+          // Invalidate venue detail to update aggregate_rating and review_count
+          queryClient.invalidateQueries({ 
+            queryKey: queryKeys.venues.detail(venueId),
+            exact: true, // Only invalidate this specific venue
+          });
+          
+          // Invalidate venue lists to update ratings in lists
+          queryClient.invalidateQueries({ 
+            queryKey: queryKeys.venues.lists() 
+          });
+        }
+      }
+    )
+    .subscribe((status, error) => {
+      if (status === 'SUBSCRIBED') {
+        console.log('✅ Subscribed to review changes');
+      } else if (status === 'CHANNEL_ERROR') {
+        console.error('❌ Review subscription error:', error);
+      }
+    });
+
+  return channel;
+}
+
+/**
  * Set up all real-time subscriptions for React Query integration
  * 
  * Subscribes to:
  * - Venue changes
  * - Check-in changes
  * - Flash offer changes
+ * - Review changes
  * 
  * Returns a cleanup function that unsubscribes from all channels.
  * Call this function when the app unmounts or when you want to stop
@@ -219,6 +277,7 @@ export function setupRealtimeSync(queryClient: QueryClient): () => void {
   const venueChannel = subscribeToVenueUpdates(queryClient);
   const checkInChannel = subscribeToCheckInUpdates(queryClient);
   const flashOfferChannel = subscribeToFlashOfferUpdates(queryClient);
+  const reviewChannel = subscribeToReviewUpdates(queryClient);
   
   // Return cleanup function
   return () => {
@@ -227,6 +286,7 @@ export function setupRealtimeSync(queryClient: QueryClient): () => void {
     venueChannel.unsubscribe();
     checkInChannel.unsubscribe();
     flashOfferChannel.unsubscribe();
+    reviewChannel.unsubscribe();
     
     console.log('✅ Real-time subscriptions cleaned up');
   };

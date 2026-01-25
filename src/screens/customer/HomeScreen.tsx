@@ -22,7 +22,6 @@ import { useLocation } from '../../hooks/useLocation';
 import { LocationService } from '../../services/locationService';
 import { CheckInService } from '../../services/api/checkins';
 import { populateVenuesDatabase } from '../../utils/populateVenues';
-import { supabase } from '../../lib/supabase';
 import { WideVenueCard } from '../../components/ui';
 import { VenuesCarouselSection } from '../../components/ui';
 import { QuickPickChip } from '../../components/quickpicks';
@@ -219,86 +218,10 @@ const HomeScreen: React.FC = () => {
   }, [user]);
 
   // Requirement 7.7: Real-time rating updates
-  // Subscribe to venue updates (aggregate_rating and review_count changes)
-  // OPTIMIZED: Only subscribe to displayed venues with debouncing
-  useEffect(() => {
-    // Only subscribe if we have venues to monitor
-    if (venueIds.length === 0) {
-      return;
-    }
-
-    console.log('🔄 Setting up real-time venue updates subscription for', venueIds.length, 'venues');
-    
-    // Debounce refetch to prevent rapid successive queries
-    let refetchTimeout: NodeJS.Timeout | null = null;
-    const debouncedRefetch = () => {
-      if (refetchTimeout) {
-        clearTimeout(refetchTimeout);
-      }
-      refetchTimeout = setTimeout(() => {
-        console.log('🔄 Executing debounced refetch');
-        refetch();
-      }, 2000); // Wait 2 seconds before refetching
-    };
-    
-    // Subscribe to changes in the venues table - FILTERED to only displayed venues
-    const subscription = supabase
-      .channel('venue-ratings-updates')
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'venues',
-          filter: `id=in.(${venueIds.join(',')})`, // OPTIMIZATION: Only subscribe to displayed venues
-        },
-        (payload) => {
-          console.log('🔄 Venue updated:', {
-            event: payload.eventType,
-            venueId: payload.new?.id,
-            venueName: payload.new?.name,
-            oldRating: payload.old?.aggregate_rating,
-            newRating: payload.new?.aggregate_rating,
-            oldCount: payload.old?.review_count,
-            newCount: payload.new?.review_count
-          });
-          
-          console.log('🔄 Venue rating updated for displayed venue, scheduling refetch...');
-          debouncedRefetch();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*', // Listen to INSERT, UPDATE, DELETE
-          schema: 'public',
-          table: 'reviews',
-          filter: `venue_id=in.(${venueIds.join(',')})`, // OPTIMIZATION: Only subscribe to reviews for displayed venues
-        },
-        (payload) => {
-          console.log('🔄 Review changed:', {
-            event: payload.eventType,
-            venueId: payload.new?.venue_id || payload.old?.venue_id,
-            reviewId: payload.new?.id || payload.old?.id,
-            newRating: payload.new?.rating,
-            oldRating: payload.old?.rating
-          });
-          
-          console.log('🔄 Review changed for displayed venue, scheduling refetch...');
-          debouncedRefetch();
-        }
-      )
-      .subscribe();
-
-    // Cleanup subscription on unmount
-    return () => {
-      console.log('🔄 Cleaning up real-time venue updates subscription');
-      if (refetchTimeout) {
-        clearTimeout(refetchTimeout);
-      }
-      subscription.unsubscribe();
-    };
-  }, [venueIds, refetch]);
+  // NOTE: Real-time venue updates are handled globally by realtimeSync.ts
+  // This avoids duplicate subscriptions and infinite loops
+  // The global subscription invalidates React Query cache, which automatically
+  // triggers refetch for this screen when venue data changes
 
   // Handle database population if no venues found
   useEffect(() => {
