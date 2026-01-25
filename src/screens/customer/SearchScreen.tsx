@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -65,10 +65,17 @@ const SearchScreen: React.FC = () => {
   const { theme } = useTheme();
   const { user } = useAuth();
 
+  // Memoize the filters object to prevent recreating on every render
+  const venueFilters = useMemo(() => ({ limit: 50 }), []);
+
   // Use custom hooks for data management
-  const { data: venues = [], isLoading: loading } = useVenuesQuery({ 
-    filters: { limit: 50 } 
+  const { data: venuesData, isLoading: loading } = useVenuesQuery({ 
+    filters: venueFilters
   });
+  
+  // Memoize venues array to prevent new reference on every render
+  const venues = useMemo(() => venuesData || [], [venuesData]);
+  
   const { toggleFavorite: toggleFavoriteHook, isFavorite } = useFavorites();
   
   // Debounce search query to optimize filtering
@@ -82,7 +89,7 @@ const SearchScreen: React.FC = () => {
       selectedCategories,
       selectedFilters,
       selectedPriceRanges,
-      searchQuery,
+      debouncedSearchQuery,
       totalVenues: venues.length
     });
 
@@ -141,9 +148,9 @@ const SearchScreen: React.FC = () => {
 
     console.log('✅ Final filtered venues:', filtered.length);
     setFilteredVenues(filtered);
-  }, [searchQuery, venues, selectedCategories, selectedFilters, selectedPriceRanges, debouncedSearchQuery]);
+  }, [venues, selectedCategories, selectedFilters, selectedPriceRanges, debouncedSearchQuery]);
 
-  // Filter venues when search query, categories, filters, or price ranges change
+  // Filter venues when dependencies change
   useEffect(() => {
     filterVenues();
   }, [filterVenues]);

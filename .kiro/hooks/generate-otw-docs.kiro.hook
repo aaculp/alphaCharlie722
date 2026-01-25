@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Generate OTW Documentation",
+  "description": "Creates or updates the On The Way documentation page that summarizes frontend and backend features, main purpose, and functionalities in a brief and concise manner for agents and hooks to understand the app",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Create a comprehensive but concise documentation page called 'ON_THE_WAY_OVERVIEW.md' in the root directory. This documentation should:\n\n1. Provide a brief overview of the On The Way app's main purpose\n2. Summarize key frontend features (React Native, screens, components, navigation)\n3. Summarize key backend features (Supabase, database schema, edge functions, authentication)\n4. List main functionalities (check-ins, flash offers, reviews/ratings, social features, notifications)\n5. Explain the tech stack and architecture\n6. Be concise and serve as an entry point for other agents/hooks to understand the codebase\n\nReview existing documentation in /docs and README.md to extract relevant information. Keep it brief but comprehensive enough for quick understanding."
+  }
+}
