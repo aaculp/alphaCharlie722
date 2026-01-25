@@ -13,3 +13,4 @@ export * from './useActivityFeedQuery';
 export * from './useFlashOffersQuery';
 export * from './useCollectionsQuery';
 export * from './useCollectionQuery';
+export * from './useUsersQuery';

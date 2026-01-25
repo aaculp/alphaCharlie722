@@ -330,6 +330,8 @@ export interface Database {
           id: string;
           email: string;
           name: string | null;
+          username: string | null;
+          display_name: string | null;
           avatar_url: string | null;
           preferences: Record<string, any> | null;
           created_at: string;
@@ -339,6 +341,8 @@ export interface Database {
           id: string;
           email: string;
           name?: string | null;
+          username?: string | null;
+          display_name?: string | null;
           avatar_url?: string | null;
           preferences?: Record<string, any> | null;
           created_at?: string;
@@ -348,6 +352,8 @@ export interface Database {
           id?: string;
           email?: string;
           name?: string | null;
+          username?: string | null;
+          display_name?: string | null;
           avatar_url?: string | null;
           preferences?: Record<string, any> | null;
           created_at?: string;

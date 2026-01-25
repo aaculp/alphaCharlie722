@@ -53,6 +53,12 @@ const TabItem = memo(({ route, index, isFocused, options, onPress, activeIndex, 
       case 'Search':
         iconName = focused ? 'search' : 'search-outline';
         break;
+      case 'Favorites':
+        iconName = focused ? 'heart' : 'heart-outline';
+        break;
+      case 'History':
+        iconName = focused ? 'time' : 'time-outline';
+        break;
       case 'Profile':
         iconName = focused ? 'person' : 'person-outline';
         break;

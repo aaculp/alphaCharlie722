@@ -9,7 +9,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Animated, {
@@ -24,7 +24,7 @@ import { ProfileService } from '../../services/api/profile';
 import { RESPONSIVE_SPACING } from '../../utils/responsive';
 import type { UserProfile, TabType, SettingType } from '../../types/profile.types';
 import type { SocialProfile } from '../../types/social.types';
-import type { ProfileStackParamList } from '../../types';
+import type { ProfileStackParamList, SearchStackParamList } from '../../types';
 
 // Import profile components
 import { HeroSection } from '../../components/profile/HeroSection';
@@ -33,6 +33,9 @@ import { TabNavigation } from '../../components/profile/TabNavigation';
 import { FollowersCard } from '../../components/profile/FollowersCard';
 import { StatisticsCard } from '../../components/profile/StatisticsCard';
 import { SettingsMenu } from '../../components/profile/SettingsMenu';
+
+// Route params type for viewing other users' profiles
+type ProfileScreenRouteProp = RouteProp<SearchStackParamList, 'UserProfile'>;
 
 interface ProfileScreenState {
   // User data
@@ -66,6 +69,11 @@ const ProfileScreen: React.FC = () => {
   const { theme } = useTheme();
   const { user: authUser } = useAuth();
   const navigation = useNavigation<NavigationProp<ProfileStackParamList>>();
+  const route = useRoute<ProfileScreenRouteProp>();
+  
+  // Get userId from route params (if viewing another user's profile)
+  const viewingUserId = route.params?.userId;
+  const isViewingOwnProfile = !viewingUserId || viewingUserId === authUser?.id;
   
   // Animation value for tab transitions (Requirement 3.7)
   const contentOpacity = useSharedValue(1);
@@ -92,10 +100,11 @@ const ProfileScreen: React.FC = () => {
 
   // Fetch profile data on mount (Requirement 6.5)
   useEffect(() => {
-    if (authUser?.id) {
+    const userIdToLoad = viewingUserId || authUser?.id;
+    if (userIdToLoad) {
       loadProfileData();
     }
-  }, [authUser?.id]);
+  }, [authUser?.id, viewingUserId]);
 
   // Animated style for tab content transitions (Requirement 3.7)
   const animatedContentStyle = useAnimatedStyle(() => ({
@@ -122,12 +131,13 @@ const ProfileScreen: React.FC = () => {
    * Validates: Requirements 6.5, 6.6
    */
   const loadProfileData = async () => {
-    if (!authUser?.id) return;
+    const userIdToLoad = viewingUserId || authUser?.id;
+    if (!userIdToLoad) return;
 
     setState(prev => ({ ...prev, isLoadingProfile: true, profileLoadError: null }));
 
     try {
-      const response = await ProfileService.fetchCompleteUserProfile(authUser.id);
+      const response = await ProfileService.fetchCompleteUserProfile(userIdToLoad);
 
       if (response.success && response.profile) {
         const profile = response.profile;
@@ -340,10 +350,12 @@ const ProfileScreen: React.FC = () => {
         {/* Hero Section with Profile Image */}
         <HeroSection
           profileImageUri={state.profileImageUri}
-          username={state.user?.username || authUser?.email?.split('@')[0] || 'User'}
+          username={state.user?.username || null}
+          displayName={state.user?.display_name || null}
           onCameraPress={handleImagePicker}
           onSettingsPress={handleSettingsPress}
           isUploading={state.isUploadingPhoto}
+          isViewingOwnProfile={isViewingOwnProfile}
         />
 
         {/* About Me Section */}

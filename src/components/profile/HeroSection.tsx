@@ -62,7 +62,8 @@ const HERO_HEIGHT = calculateHeroHeight();
  * HeroSection component for profile screen
  * 
  * @param profileImageUri - URI of the profile photo (null for placeholder)
- * @param username - Username to display in overlay
+ * @param username - Username to display in overlay (with @ prefix)
+ * @param displayName - Display name to show as primary identifier
  * @param onCameraPress - Callback when camera button is pressed
  * @param onSettingsPress - Callback when settings button is pressed
  * @param isUploading - Optional loading state for photo upload
@@ -70,11 +71,18 @@ const HERO_HEIGHT = calculateHeroHeight();
 export const HeroSection: React.FC<HeroSectionProps> = ({
   profileImageUri,
   username,
+  displayName,
   onCameraPress,
   onSettingsPress,
   isUploading = false,
+  isViewingOwnProfile = true,
 }) => {
   const { theme } = useTheme();
+
+  // Determine what to display based on available fields
+  // Priority: display_name (primary) with @username (secondary), or just @username, or fallback
+  const primaryText = displayName || (username ? `@${username}` : 'Anonymous');
+  const secondaryText = displayName && username ? `@${username}` : null;
 
   // Determine which image to display
   const imageSource = profileImageUri
@@ -100,42 +108,49 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
       {/* Bottom overlay with gradient background */}
       <View style={styles.bottomOverlay}>
-        {/* Username at bottom-left */}
+        {/* Username/Display Name at bottom-left */}
         <View style={styles.usernameContainer}>
           <Text style={[styles.username, { fontFamily: theme.fonts.primary.bold }]}>
-            {username}
+            {primaryText}
           </Text>
+          {secondaryText && (
+            <Text style={[styles.secondaryUsername, { fontFamily: theme.fonts.secondary.regular }]}>
+              {secondaryText}
+            </Text>
+          )}
         </View>
 
-        {/* Action buttons at bottom-right */}
-        <View style={styles.buttonsContainer}>
-          {/* Camera Button (Left) */}
-          <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: 'rgba(0, 0, 0, 0.5)' }]}
-            onPress={onCameraPress}
-            accessible={true}
-            accessibilityRole="button"
-            accessibilityLabel="Change profile photo"
-            accessibilityHint="Double tap to select a new profile photo"
-            testID="camera-button"
-            disabled={isUploading}
-          >
-            <Icon name="camera-outline" size={24} color="#FFFFFF" />
-          </TouchableOpacity>
+        {/* Action buttons at bottom-right - only show when viewing own profile */}
+        {isViewingOwnProfile && (
+          <View style={styles.buttonsContainer}>
+            {/* Camera Button (Left) */}
+            <TouchableOpacity
+              style={[styles.actionButton, { backgroundColor: 'rgba(0, 0, 0, 0.5)' }]}
+              onPress={onCameraPress}
+              accessible={true}
+              accessibilityRole="button"
+              accessibilityLabel="Change profile photo"
+              accessibilityHint="Double tap to select a new profile photo"
+              testID="camera-button"
+              disabled={isUploading}
+            >
+              <Icon name="camera-outline" size={24} color="#FFFFFF" />
+            </TouchableOpacity>
 
-          {/* Settings Button (Right) */}
-          <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: 'rgba(0, 0, 0, 0.5)' }]}
-            onPress={onSettingsPress}
-            accessible={true}
-            accessibilityRole="button"
-            accessibilityLabel="Open settings"
-            accessibilityHint="Double tap to open settings menu"
-            testID="settings-button"
-          >
-            <Icon name="settings-outline" size={24} color="#FFFFFF" />
-          </TouchableOpacity>
-        </View>
+            {/* Settings Button (Right) */}
+            <TouchableOpacity
+              style={[styles.actionButton, { backgroundColor: 'rgba(0, 0, 0, 0.5)' }]}
+              onPress={onSettingsPress}
+              accessible={true}
+              accessibilityRole="button"
+              accessibilityLabel="Open settings"
+              accessibilityHint="Double tap to open settings menu"
+              testID="settings-button"
+            >
+              <Icon name="settings-outline" size={24} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
     </View>
   );
@@ -183,6 +198,14 @@ const styles = StyleSheet.create({
   username: {
     fontSize: 24,
     color: '#FFFFFF',
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+  secondaryUsername: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.8)',
+    marginTop: 2,
     textShadowColor: 'rgba(0, 0, 0, 0.75)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,

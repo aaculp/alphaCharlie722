@@ -199,3 +199,10 @@ export type {
   // Aggregate
   AggregateRating,
 } from './review.types';
+
+// Search types
+export type {
+  SearchMode,
+  UserSearchResult,
+  SearchState,
+} from './search.types';

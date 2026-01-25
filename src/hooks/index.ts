@@ -52,6 +52,18 @@ export type { EngagementColorResult } from './useEngagementColor';
 export { useDebounce } from './useDebounce';
 
 /**
+ * useSearchMode - Detects search mode based on @ prefix and cleans the query
+ * 
+ * @example
+ * ```tsx
+ * const { mode, cleanQuery } = useSearchMode(searchQuery);
+ * // mode: 'user' | 'venue'
+ * // cleanQuery: query with @ prefix removed if present
+ * ```
+ */
+export { useSearchMode } from './useSearchMode';
+
+/**
  * @deprecated Use `useVenuesQuery` from './queries/useVenuesQuery' instead
  * 
  * useVenues - Fetches and manages venue data with search/filter support

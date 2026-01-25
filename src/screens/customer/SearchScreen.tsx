@@ -19,7 +19,10 @@ import type { SearchStackParamList, Venue } from '../../types';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useVenuesQuery } from '../../hooks/queries/useVenuesQuery';
+import { useUsersQuery } from '../../hooks/queries/useUsersQuery';
 import { useFavorites, useDebounce } from '../../hooks';
+import { useSearchMode } from '../../hooks/useSearchMode';
+import { getDisplayName } from '../../utils/displayName';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 type SearchScreenNavigationProp = NativeStackNavigationProp<
@@ -66,25 +69,53 @@ const SearchScreen: React.FC = () => {
   const { user } = useAuth();
 
   // Memoize the filters object to prevent recreating on every render
+  // This optimization ensures the venueFilters object reference stays stable
   const venueFilters = useMemo(() => ({ limit: 50 }), []);
 
+  // Debounce search query to optimize filtering and reduce API calls
+  // 300ms delay ensures we don't query on every keystroke (Requirement 8.1)
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+
+  // Detect search mode based on @ prefix (Requirements 3.1, 3.2, 3.3)
+  // - mode: 'user' if query starts with @, otherwise 'venue'
+  // - cleanQuery: query with @ prefix removed for API calls
+  const { mode, cleanQuery } = useSearchMode(debouncedSearchQuery);
+
   // Use custom hooks for data management
+  // Venue search query - only enabled when in venue mode (Requirement 7.1)
   const { data: venuesData, isLoading: loading } = useVenuesQuery({ 
-    filters: venueFilters
+    filters: venueFilters,
+    enabled: mode === 'venue', // Conditional fetching prevents unnecessary API calls
   });
   
   // Memoize venues array to prevent new reference on every render
+  // This optimization prevents unnecessary re-renders of child components
   const venues = useMemo(() => venuesData || [], [venuesData]);
+  
+  // User search query - only enabled when in user mode (Requirements 2.1, 2.2, 2.3)
+  // Searches profiles table for matching usernames and display names
+  const { data: usersData, isLoading: usersLoading, error: usersError } = useUsersQuery({
+    searchQuery: cleanQuery,
+    enabled: mode === 'user', // Conditional fetching based on search mode
+  });
   
   const { toggleFavorite: toggleFavoriteHook, isFavorite } = useFavorites();
   
-  // Debounce search query to optimize filtering
-  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+  // Determine loading state based on current mode (Requirement 8.3)
+  // Shows appropriate loading indicator for venue or user search
+  const isLoading = mode === 'venue' ? loading : usersLoading;
 
   // Animation for drawer
   const slideAnim = useRef(new Animated.Value(Dimensions.get('window').width * 0.4)).current;
 
   const filterVenues = useCallback(() => {
+    // Skip filtering if in user search mode (Requirement 3.1)
+    // User search is handled by the useUsersQuery hook
+    if (mode === 'user') {
+      setFilteredVenues([]);
+      return;
+    }
+
     console.log('🔍 Filtering venues:', {
       selectedCategories,
       selectedFilters,
@@ -95,13 +126,13 @@ const SearchScreen: React.FC = () => {
 
     let filtered = [...venues]; // Create a copy to avoid mutations
 
-    // Filter by categories (if not 'All')
+    // Filter by categories (if not 'All') - Requirement 7.1
     if (!selectedCategories.includes('All') && selectedCategories.length > 0) {
       filtered = filtered.filter(venue => selectedCategories.includes(venue.category));
       console.log(`📂 After category filter (${selectedCategories.join(', ')}):`, filtered.length);
     }
 
-    // Filter by price ranges (if not 'all_prices')
+    // Filter by price ranges (if not 'all_prices') - Requirement 7.1
     if (!selectedPriceRanges.includes('all_prices') && selectedPriceRanges.length > 0) {
       const priceValues = selectedPriceRanges
         .map(id => priceRanges.find(p => p.id === id)?.value)
@@ -113,7 +144,7 @@ const SearchScreen: React.FC = () => {
       }
     }
 
-    // Apply additional filters (skip 'all' filter)
+    // Apply additional filters (skip 'all' filter) - Requirement 7.1
     const activeFilters = selectedFilters.filter(f => f !== 'all');
     activeFilters.forEach(filter => {
       const beforeCount = filtered.length;
@@ -131,7 +162,8 @@ const SearchScreen: React.FC = () => {
       console.log(`🎯 After ${filter} filter:`, filtered.length, `(was ${beforeCount})`);
     });
 
-    // Filter by search query last
+    // Filter by search query last - Multi-field search (Requirement 7.1)
+    // Searches across name, category, location, and description fields
     if (debouncedSearchQuery.trim() !== '') {
       const query = debouncedSearchQuery.toLowerCase();
       filtered = filtered.filter(venue =>
@@ -143,26 +175,39 @@ const SearchScreen: React.FC = () => {
       console.log(`🔎 After search filter (${debouncedSearchQuery}):`, filtered.length);
     }
 
-    // Sort by rating (highest first)
+    // Sort by rating (highest first) - Requirement 2.4
     filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0));
 
     console.log('✅ Final filtered venues:', filtered.length);
     setFilteredVenues(filtered);
-  }, [venues, selectedCategories, selectedFilters, selectedPriceRanges, debouncedSearchQuery]);
+  }, [venues, selectedCategories, selectedFilters, selectedPriceRanges, debouncedSearchQuery, mode]);
 
   // Filter venues when dependencies change
   useEffect(() => {
     filterVenues();
   }, [filterVenues]);
 
-  // Helper function to check if venue is open now
+  // Handle user search errors (Requirement 8.3)
+  // Display user-friendly error message when user search fails
+  useEffect(() => {
+    if (usersError && mode === 'user') {
+      Alert.alert(
+        'Search Error',
+        'Unable to search users. Please check your connection and try again.',
+        [{ text: 'OK' }]
+      );
+    }
+  }, [usersError, mode]);
+
+  // Helper function to check if venue is open now (Requirement 7.1)
+  // Parses venue hours and compares with current time
   const isVenueOpenNow = (venue: Venue) => {
     if (!venue.hours) return false;
 
     const now = new Date();
     const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const currentDay = dayNames[now.getDay()];
-    const currentTime = now.getHours() * 100 + now.getMinutes(); // 1430 for 2:30 PM
+    const currentTime = now.getHours() * 100 + now.getMinutes(); // Convert to military time format (e.g., 1430 for 2:30 PM)
 
     const todayHours = venue.hours[currentDay as keyof typeof venue.hours];
     if (!todayHours || todayHours === 'Closed') return false;
@@ -177,13 +222,14 @@ const SearchScreen: React.FC = () => {
     let openTime = parseInt(openHour, 10) * 100 + parseInt(openMin, 10);
     let closeTime = parseInt(closeHour, 10) * 100 + parseInt(closeMin, 10);
 
-    // Convert to 24-hour format
+    // Convert to 24-hour format (military time)
     if (openPeriod === 'PM' && parseInt(openHour, 10) !== 12) openTime += 1200;
     if (closePeriod === 'PM' && parseInt(closeHour, 10) !== 12) closeTime += 1200;
     if (openPeriod === 'AM' && parseInt(openHour, 10) === 12) openTime -= 1200;
     if (closePeriod === 'AM' && parseInt(closeHour, 10) === 12) closeTime -= 1200;
 
     // Handle overnight hours (close time is next day)
+    // Example: 10:00 PM - 2:00 AM
     if (closeTime < openTime) {
       return currentTime >= openTime || currentTime <= closeTime;
     }
@@ -191,6 +237,8 @@ const SearchScreen: React.FC = () => {
     return currentTime >= openTime && currentTime <= closeTime;
   };
 
+  // Toggle filter selection with multi-select support
+  // Handles 'all' filter as mutually exclusive with specific filters
   const toggleFilter = useCallback((filterId: string) => {
     setSelectedFilters(prev => {
       if (filterId === 'all') {
@@ -224,7 +272,8 @@ const SearchScreen: React.FC = () => {
     setSelectedFilters(['all']);
   };
 
-  // Toggle functions for multiselect
+  // Toggle functions for multiselect filters
+  // Each toggle handles 'All' as mutually exclusive with specific selections
   const toggleCategory = (category: string) => {
     setSelectedCategories(prev => {
       if (category === 'All') {
@@ -301,6 +350,20 @@ const SearchScreen: React.FC = () => {
     navigation.navigate('VenueDetail', {
       venueId: venue.id,
       venueName: venue.name,
+    });
+  };
+
+  // Navigation handler for user profile (Requirements 5.1, 5.2)
+  // Validates user data before navigation to prevent errors
+  const handleUserPress = (user: any) => {
+    // Edge case: ensure user has valid ID before navigating
+    if (!user || !user.id) {
+      Alert.alert('Error', 'Unable to view this user profile.');
+      return;
+    }
+
+    navigation.navigate('UserProfile', {
+      userId: user.id,
     });
   };
 
@@ -405,7 +468,12 @@ const SearchScreen: React.FC = () => {
             {/* Results Counter */}
             <View style={styles.drawerResultsContainer}>
               <Text style={[styles.drawerResultsText, { color: theme.colors.textSecondary }]}>
-                {loading ? 'Loading...' : `${filteredVenues.length} venues found`}
+                {isLoading 
+                  ? 'Loading...' 
+                  : mode === 'venue' 
+                    ? `${filteredVenues.length} venues found`
+                    : `${usersData?.length || 0} users found`
+                }
               </Text>
             </View>
           </View>
@@ -551,6 +619,67 @@ const SearchScreen: React.FC = () => {
     </TouchableOpacity>
   );
 
+  // User result item renderer (Requirements 4.1, 4.2, 4.3, 4.4)
+  // Displays user avatar, display name, and username with @ prefix
+  const renderUserItem = ({ item }: { item: any }) => {
+    // Handle edge case: user without username (shouldn't happen due to query filter, but defensive)
+    if (!item.username) {
+      return null;
+    }
+
+    // Determine avatar source with fallback (Requirement 4.3)
+    const avatarSource = item.avatar_url 
+      ? { uri: item.avatar_url }
+      : { uri: 'https://via.placeholder.com/50x50?text=User' };
+
+    return (
+      <TouchableOpacity
+        style={[styles.userItem, { backgroundColor: theme.colors.surface }]}
+        onPress={() => handleUserPress(item)}
+      >
+        <Image
+          source={avatarSource}
+          style={styles.userAvatar}
+          defaultSource={{ uri: 'https://via.placeholder.com/50x50?text=User' }}
+          onError={() => {
+            // Silently handle image load errors - fallback will be shown
+            console.log('Failed to load avatar for user:', item.username);
+          }}
+        />
+        <View style={styles.userInfo}>
+          {/* Display name with fallback to username (Requirement 10.1) */}
+          <Text style={[styles.displayName, { color: theme.colors.text }]}>
+            {getDisplayName(item)}
+          </Text>
+          {/* Username with @ prefix (Requirement 4.4) */}
+          <Text style={[styles.username, { color: theme.colors.textSecondary }]}>
+            @{item.username}
+          </Text>
+        </View>
+        <Icon name="chevron-forward" size={20} color={theme.colors.textSecondary} />
+      </TouchableOpacity>
+    );
+  };
+
+  // Mode indicator component (Requirement 3.5)
+  // Shows visual indicator of current search mode (user vs venue)
+  const renderModeIndicator = () => {
+    if (!searchQuery) return null;
+    
+    return (
+      <View style={styles.modeIndicator}>
+        <Icon 
+          name={mode === 'user' ? 'person' : 'business'} 
+          size={16} 
+          color={theme.colors.primary} 
+        />
+        <Text style={[styles.modeText, { color: theme.colors.textSecondary }]}>
+          Searching {mode === 'user' ? 'users' : 'venues'}
+        </Text>
+      </View>
+    );
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       {/* Search Bar with Filter Button */}
@@ -590,30 +719,60 @@ const SearchScreen: React.FC = () => {
 
       {/* Results Counter */}
       <View style={styles.resultsContainer}>
+        {renderModeIndicator()}
         <Text style={[styles.resultsText, { color: theme.colors.textSecondary }]}>
-          {loading ? 'Loading...' : `${filteredVenues.length} venues found`}
+          {isLoading 
+            ? 'Loading...' 
+            : mode === 'venue' 
+              ? `${filteredVenues.length} venues found`
+              : `${usersData?.length || 0} users found`
+          }
         </Text>
       </View>
 
-      {loading ? (
+      {isLoading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
-          <Text style={[styles.loadingText, { color: theme.colors.textSecondary }]}>Loading venues...</Text>
+          <Text style={[styles.loadingText, { color: theme.colors.textSecondary }]}>
+            Loading {mode === 'user' ? 'users' : 'venues'}...
+          </Text>
         </View>
       ) : (
         <FlatList
-          data={filteredVenues}
-          renderItem={renderVenueItem}
+          data={mode === 'venue' ? filteredVenues : (usersData || [])}
+          renderItem={mode === 'venue' ? renderVenueItem : renderUserItem}
           keyExtractor={item => item.id}
           style={styles.venuesList}
-          contentContainerStyle={filteredVenues.length === 0 ? styles.emptyListContainer : styles.listContent}
+          contentContainerStyle={
+            (mode === 'venue' ? filteredVenues.length : (usersData?.length || 0)) === 0 
+              ? styles.emptyListContainer 
+              : styles.listContent
+          }
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <Icon name="search-outline" size={48} color={theme.colors.textSecondary} />
-              <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>No venues found</Text>
+              <Icon 
+                name={usersError && mode === 'user' ? 'alert-circle-outline' : mode === 'user' ? 'person-outline' : 'search-outline'} 
+                size={48} 
+                color={usersError && mode === 'user' ? '#FF3B30' : theme.colors.textSecondary} 
+              />
+              <Text style={[styles.emptyText, { color: usersError && mode === 'user' ? '#FF3B30' : theme.colors.textSecondary }]}>
+                {usersError && mode === 'user' 
+                  ? 'Search Error' 
+                  : `No ${mode === 'user' ? 'users' : 'venues'} found`
+                }
+              </Text>
               <Text style={[styles.emptySubtext, { color: theme.colors.textSecondary }]}>
-                {searchQuery ? 'Try adjusting your search' : 'Start typing to search venues'}
+                {usersError && mode === 'user'
+                  ? 'Unable to search users. Please check your connection.'
+                  : mode === 'user' && cleanQuery.length < 2
+                    ? 'Type at least 2 characters after @ to search users'
+                    : searchQuery 
+                      ? `Try adjusting your search${mode === 'user' ? ' or check the username' : ''}` 
+                      : mode === 'user' 
+                        ? 'Start typing with @ to search users' 
+                        : 'Start typing to search venues'
+                }
               </Text>
             </View>
           }
@@ -766,6 +925,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Inter-Regular',
   },
+  modeIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  modeText: {
+    fontSize: 12,
+    fontFamily: 'Inter-Regular',
+    marginLeft: 6,
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -794,6 +963,41 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
+  },
+  userItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 15,
+    marginVertical: 5,
+    padding: 15,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  userAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginRight: 15,
+  },
+  userInfo: {
+    flex: 1,
+  },
+  displayName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 4,
+    fontFamily: 'Poppins-SemiBold',
+  },
+  username: {
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
   },
   venueImageContainer: {
     position: 'relative',

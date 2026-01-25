@@ -31,7 +31,8 @@ export type TabType = 'main' | 'settings';
 export interface UserProfile {
   id: string;
   email: string;
-  username: string;
+  username: string | null;
+  display_name: string | null;
   profilePhotoUrl: string | null;
   aboutText: string;
   followerCount: number;
@@ -113,10 +114,12 @@ export interface ProfileScreenState {
  */
 export interface HeroSectionProps {
   profileImageUri: string | null;
-  username: string;
+  username: string | null;
+  displayName?: string | null;
   onCameraPress: () => void;
   onSettingsPress: () => void;
   isUploading?: boolean;
+  isViewingOwnProfile?: boolean; // Hide edit buttons when viewing another user's profile
 }
 
 /**

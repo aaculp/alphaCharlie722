@@ -58,12 +58,13 @@ export const flashOfferKeys = {
 
 /**
  * User query keys
- * Supports user profiles, friends lists, and other user-related data
+ * Supports user profiles, friends lists, user search, and other user-related data
  */
 export const userKeys = {
   all: ['users'] as const,
   profile: (userId: string) => [...userKeys.all, userId, 'profile'] as const,
   friends: (userId: string) => [...userKeys.all, userId, 'friends'] as const,
+  search: (searchQuery: string) => [...userKeys.all, 'search', searchQuery] as const,
 } as const;
 
 /**

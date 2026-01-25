@@ -1,36 +1,36 @@
-# On The Way (OTW) - Application Overview
+# On The Way (OTW) - Codebase Overview
 
 ## Purpose
 
-On The Way (OTW) is a location-based social venue discovery platform that connects users with local venues through real-time check-ins, reviews, flash offers, and social features. The app helps users discover venues, track their activity, and engage with their community while providing venue owners with powerful analytics and promotional tools.
+On The Way (OTW) is a location-based social discovery app that helps users find and check into venues (bars, restaurants, cafes, etc.), discover flash offers, connect with friends, and share experiences. The app serves both customers and venue owners, providing real-time engagement tracking and promotional tools.
 
 ---
 
 ## Tech Stack
 
 ### Frontend
-- **Framework:** React Native 0.83.1 (React 19.2.0)
-- **Language:** TypeScript 5.8.3
-- **Navigation:** React Navigation v7 (Bottom Tabs + Native Stack)
-- **State Management:** React Query (@tanstack/react-query 5.90.19)
-- **Animations:** React Native Reanimated 4.2.1
-- **Gestures:** React Native Gesture Handler 2.30.0
-- **Icons:** React Native Vector Icons (Ionicons)
-- **Image Handling:** React Native Image Picker 8.2.1
+- **Framework**: React Native 0.83.1 (React 19.2.0)
+- **Language**: TypeScript 5.8.3
+- **Navigation**: React Navigation v7 (Bottom Tabs + Native Stack)
+- **State Management**: React Query (TanStack Query) v5.90
+- **Animations**: React Native Reanimated v4.2
+- **Gestures**: React Native Gesture Handler v2.30
+- **Icons**: React Native Vector Icons (Ionicons)
+- **Testing**: Jest + React Testing Library + fast-check (property-based testing)
 
 ### Backend
-- **Database:** Supabase (PostgreSQL with PostGIS)
-- **Authentication:** Supabase Auth (JWT-based)
-- **Real-time:** Supabase Realtime subscriptions
-- **Edge Functions:** Deno-based Supabase Edge Functions
-- **Push Notifications:** Firebase Cloud Messaging (FCM)
-- **Storage:** Supabase Storage (for images)
+- **Platform**: Supabase (PostgreSQL 15+ with PostGIS)
+- **Authentication**: Supabase Auth (JWT tokens)
+- **Database**: PostgreSQL with Row Level Security (RLS)
+- **Edge Functions**: Deno runtime (serverless)
+- **Push Notifications**: Firebase Cloud Messaging (FCM)
+- **Storage**: Supabase Storage (avatars, venue images)
 
 ### Development Tools
-- **Testing:** Jest 29.6.3, React Testing Library, fast-check (PBT)
-- **Linting:** ESLint 8.19.0
-- **Code Quality:** Prettier 2.8.8
-- **Build:** Metro bundler, Gradle (Android)
+- **Package Manager**: npm
+- **Build Tools**: Metro bundler, Gradle (Android), Xcode (iOS)
+- **Code Quality**: ESLint, Prettier
+- **Version Control**: Git
 
 ---
 
@@ -38,108 +38,140 @@ On The Way (OTW) is a location-based social venue discovery platform that connec
 
 ### Frontend Architecture
 
-**Domain-Driven Structure:**
+**Domain-Driven Folder Structure**:
 ```
 src/
-├── components/     # UI components by domain (venue, checkin, social, etc.)
-├── screens/        # Screen components by user type (customer, venue, auth)
-├── hooks/          # Custom React hooks for business logic
-├── services/       # API layer and business services
-├── contexts/       # React contexts (Auth, Theme, Location, etc.)
-├── types/          # TypeScript type definitions
-├── utils/          # Utility functions
-└── lib/            # External library configurations
+├── components/          # UI components by domain
+│   ├── checkin/        # Check-in related components
+│   ├── flashOffer/     # Flash offer components
+│   ├── navigation/     # Navigation components
+│   ├── profile/        # Profile components
+│   ├── shared/         # Shared/reusable components
+│   ├── social/         # Social features
+│   ├── ui/             # UI primitives (cards, chips)
+│   └── venue/          # Venue-specific components
+├── contexts/           # React contexts (Auth, Theme, Location)
+├── hooks/              # Custom React hooks
+│   ├── mutations/      # React Query mutations
+│   └── queries/        # React Query queries
+├── lib/                # External library configs (Supabase, React Query)
+├── navigation/         # Navigation configuration
+├── screens/            # Screen components by user type
+│   ├── auth/          # Authentication screens
+│   ├── customer/      # Customer-facing screens
+│   └── venue/         # Venue owner screens
+├── services/           # Business logic and API layer
+│   ├── api/           # API services by domain
+│   ├── compliance/    # Content moderation
+│   └── monitoring/    # Analytics and monitoring
+├── types/              # TypeScript type definitions
+└── utils/              # Utility functions
 ```
 
-**Key Patterns:**
-- Custom hooks separate business logic from UI
-- React Query for data fetching, caching, and synchronization
+**Key Patterns**:
+- Custom hooks for data fetching and business logic
+- React Query for server state management
 - Context API for global state (auth, theme, location)
-- Domain-driven folder organization for scalability
+- Domain-driven organization for scalability
 - Named exports for better tree-shaking
 
 ### Backend Architecture
 
-**Database Schema:**
-- `venues` - Venue information with spatial data
-- `check_ins` - User check-in records
-- `reviews` - User reviews with ratings
-- `helpful_votes` - Review helpfulness tracking
-- `favorites` - User favorite venues
+**Database Schema**:
+- `profiles` - User profiles (with username/display_name for @ search)
+- `venues` - Venue/business locations
+- `check_ins` - User check-ins to venues
+- `reviews` - Venue reviews and ratings
 - `flash_offers` - Time-limited promotional offers
-- `flash_offer_claims` - Offer claim tracking
+- `flash_offer_claims` - Claimed offers
 - `friendships` - Social connections
-- `collections` - User-curated venue lists
+- `collections` - User-created venue lists
 - `device_tokens` - Push notification tokens
 - `notification_preferences` - User notification settings
 
-**Security:**
-- Row Level Security (RLS) policies on all tables
+**Security**:
+- Row Level Security (RLS) on all tables
 - JWT-based authentication
-- Service role for admin operations
+- Database-level authorization
 - Content moderation for user-generated content
+
+**Performance**:
+- B-Tree indexes for equality/range queries
+- GIN indexes for full-text search
+- GIST indexes for spatial queries (PostGIS)
+- Partial indexes for filtered queries
+- React Query caching on frontend
 
 ---
 
 ## Core Features
 
 ### 1. Venue Discovery
-- **Featured Venues:** Curated list of popular venues
-- **New Venues:** Recently added venues (last 30 days)
-- **Search & Filter:** Real-time search with category/location filters
-- **Location-Based:** Nearby venues using GPS coordinates
-- **Venue Details:** Comprehensive information (hours, contact, amenities)
+- Browse featured venues
+- Search by name, category, location
+- Filter by amenities, price range, ratings
+- Location-based discovery (nearby venues)
+- New venues spotlight
+- Real-time engagement tracking (active check-ins)
 
 ### 2. Check-In System
-- **Real-Time Check-Ins:** Users check in/out of venues
-- **Activity Tracking:** Live customer count per venue
-- **Engagement Levels:** Visual indicators (Low-key, Chill, Buzzing, Packed)
-- **Check-In History:** Personal check-in timeline
-- **Swipe Gestures:** Quick check-in/out via swipe actions
+- Check in/out of venues
+- Swipe gestures for quick check-in
+- Check-in history tracking
+- Active check-in counts per venue
+- Haptic feedback for interactions
+- Automatic check-out when checking into new venue
 
-### 3. Reviews & Ratings
-- **Star Ratings:** 1-5 star rating system
-- **Written Reviews:** Text reviews with profanity filtering
-- **Aggregate Ratings:** Automatic calculation via database triggers
-- **Helpful Votes:** Community-driven review quality
-- **Venue Responses:** Owners can respond to reviews
-- **Real-Time Updates:** Live rating updates via Supabase subscriptions
+### 3. Flash Offers
+- Time-limited promotional offers from venues
+- Location-based offer discovery (radius filtering)
+- Claim tracking and redemption
+- Push notifications for nearby offers
+- Real-time offer updates via Supabase Realtime
+- Offer expiration management
 
-### 4. Flash Offers
-- **Time-Limited Deals:** Promotional offers with expiration
-- **Location-Based:** Nearby offers within configurable radius
-- **Claim System:** Atomic claim operations to prevent double-claiming
-- **Push Notifications:** FCM-based offer alerts
-- **Analytics:** Track views, claims, and redemptions
+### 4. Reviews & Ratings
+- 5-star rating system
+- Written reviews (max 500 characters)
+- Helpful vote system
+- Venue owner responses
+- Aggregate rating calculation (database trigger)
+- Real-time rating updates
+- Profanity filtering
 
 ### 5. Social Features
-- **Friend System:** Add/remove friends, friend requests
-- **Activity Feed:** See friends' check-ins and activity
-- **Collections:** Curated venue lists (public/private)
-- **Venue Sharing:** Share venues with friends
-- **Mutual Favorites:** See shared favorite venues
+- User profiles with username/display_name
+- @ search for finding users
+- Friend system (requests, connections)
+- Collections (save venues to lists)
+- Share venues with friends
+- Activity feed
+- Mutual favorites indicator
 
-### 6. User Profile
-- **Profile Management:** Avatar, bio, preferences
-- **Statistics:** Check-in counts, venues visited
-- **Check-In History:** Personal activity timeline
-- **Favorites:** Saved venues
-- **Settings:** Notification preferences, privacy controls
+### 6. Push Notifications
+- Flash offer notifications
+- Friend activity notifications
+- Check-in reminders
+- Notification preferences (per-type control)
+- Quiet hours support
+- Rate limiting (max per day)
+- FCM integration
 
-### 7. Venue Owner Dashboard
-- **Analytics:** Customer insights, peak hours, demographics
-- **Flash Offer Creation:** Create and manage promotional offers
-- **Business Account:** Subscription tiers (Free, Core, Pro, Revenue+)
-- **Push Notification Credits:** Tiered notification system
-- **Venue Management:** Update venue information
+### 7. User Profiles
+- Customizable profiles with avatars
+- Username system (@ search enabled)
+- Display name vs username
+- Check-in statistics
+- About me section
+- Friends list
+- Privacy controls
 
-### 8. Push Notifications
-- **FCM Integration:** Firebase Cloud Messaging
-- **Device Token Management:** Automatic token registration/cleanup
-- **Notification Preferences:** Granular user controls
-- **Rate Limiting:** Prevent notification spam
-- **Social Notifications:** Friend activity alerts
-- **Offer Notifications:** Flash offer alerts
+### 8. Venue Owner Dashboard
+- Analytics and insights
+- Customer engagement metrics
+- Flash offer creation
+- Venue information management
+- Review management
 
 ---
 
@@ -151,18 +183,19 @@ AppNavigator
 ├── AuthScreen (no session)
 └── MainTabNavigator (authenticated)
     ├── HomeStack
-    │   ├── HomeScreen
+    │   ├── HomeScreen (featured venues, flash offers, check-ins)
     │   ├── VenueDetailScreen
     │   ├── VenueReviewsScreen
-    │   └── FlashOfferDetailScreen
+    │   ├── FlashOfferDetailScreen
+    │   └── ClaimConfirmationScreen
     ├── SearchStack
-    │   ├── SearchScreen
+    │   ├── SearchScreen (venue search + @ user search)
     │   └── VenueDetailScreen
     ├── FavoritesStack
     │   ├── FavoritesScreen
     │   └── VenueDetailScreen
     ├── HistoryStack
-    │   ├── HistoryScreen
+    │   ├── HistoryScreen (check-in history)
     │   └── VenueDetailScreen
     └── ProfileStack
         ├── ProfileScreen
@@ -174,235 +207,314 @@ AppNavigator
 
 ## Key Custom Hooks
 
-### Data Fetching
-- `useVenues()` - Fetch and manage venue data
-- `useVenueQuery()` - Single venue with React Query
-- `useNewVenues()` - Recently added venues
-- `useCheckInStats()` - Venue check-in statistics
-- `useCheckInHistory()` - User check-in timeline
-- `useFlashOffers()` - Nearby flash offers
-- `useCollections()` - User collections
-- `useFriends()` - Friend list and management
-- `useNotificationPreferences()` - Notification settings
+### Data Fetching Hooks
+- `useVenues()` - Fetch venues with filtering
+- `useVenueQuery()` - Single venue details
+- `useUsersQuery()` - User search (@ search)
+- `useCheckInStats()` - Check-in counts per venue
+- `useCheckInHistory()` - User's check-in history
+- `useFlashOffersQuery()` - Nearby flash offers
+- `useCollectionsQuery()` - User's collections
+- `useFriendsQuery()` - Friends list
+- `useUserProfileQuery()` - User profile data
 
-### Mutations
-- `useCheckInMutation()` - Check-in/out operations
-- `useClaimFlashOfferMutation()` - Claim flash offers
+### Mutation Hooks
+- `useCheckInMutation()` - Check in/out actions
+- `useClaimFlashOfferMutation()` - Claim offers
 - `useAddFriendMutation()` - Send friend requests
 - `useCollectionMutations()` - Manage collections
-- `useUpdateProfileMutation()` - Update user profile
+- `useUpdateProfileMutation()` - Update profile
 
-### UI/Interaction
+### UI/Interaction Hooks
 - `useSwipeGesture()` - Swipe gesture handling
-- `useHapticFeedback()` - Haptic feedback triggers
-- `useDebounce()` - Debounce rapidly changing values
-- `useEngagementColor()` - Activity level colors
+- `useHapticFeedback()` - Haptic feedback
+- `useDebounce()` - Debounce values (search)
+- `useSearchMode()` - Detect @ search mode
+- `useEngagementColor()` - Engagement level colors
 
 ---
 
 ## API Services
 
-### Core Services
-- `VenueService` - Venue CRUD operations
-- `ReviewService` - Review submission, voting, moderation
-- `CheckInService` - Check-in/out, statistics
-- `FlashOfferService` - Offer management, claiming
-- `AuthService` - Authentication operations
-- `ProfileService` - User profile management
+Located in `src/services/api/`:
 
-### Social Services
-- `FriendService` - Friend relationships
-- `CollectionService` - Venue collections
-- `ActivityFeedService` - Social activity feed
-- `VenueShareService` - Venue sharing
+- `auth.ts` - Authentication (sign in/up/out)
+- `venues.ts` - Venue CRUD operations
+- `checkins.ts` - Check-in management
+- `reviews.ts` - Review CRUD and voting
+- `flashOffers.ts` - Flash offer operations
+- `social.ts` - Friends, collections, sharing
+- `notifications.ts` - Push notification management
 
-### Notification Services
-- `PushNotificationService` - FCM integration
-- `NotificationPreferencesService` - User preferences
-- `DeviceTokenManager` - Token lifecycle management
-- `NotificationHandler` - Notification processing
+All services follow consistent patterns:
+- TypeScript types for requests/responses
+- Error handling with try-catch
+- RLS enforcement via database policies
+- Batch operations where applicable
 
 ---
 
-## Database Features
+## Database Migrations
 
-### Performance Optimizations
-- Spatial indexes for location queries (PostGIS)
-- Composite indexes on frequently queried columns
-- Connection pooling for scalability
-- Query optimization with proper joins
+Located in `supabase/migrations/` and `database/migrations/`:
 
-### Real-Time Features
-- Supabase Realtime subscriptions for live updates
-- Venue rating updates via database triggers
-- Check-in count updates
-- Review notifications
+**Recent Migrations**:
+- `20250125000000_add_username_display_name.sql` - Username/display_name fields for @ search
+- `20250125000001_add_user_search_rls_policy.sql` - RLS policy for user search
+- `20250118000000_create_reviews_ratings_tables.sql` - Reviews and ratings system
+- `019_final_simple.sql` - Reviews, ratings, and social features
 
-### Data Integrity
-- Foreign key constraints
-- Check constraints for data validation
-- Unique constraints to prevent duplicates
-- Atomic operations for critical actions (offer claiming)
+**Migration Strategy**:
+- Version controlled with timestamps
+- Test in development first
+- Include rollback scripts
+- Document breaking changes
+- Test RLS policies thoroughly
 
 ---
 
 ## Testing Strategy
 
 ### Unit Tests
-- Custom hooks testing with React Testing Library
-- Service layer testing with mocked Supabase client
-- Utility function testing
-- Component testing
+- Component tests with React Testing Library
+- Hook tests with `renderHook`
+- Service tests with mocked Supabase client
+- Utility function tests
 
 ### Property-Based Tests (PBT)
-- Gesture state transitions (`useSwipeGesture`)
-- Notification preferences (`useNotificationPreferences`)
-- Cache persistence logic
-- Real-time sync behavior
-- Query key generation
+- Uses `fast-check` library
+- Tests universal properties across many inputs
+- Located in `__tests__/*.pbt.test.tsx` files
+- Examples:
+  - `useSwipeGesture` - Gesture state transitions
+  - `useNotificationPreferences` - Preference updates
+  - `queryKeys` - Key uniqueness and structure
+  - `realtimeSync` - Subscription lifecycle
 
 ### Integration Tests
-- Check-in flow (UI → API → Database → UI)
-- Review submission with trigger validation
-- Real-time subscription updates
-- Authentication flows
+- End-to-end flows (check-in, review submission)
+- Real-time update testing
+- Navigation flow testing
+
+**Test Commands**:
+```bash
+npm test                    # Run all tests
+npm test -- --watch        # Watch mode
+npm test -- --coverage     # Coverage report
+```
 
 ---
 
 ## Development Workflow
 
-### Local Development
+### Setup
 ```bash
-# Start Metro bundler
-npm start
-
-# Run Android emulator
-npm run emulator
-
-# Build and install app
-npm run android
-
-# Full development (all-in-one)
-npm run dev:full
+npm install                 # Install dependencies
+bundle install              # Install Ruby dependencies (iOS)
+bundle exec pod install     # Install iOS pods
 ```
 
-### Database Setup
-1. Run SQL scripts in `database/setup/` directory
-2. Apply migrations in `database/migrations/`
-3. Optionally add mock data from `database/mockdata/`
-
-### Edge Functions
+### Running the App
 ```bash
-# Start local Supabase
-supabase start
+npm run dev:full           # Start emulator + Metro + build (all-in-one)
+npm run dev                # Start emulator + Metro only
+npm run android            # Build and run Android
+npm run ios                # Build and run iOS
+npm start                  # Start Metro bundler only
+```
 
-# Deploy function locally
-cd supabase/functions
-./deploy.sh local
+### Database
+```bash
+supabase start             # Start local Supabase
+supabase db push           # Apply migrations
+supabase db reset          # Reset database
+```
 
-# Test function
-./test-function.sh local
+### Cleaning
+```bash
+npm run clean              # Clean build cache
+npm run clean:metro        # Clean Metro cache
+npm run fresh-start        # Clean + full restart
 ```
 
 ---
 
-## Deployment
+## Environment Variables
+
+Required environment variables (`.env` or platform-specific):
+
+- `SUPABASE_URL` - Supabase project URL
+- `SUPABASE_ANON_KEY` - Supabase anonymous key
+- `FIREBASE_SERVER_KEY` - FCM server key (for push notifications)
+
+---
+
+## Key Files & Directories
+
+### Configuration
+- `app.json` - React Native app configuration
+- `babel.config.js` - Babel configuration
+- `metro.config.js` - Metro bundler configuration
+- `tsconfig.json` - TypeScript configuration
+- `jest.config.js` - Jest test configuration
+
+### Documentation
+- `docs/APP_ARCHITECTURE.md` - Frontend architecture details
+- `docs/BACKEND_ARCHITECTURE.md` - Backend architecture details
+- `docs/api-reference.md` - Complete API documentation
+- `docs/feature-roadmap.md` - Future feature plans
+- `database/README.md` - Database setup guide
+
+### Database
+- `database/setup/` - Initial database setup scripts
+- `database/migrations/` - Database migration scripts
+- `database/mockdata/` - Test data scripts
+- `supabase/migrations/` - Supabase-managed migrations
+- `supabase/functions/` - Edge functions (Deno)
+
+### Specs
+- `.kiro/specs/` - Feature specifications and implementation plans
+- Each spec contains: `requirements.md`, `design.md`, `tasks.md`
+
+---
+
+## Code Conventions
+
+### Naming
+- **Components**: PascalCase (`VenueCard.tsx`)
+- **Screens**: PascalCase with "Screen" suffix (`HomeScreen.tsx`)
+- **Hooks**: camelCase with "use" prefix (`useVenues.ts`)
+- **Services**: camelCase with "Service" suffix (`venueService.ts`)
+- **Types**: PascalCase (`Venue`, `CheckIn`)
+- **Constants**: UPPER_SNAKE_CASE (`ACTIVITY_COLORS`)
+
+### Imports
+- Use absolute imports across features: `@/components/venue`
+- Use relative imports within same feature: `./VenueCard`
+- Prefer named exports over default exports
+- Use index files for clean public APIs
+
+### Best Practices
+- Always handle loading and error states
+- Use TypeScript types for all props and returns
+- Implement proper error boundaries
+- Use React Query for server state
+- Use Context API for global client state
+- Follow domain-driven organization
+- Write tests for critical paths
+- Document complex logic with comments
+
+---
+
+## Common Tasks
+
+### Adding a New Feature
+1. Create spec in `.kiro/specs/{feature-name}/`
+2. Define types in `src/types/{feature}.types.ts`
+3. Create API service in `src/services/api/{feature}.ts`
+4. Create React Query hooks in `src/hooks/queries/` or `src/hooks/mutations/`
+5. Create components in `src/components/{domain}/`
+6. Create screens in `src/screens/{user-type}/`
+7. Update navigation in `src/navigation/AppNavigator.tsx`
+8. Write tests in `__tests__/` directories
+9. Update documentation
+
+### Adding a Database Table
+1. Create migration in `supabase/migrations/`
+2. Define RLS policies
+3. Add indexes for performance
+4. Update TypeScript types in `src/lib/supabase.ts`
+5. Create API service methods
+6. Test RLS policies thoroughly
+
+### Adding a New Screen
+1. Create screen component in `src/screens/{user-type}/`
+2. Add route to navigation types in `src/types/navigation.types.ts`
+3. Update navigator in `src/navigation/AppNavigator.tsx`
+4. Export from `src/screens/{user-type}/index.ts`
+5. Add navigation logic in parent screens
+
+---
+
+## Performance Considerations
 
 ### Frontend
-- Android: Build APK/AAB via Gradle
-- iOS: Build via Xcode (requires Mac)
-- Environment-specific configurations
+- Use `React.memo` for frequently re-rendered components
+- Use `useMemo` for expensive calculations
+- Use `useCallback` for event handlers passed to children
+- Implement pagination for large lists
+- Debounce search inputs (300ms)
+- Lazy load images with placeholders
+- Use React Query caching (5-10 minute TTL)
 
 ### Backend
-- Supabase migrations via CLI
-- Edge function deployment to production
-- Environment secrets management
-- Database backups and monitoring
+- Use specific column selection (avoid `SELECT *`)
+- Batch queries instead of N+1 queries
+- Use pagination for large result sets
+- Leverage database indexes
+- Use partial indexes for filtered queries
+- Cache computed values in denormalized columns
+- Monitor slow queries with `pg_stat_statements`
 
 ---
 
-## Documentation
+## Security Best Practices
 
-### Key Documents
-- `README.md` - Getting started guide
-- `docs/APP_ARCHITECTURE.md` - Detailed architecture
-- `docs/feature-roadmap.md` - Future features
-- `database/README.md` - Database setup
-- `supabase/functions/README.md` - Edge functions guide
-- `.kiro/specs/` - Feature specifications
-
-### Spec-Driven Development
-The project uses spec-driven development with structured specifications in `.kiro/specs/`:
-- Requirements documents
-- Design documents with correctness properties
-- Task lists with property-based testing
-- Examples: `flash-offers-mvp`, `venue-reviews-ratings`, `social-friend-system`
+1. **Never expose sensitive data** in API responses (email, phone, etc.)
+2. **Always use RLS policies** for authorization
+3. **Validate and sanitize** all user input
+4. **Use environment variables** for secrets
+5. **Implement rate limiting** for expensive operations
+6. **Log security-relevant events**
+7. **Filter user-generated content** for profanity/spam
+8. **Use HTTPS** for all API calls
+9. **Implement proper error handling** (don't leak stack traces)
+10. **Keep dependencies updated** for security patches
 
 ---
 
-## Current Status
+## Troubleshooting
 
-### Production-Ready Features
-✅ User authentication
-✅ Venue discovery and search
-✅ Check-in/check-out system
-✅ Reviews and ratings
-✅ Flash offers (MVP)
-✅ Social features (friends, collections)
-✅ Push notifications (infrastructure)
-✅ Venue owner dashboard
+### Common Issues
+- **Metro bundler cache issues**: Run `npm run clean:metro`
+- **Build failures**: Run `npm run clean` then rebuild
+- **Supabase connection issues**: Check environment variables
+- **Push notification issues**: Verify FCM configuration
+- **RLS policy errors**: Check user authentication state
+- **Type errors**: Run `npx tsc --noEmit` to check types
 
-### In Development
-🔄 Advanced analytics
-🔄 Enhanced social features
-🔄 Gamification elements
-
-### Planned Features
-📋 Loyalty programs
-📋 Event calendar
-📋 Advanced recommendations
-📋 In-app messaging
+### Debug Tools
+- React Query DevTools (enabled in development)
+- React Native Debugger
+- Flipper (for network inspection)
+- Supabase Studio (database inspection)
+- Firebase Console (push notification logs)
 
 ---
 
-## Key Considerations for Agents
+## Resources
 
-### Code Style
-- Use TypeScript for type safety
-- Follow domain-driven folder structure
-- Prefer named exports over default exports
-- Use custom hooks for business logic
-- Implement proper error handling
+### Documentation
+- [React Native Docs](https://reactnative.dev/)
+- [React Navigation Docs](https://reactnavigation.org/)
+- [React Query Docs](https://tanstack.com/query/latest)
+- [Supabase Docs](https://supabase.com/docs)
+- [Firebase Docs](https://firebase.google.com/docs)
 
-### Database Operations
-- Always use RLS policies
-- Validate data before insertion
-- Use transactions for multi-step operations
-- Consider performance implications of queries
-
-### Testing
-- Write unit tests for new hooks
-- Add property-based tests for complex logic
-- Test error scenarios
-- Validate real-time subscriptions
-
-### Performance
-- Use React Query for caching
-- Implement pagination for large lists
-- Debounce user input
-- Optimize images and assets
-- Monitor bundle size
+### Internal Docs
+- `docs/APP_ARCHITECTURE.md` - Detailed frontend architecture
+- `docs/BACKEND_ARCHITECTURE.md` - Detailed backend architecture
+- `docs/api-reference.md` - Complete API reference
+- `README.md` - Setup and getting started guide
 
 ---
 
-## Contact & Resources
+**Last Updated**: January 25, 2026
 
-- **Supabase Dashboard:** Project-specific URL
-- **Firebase Console:** FCM configuration
-- **GitHub Repository:** (if applicable)
-- **Documentation:** `/docs` directory
-- **Specs:** `.kiro/specs` directory
+**Current Version**: 0.0.1
+
+**Platform**: React Native 0.83.1 | Supabase | Firebase
 
 ---
 
-*Last Updated: January 25, 2026*
+*This document serves as a quick reference for developers, agents, and hooks to understand the OTW codebase structure, architecture, and conventions.*

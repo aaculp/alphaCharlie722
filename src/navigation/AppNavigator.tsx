@@ -16,12 +16,14 @@ import type {
   SettingsStackParamList,
   HomeStackParamList,
   SearchStackParamList,
+  FavoritesStackParamList,
+  HistoryStackParamList,
   VenueStackParamList,
 } from '../types';
 import type { SocialNotification } from '../types/social.types';
 
 // Import screens
-import { HomeScreen, SearchScreen, VenueDetailScreen, SettingsScreen, FavoritesScreen, ProfileScreen, FlashOfferDetailScreen, ClaimConfirmationScreen } from '../screens/customer';
+import { HomeScreen, SearchScreen, VenueDetailScreen, SettingsScreen, FavoritesScreen, ProfileScreen, FlashOfferDetailScreen, ClaimConfirmationScreen, HistoryScreen } from '../screens/customer';
 import VenueReviewsScreen from '../screens/customer/VenueReviewsScreen';
 import MyClaimsScreen from '../screens/customer/MyClaimsScreen';
 import ClaimDetailScreen from '../screens/customer/ClaimDetailScreen';
@@ -33,6 +35,8 @@ import { VenueDashboardScreen, FlashOfferListScreen, FlashOfferDetailScreen as V
 const Tab = createBottomTabNavigator<RootTabParamList>();
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
 const SearchStack = createNativeStackNavigator<SearchStackParamList>();
+const FavoritesStack = createNativeStackNavigator<FavoritesStackParamList>();
+const HistoryStack = createNativeStackNavigator<HistoryStackParamList>();
 const ProfileStack = createNativeStackNavigator<ProfileStackParamList>();
 const SettingsStack = createNativeStackNavigator<SettingsStackParamList>();
 const VenueStack = createNativeStackNavigator<VenueStackParamList>();
@@ -121,7 +125,80 @@ function SearchStackNavigator() {
           animation: 'slide_from_right',
         }}
       />
+      <SearchStack.Screen
+        name="UserProfile"
+        component={ProfileScreen}
+        options={{
+          animation: 'slide_from_right',
+        }}
+      />
     </SearchStack.Navigator>
+  );
+}
+
+// Favorites Stack Navigator
+function FavoritesStackNavigator() {
+  const { theme } = useTheme();
+
+  return (
+    <FavoritesStack.Navigator
+      screenOptions={{
+        headerShown: false,
+        contentStyle: {
+          backgroundColor: theme.colors.background,
+        },
+        animation: 'slide_from_right',
+        animationDuration: 250,
+      }}
+    >
+      <FavoritesStack.Screen
+        name="FavoritesList"
+        component={FavoritesScreen}
+        options={{
+          animation: 'fade',
+        }}
+      />
+      <FavoritesStack.Screen
+        name="VenueDetail"
+        component={VenueDetailScreen}
+        options={{
+          animation: 'slide_from_right',
+        }}
+      />
+    </FavoritesStack.Navigator>
+  );
+}
+
+// History Stack Navigator
+function HistoryStackNavigator() {
+  const { theme } = useTheme();
+
+  return (
+    <HistoryStack.Navigator
+      screenOptions={{
+        headerShown: false,
+        contentStyle: {
+          backgroundColor: theme.colors.background,
+        },
+        animation: 'slide_from_right',
+        animationDuration: 250,
+      }}
+    >
+      <HistoryStack.Screen
+        name="HistoryList"
+        component={HistoryScreen}
+        options={{
+          animation: 'fade',
+        }}
+      />
+      <HistoryStack.Screen
+        name="VenueDetail"
+        component={VenueDetailScreen}
+        options={{
+          animation: 'slide_from_right',
+        }}
+      />
+    </HistoryStack.Navigator>
   );
 }
 
@@ -437,6 +514,10 @@ function MainTabNavigator() {
         return 'Feed';
       case 'Search':
         return 'Search';
+      case 'Favorites':
+        return 'Favorites';
+      case 'History':
+        return 'History';
       case 'Profile':
         return 'Profile';
       default:
@@ -496,6 +577,16 @@ function MainTabNavigator() {
             options={{ title: 'Search' }}
           />
           <Tab.Screen
+            name="Favorites"
+            component={FavoritesStackNavigator}
+            options={{ title: 'Favorites' }}
+          />
+          <Tab.Screen
+            name="History"
+            component={HistoryStackNavigator}
+            options={{ title: 'History' }}
+          />
+          <Tab.Screen
             name="Profile"
             component={ProfileStackNavigator}
             options={{ title: 'Profile' }}
@@ -553,6 +644,16 @@ function MainTabNavigator() {
             name="Search"
             component={SearchStackNavigator}
             options={{ title: getTabLabel('Search') }}
+          />
+          <Tab.Screen
+            name="Favorites"
+            component={FavoritesStackNavigator}
+            options={{ title: getTabLabel('Favorites') }}
+          />
+          <Tab.Screen
+            name="History"
+            component={HistoryStackNavigator}
+            options={{ title: getTabLabel('History') }}
           />
           <Tab.Screen
             name="Profile"

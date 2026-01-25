@@ -269,9 +269,52 @@ class MockQueryBuilder {
         case 'is':
           result = result.filter(item => item[filter.column] === filter.value);
           break;
+        case 'like':
+          result = result.filter(item => {
+            const value = String(item[filter.column] || '');
+            const pattern = String(filter.value).replace(/%/g, '.*');
+            return new RegExp(pattern).test(value);
+          });
+          break;
+        case 'ilike':
+          result = result.filter(item => {
+            const value = String(item[filter.column] || '').toLowerCase();
+            const pattern = String(filter.value).toLowerCase().replace(/%/g, '.*');
+            return new RegExp(pattern).test(value);
+          });
+          break;
+        case 'not':
+          // Handle NOT operator
+          if (filter.value.operator === 'is') {
+            result = result.filter(item => item[filter.column] !== filter.value.value);
+          }
+          break;
         case 'or':
-          // Simple OR implementation - parse "and(col.eq.val,col2.eq.val2),and(...)"
-          // For now, just return all data (tests can override if needed)
+          // Parse OR query: "username.ilike.%term%,display_name.ilike.%term%"
+          const orConditions = filter.value.split(',');
+          result = result.filter(item => {
+            return orConditions.some((condition: string) => {
+              const parts = condition.trim().split('.');
+              if (parts.length >= 3) {
+                const column = parts[0];
+                const operator = parts[1];
+                const value = parts.slice(2).join('.');
+                
+                if (operator === 'ilike') {
+                  const itemValue = String(item[column] || '').toLowerCase();
+                  const pattern = value.toLowerCase().replace(/%/g, '.*');
+                  return new RegExp(pattern).test(itemValue);
+                } else if (operator === 'like') {
+                  const itemValue = String(item[column] || '');
+                  const pattern = value.replace(/%/g, '.*');
+                  return new RegExp(pattern).test(itemValue);
+                } else if (operator === 'eq') {
+                  return item[column] === value;
+                }
+              }
+              return false;
+            });
+          });
           break;
       }
     }

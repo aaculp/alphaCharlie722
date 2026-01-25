@@ -25,6 +25,88 @@ A React Native app with bottom tab navigation featuring venue discovery and user
 - Filter by venue name, category, or location
 - Venue list with ratings and distance
 - Navigation to detailed venue pages
+- **@ Search Feature**: Search for users by typing @ followed by username
+
+### @ Search Feature
+
+The @ Search Feature enables seamless user discovery within the app by using a simple @ prefix in the search bar.
+
+#### How It Works
+
+The search screen operates in two modes:
+
+1. **Venue Search Mode (Default)**
+   - Search for venues by name, category, location, or description
+   - Apply filters for categories, price ranges, and trending options
+   - View venue ratings, locations, and details
+
+2. **User Search Mode (@ Prefix)**
+   - Type `@` followed by a username or display name
+   - Search results show matching users with avatars and usernames
+   - Tap any user to view their profile
+
+#### Usage Examples
+
+```
+# Venue search (default)
+"coffee shop"          → Searches venues
+"downtown"             → Searches venues by location
+"fine dining"          → Searches venues by category
+
+# User search (@ prefix)
+"@john_doe"            → Searches for users with username or display name matching "john_doe"
+"@sarah"               → Searches for users with username or display name matching "sarah"
+```
+
+#### Username Requirements
+
+Usernames must follow these rules:
+- **Length**: 3-30 characters
+- **Characters**: Lowercase letters (a-z), numbers (0-9), and underscores (_)
+- **Format**: Must match pattern `^[a-z0-9_]{3,30}$`
+- **Uniqueness**: Each username must be unique across all users
+- **Storage**: Always stored in lowercase
+
+#### Search Behavior
+
+- **Debounced Search**: 300ms delay after typing to optimize performance
+- **Multi-Field Matching**: Searches both username and display_name fields
+- **Case Insensitive**: Search is case-insensitive for better user experience
+- **Result Limit**: Returns up to 20 users per search
+- **Minimum Query Length**: Requires at least 2 characters after @ to search
+
+#### Display Priority
+
+When displaying user information, the app follows this priority:
+1. **Display Name** (if set) - shown as primary identifier
+2. **Username** (if display name not set) - shown as primary identifier
+3. **Name** (if neither username nor display name set) - fallback identifier
+
+The username is always shown with @ prefix as a secondary identifier when display name is present.
+
+#### Privacy & Security
+
+- **Authentication Required**: Only authenticated users can search for other users
+- **Public Profile Data Only**: Search results only include:
+  - User ID
+  - Username
+  - Display Name
+  - Avatar URL
+- **Sensitive Data Protected**: Email, phone, and other sensitive fields are never exposed in search results
+- **RLS Policies**: Row Level Security policies enforce access control at the database level
+
+#### Technical Implementation
+
+The @ Search Feature is built with:
+- **Mode Detection**: `useSearchMode` hook detects @ prefix and switches modes
+- **User Query**: `useUsersQuery` hook fetches matching users from profiles table
+- **Validation**: `validateUsername` function ensures username format compliance
+- **Display Utility**: `getDisplayName` function handles display name priority logic
+
+For more technical details, see:
+- Design Document: `.kiro/specs/at-search-feature/design.md`
+- Requirements: `.kiro/specs/at-search-feature/requirements.md`
+- Implementation Tasks: `.kiro/specs/at-search-feature/tasks.md`
 
 ### Venue Detail Screen
 - Comprehensive venue information
@@ -281,6 +363,67 @@ useEffect(() => {
 - Generic type support
 - Configurable delay
 - Automatic cleanup on unmount
+
+#### useSearchMode
+Detects search mode based on @ prefix and cleans the query for API calls.
+
+```typescript
+import { useSearchMode } from '@/hooks';
+
+const [searchQuery, setSearchQuery] = useState('');
+const { mode, cleanQuery } = useSearchMode(searchQuery);
+
+// mode will be 'user' if query starts with @, otherwise 'venue'
+// cleanQuery will have @ prefix removed for API calls
+
+if (mode === 'user') {
+  // Fetch users with cleanQuery
+} else {
+  // Fetch venues with cleanQuery
+}
+```
+
+**Parameters:**
+- `searchQuery: string` - The raw search query from user input
+
+**Returns:**
+- `mode: 'user' | 'venue'` - Detected search mode
+- `cleanQuery: string` - Query with @ prefix removed (if present)
+
+**Features:**
+- Automatic mode detection based on @ prefix
+- Query cleaning for API calls
+- Memoized to prevent unnecessary recalculations
+
+#### useUsersQuery
+Fetches users matching a search query (used for @ search feature).
+
+```typescript
+import { useUsersQuery } from '@/hooks/queries';
+
+const { data: users, isLoading, error } = useUsersQuery({
+  searchQuery: 'john',
+  enabled: searchQuery.length >= 2,
+});
+
+// users will contain matching user profiles
+```
+
+**Options:**
+- `searchQuery: string` - Search term to match against username and display_name
+- `enabled?: boolean` - Conditionally enable/disable fetching
+
+**Returns:**
+- `data: UserSearchResult[]` - Array of matching user profiles
+- `isLoading: boolean` - Loading state
+- `error: Error | null` - Error state
+
+**Features:**
+- Searches both username and display_name fields
+- Case-insensitive matching
+- Returns up to 20 results
+- Filters out users without usernames
+- Requires minimum 2 characters to search
 
 ### Hook Usage Patterns
 

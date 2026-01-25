@@ -2,6 +2,8 @@
 export type RootTabParamList = {
   Home: undefined;
   Search: undefined;
+  Favorites: undefined;
+  History: undefined;
   Profile: undefined;
 };
 
@@ -39,6 +41,19 @@ export type HomeStackParamList = {
 // Search stack navigation types
 export type SearchStackParamList = {
   SearchList: undefined;
+  VenueDetail: { venueId: string; venueName: string };
+  UserProfile: { userId: string };
+};
+
+// Favorites stack navigation types
+export type FavoritesStackParamList = {
+  FavoritesList: undefined;
+  VenueDetail: { venueId: string; venueName: string };
+};
+
+// History stack navigation types
+export type HistoryStackParamList = {
+  HistoryList: undefined;
   VenueDetail: { venueId: string; venueName: string };
 };
 
