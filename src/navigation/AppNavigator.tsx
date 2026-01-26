@@ -23,7 +23,7 @@ import type {
 import type { SocialNotification } from '../types/social.types';
 
 // Import screens
-import { HomeScreen, SearchScreen, VenueDetailScreen, SettingsScreen, FavoritesScreen, ProfileScreen, FlashOfferDetailScreen, ClaimConfirmationScreen, HistoryScreen } from '../screens/customer';
+import { HomeScreen, SearchScreen, VenueDetailScreen, SettingsScreen, FavoritesScreen, ProfileScreen, EditProfileScreen, FlashOfferDetailScreen, ClaimConfirmationScreen, HistoryScreen } from '../screens/customer';
 import VenueReviewsScreen from '../screens/customer/VenueReviewsScreen';
 import MyClaimsScreen from '../screens/customer/MyClaimsScreen';
 import ClaimDetailScreen from '../screens/customer/ClaimDetailScreen';
@@ -218,6 +218,10 @@ function ProfileStackNavigator() {
       <ProfileStack.Screen
         name="ProfileMain"
         component={ProfileScreen}
+      />
+      <ProfileStack.Screen
+        name="EditProfile"
+        component={EditProfileScreen}
       />
       <ProfileStack.Screen
         name="Settings"

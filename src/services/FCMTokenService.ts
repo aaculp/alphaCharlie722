@@ -8,7 +8,7 @@
  */
 
 import { getMessaging, requestPermission, getToken, onTokenRefresh, deleteToken, AuthorizationStatus } from '@react-native-firebase/messaging';
-import { Platform } from 'react-native';
+import { Platform, PermissionsAndroid } from 'react-native';
 import { DeviceTokenManager } from './DeviceTokenManager';
 
 export class FCMTokenService {
@@ -24,7 +24,30 @@ export class FCMTokenService {
     try {
       console.log('🔔 Initializing FCM...');
       
-      // Request permission (iOS requires this, Android 13+ also requires it)
+      // For Android 13+ (API level 33+), request POST_NOTIFICATIONS permission
+      if (Platform.OS === 'android' && Platform.Version >= 33) {
+        console.log('📱 Android 13+ detected, requesting POST_NOTIFICATIONS permission...');
+        
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
+          {
+            title: 'Enable Notifications',
+            message: 'Allow alphaCharlie722 to send you notifications about flash offers, friend requests, and venue updates?',
+            buttonNeutral: 'Ask Me Later',
+            buttonNegative: 'Don\'t Allow',
+            buttonPositive: 'Allow',
+          }
+        );
+        
+        if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+          console.log('⚠️ Android notification permission not granted:', granted);
+          return;
+        }
+        
+        console.log('✅ Android notification permission granted');
+      }
+      
+      // Request permission from Firebase (iOS and older Android)
       const authStatus = await requestPermission(getMessaging());
       const enabled =
         authStatus === AuthorizationStatus.AUTHORIZED ||

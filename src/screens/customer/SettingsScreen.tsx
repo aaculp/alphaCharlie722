@@ -116,11 +116,7 @@ const SettingsScreen: React.FC = () => {
           }
           
           if (result.status !== 'authorized' && result.status !== 'provisional') {
-            Alert.alert(
-              'Permission Required',
-              'Push notifications require permission to work. Please enable them in settings.',
-              [{ text: 'OK' }]
-            );
+            console.log('⚠️ Push notification permission not granted');
             return;
           }
         }
@@ -136,24 +132,9 @@ const SettingsScreen: React.FC = () => {
       }
 
       setPushEnabled(value);
-      
-      if (value) {
-        Alert.alert(
-          'Success',
-          'Push notifications enabled. You\'ll receive real-time updates for social interactions.',
-          [{ text: 'OK' }]
-        );
-      } else {
-        // Show fallback info when disabling
-        PushPermissionService.showFallbackNotificationInfo();
-      }
+      console.log(value ? '✅ Push notifications enabled' : '❌ Push notifications disabled');
     } catch (error) {
       console.error('Error toggling push notifications:', error);
-      Alert.alert(
-        'Error',
-        'Failed to update push notification settings. Please try again.',
-        [{ text: 'OK' }]
-      );
     }
   };
 
@@ -369,11 +350,13 @@ const SettingsScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <View style={[styles.header, { backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.border }]}>
+      <View style={[styles.header, { borderBottomColor: theme.colors.border }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Icon name="arrow-back" size={24} color={theme.colors.text} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Settings</Text>
+        <Text style={[styles.headerTitle, { color: theme.colors.text, fontFamily: theme.fonts.primary.bold }]}>
+          Settings
+        </Text>
         <View style={styles.headerSpacer} />
       </View>
 
@@ -392,18 +375,6 @@ const SettingsScreen: React.FC = () => {
         {/* User Profile Section */}
         <SectionHeader title="Profile" />
         <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
-          <SettingItem
-            icon="person-circle"
-            title="Edit Profile"
-            subtitle="Update your personal information"
-            onPress={() => navigation.navigate('Profile')}
-          />
-          <SettingItem
-            icon="heart"
-            title="My Favorites"
-            subtitle="View your saved venues"
-            onPress={() => navigation.navigate('Favorites')}
-          />
           <SettingItem
             icon="ticket"
             title="My Flash Offers"
@@ -958,26 +929,21 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    borderBottomWidth: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
   },
   backButton: {
-    padding: 8,
+    minWidth: 60,
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    fontFamily: 'Poppins-Bold', // Primary font for headings
+    fontSize: 18,
   },
   headerSpacer: {
-    width: 40, // Same width as back button to center title
-  },
-  logoutHeaderButton: {
-    padding: 8,
+    minWidth: 60,
   },
   scrollView: {
     flex: 1,

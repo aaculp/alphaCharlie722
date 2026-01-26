@@ -5,6 +5,11 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Linking,
+  Alert,
+  Modal,
+  TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -23,6 +28,44 @@ type FlashOffersHelpScreenProps = {
  */
 const FlashOffersHelpScreen: React.FC<FlashOffersHelpScreenProps> = ({ navigation }) => {
   const { theme } = useTheme();
+  const [showContactModal, setShowContactModal] = React.useState(false);
+  const [subject, setSubject] = React.useState('');
+  const [message, setMessage] = React.useState('');
+  const [sending, setSending] = React.useState(false);
+
+  console.log('FlashOffersHelpScreen render - showContactModal:', showContactModal);
+
+  const handleSendSupport = async () => {
+    if (!subject.trim() || !message.trim()) {
+      Alert.alert('Missing Information', 'Please fill in both subject and message.');
+      return;
+    }
+
+    setSending(true);
+
+    // Simulate sending email (you can replace this with actual email service)
+    const email = 'aaculp@icloud.com';
+    const mailtoUrl = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
+    
+    try {
+      const canOpen = await Linking.canOpenURL(mailtoUrl);
+      
+      if (canOpen) {
+        await Linking.openURL(mailtoUrl);
+        setShowContactModal(false);
+        setSubject('');
+        setMessage('');
+        Alert.alert('Success', 'Your email app has been opened. Please send the email to complete your support request.');
+      } else {
+        Alert.alert('Error', 'Could not open email app. Please try again later.');
+      }
+    } catch (error) {
+      console.error('Error sending support message:', error);
+      Alert.alert('Error', 'Failed to send support request. Please try again.');
+    } finally {
+      setSending(false);
+    }
+  };
 
   const customerFAQs: FAQItem[] = [
     {
@@ -180,8 +223,8 @@ const FlashOffersHelpScreen: React.FC<FlashOffersHelpScreenProps> = ({ navigatio
           <TouchableOpacity
             style={[styles.supportButton, { backgroundColor: theme.colors.primary }]}
             onPress={() => {
-              // TODO: Navigate to support or open email
-              console.log('Contact support');
+              console.log('Contact Support button pressed');
+              setShowContactModal(true);
             }}
           >
             <Text style={styles.supportButtonText}>Contact Support</Text>
@@ -190,6 +233,117 @@ const FlashOffersHelpScreen: React.FC<FlashOffersHelpScreenProps> = ({ navigatio
 
         <View style={styles.bottomSpacing} />
       </ScrollView>
+
+      {/* Contact Support Modal */}
+      <Modal
+        visible={showContactModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => {
+          console.log('Modal onRequestClose called');
+          setShowContactModal(false);
+        }}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay} 
+          activeOpacity={1}
+          onPress={() => setShowContactModal(false)}
+        >
+          <TouchableOpacity 
+            activeOpacity={1} 
+            onPress={(e) => e.stopPropagation()}
+            style={[styles.modalContent, { backgroundColor: theme.colors.surface }]}
+          >
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: theme.colors.text }]}>
+                Contact Support
+              </Text>
+              <TouchableOpacity onPress={() => {
+                console.log('Close button pressed');
+                setShowContactModal(false);
+              }}>
+                <Icon name="close" size={24} color={theme.colors.text} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+              <Text style={[styles.modalDescription, { color: theme.colors.textSecondary }]}>
+                Send us a message and we'll get back to you as soon as possible.
+              </Text>
+
+              <View style={styles.inputContainer}>
+                <Text style={[styles.inputLabel, { color: theme.colors.text }]}>
+                  Subject
+                </Text>
+                <TextInput
+                  style={[
+                    styles.input,
+                    {
+                      backgroundColor: theme.colors.background,
+                      color: theme.colors.text,
+                      borderColor: theme.colors.border,
+                    },
+                  ]}
+                  value={subject}
+                  onChangeText={setSubject}
+                  placeholder="What do you need help with?"
+                  placeholderTextColor={theme.colors.textSecondary}
+                  maxLength={100}
+                />
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={[styles.inputLabel, { color: theme.colors.text }]}>
+                  Message
+                </Text>
+                <TextInput
+                  style={[
+                    styles.textArea,
+                    {
+                      backgroundColor: theme.colors.background,
+                      color: theme.colors.text,
+                      borderColor: theme.colors.border,
+                    },
+                  ]}
+                  value={message}
+                  onChangeText={setMessage}
+                  placeholder="Please describe your issue in detail..."
+                  placeholderTextColor={theme.colors.textSecondary}
+                  multiline
+                  numberOfLines={6}
+                  maxLength={1000}
+                  textAlignVertical="top"
+                />
+                <Text style={[styles.charCount, { color: theme.colors.textSecondary }]}>
+                  {message.length}/1000
+                </Text>
+              </View>
+            </ScrollView>
+
+            <View style={styles.modalFooter}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton, { borderColor: theme.colors.border }]}
+                onPress={() => setShowContactModal(false)}
+              >
+                <Text style={[styles.cancelButtonText, { color: theme.colors.text }]}>
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.sendButton, { backgroundColor: theme.colors.primary }]}
+                onPress={handleSendSupport}
+                disabled={sending}
+              >
+                {sending ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.sendButtonText}>Send</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -322,6 +476,107 @@ const styles = StyleSheet.create({
   },
   bottomSpacing: {
     height: 40,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '80%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0, 0, 0, 0.1)',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    fontFamily: 'Poppins-Bold',
+  },
+  modalBody: {
+    padding: 20,
+    maxHeight: 400,
+  },
+  modalDescription: {
+    fontSize: 14,
+    lineHeight: 20,
+    fontFamily: 'Inter-Regular',
+    marginBottom: 20,
+  },
+  inputContainer: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    fontFamily: 'Inter-SemiBold',
+    marginBottom: 8,
+  },
+  input: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
+    fontFamily: 'Inter-Regular',
+  },
+  textArea: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
+    fontFamily: 'Inter-Regular',
+    minHeight: 120,
+  },
+  charCount: {
+    fontSize: 12,
+    fontFamily: 'Inter-Regular',
+    marginTop: 4,
+    textAlign: 'right',
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    padding: 20,
+    gap: 12,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0, 0, 0, 0.1)',
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelButton: {
+    borderWidth: 1,
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    fontFamily: 'Inter-SemiBold',
+  },
+  sendButton: {
+    minHeight: 48,
+  },
+  sendButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    fontFamily: 'Inter-SemiBold',
   },
 });
 

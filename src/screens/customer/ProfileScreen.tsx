@@ -13,7 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
 import type { ProfileStackParamList } from '../../types';
 import { ProfileService } from '../../services/api/profile';
@@ -32,6 +32,13 @@ const ProfileScreen: React.FC = () => {
     loadProfile();
   }, [user?.id]);
 
+  // Reload profile when screen comes into focus (after editing)
+  useFocusEffect(
+    React.useCallback(() => {
+      loadProfile();
+    }, [user?.id])
+  );
+
   const loadProfile = async () => {
     if (!user?.id) return;
 
@@ -48,18 +55,19 @@ const ProfileScreen: React.FC = () => {
     }
   };
 
+  const handleEditProfile = () => {
+    navigation.navigate('EditProfile' as never);
+  };
+
   const handleLogout = () => {
     console.log('Logout button pressed');
     setShowLogoutModal(true);
   };
 
   const confirmLogout = async () => {
-    console.log('Confirming logout');
     setShowLogoutModal(false);
     await signOut();
   };
-
-  console.log('ProfileScreen render - showLogoutModal:', showLogoutModal);
 
   if (loading) {
     return (
@@ -89,16 +97,31 @@ const ProfileScreen: React.FC = () => {
             </View>
           </View>
 
-          {/* Name and Logout Button */}
+          {/* Name and Action Buttons */}
           <View style={styles.nameLogoutContainer}>
             <Text style={[styles.name, { color: theme.colors.text, fontFamily: theme.fonts.primary.bold }]}>
               {profileData?.display_name || profileData?.username || 'User'}
             </Text>
             <View style={styles.iconButtonsContainer}>
-              <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Settings')}>
+              <TouchableOpacity 
+                style={styles.iconButton} 
+                onPress={handleEditProfile}
+                activeOpacity={0.7}
+              >
+                <Icon name="create-outline" size={24} color={theme.colors.text} />
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.iconButton} 
+                onPress={() => navigation.navigate('Settings' as never)}
+                activeOpacity={0.7}
+              >
                 <Icon name="settings-outline" size={24} color={theme.colors.text} />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.iconButton} onPress={handleLogout}>
+              <TouchableOpacity 
+                style={styles.iconButton} 
+                onPress={handleLogout}
+                activeOpacity={0.7}
+              >
                 <Icon name="log-out-outline" size={24} color={theme.colors.error} />
               </TouchableOpacity>
             </View>
@@ -211,6 +234,10 @@ const styles = StyleSheet.create({
   },
   iconButton: {
     padding: 4,
+    minWidth: 32,
+    minHeight: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   nameLogoutContainer: {
     flexDirection: 'row',
