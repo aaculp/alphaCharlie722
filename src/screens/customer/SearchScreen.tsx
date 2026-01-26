@@ -77,10 +77,10 @@ const SearchScreen: React.FC = () => {
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   // MVP: Venues-only search
-  // Venue search query - only enabled when there's a search query
+  // Venue search query - always fetch venues for filtering
   const { venues: venuesData, isLoading: venuesLoading, error: venuesError } = useVenuesQuery({ 
     filters: venueFilters,
-    enabled: debouncedSearchQuery.length > 0, // Only fetch when user is searching
+    enabled: true, // Always fetch venues - we filter them client-side
   });
   
   // Memoize venues array to prevent new reference on every render
@@ -115,6 +115,13 @@ const SearchScreen: React.FC = () => {
   const slideAnim = useRef(new Animated.Value(Dimensions.get('window').width * 0.4)).current;
 
   const filterVenues = useCallback(() => {
+    // Only filter when there's a search query (2+ chars) or active filters
+    if (debouncedSearchQuery.length < 2 && selectedCategories.includes('All') && selectedFilters.includes('all') && selectedPriceRanges.includes('all_prices')) {
+      // Clear filtered venues when search query is too short and no active filters
+      setFilteredVenues([]);
+      return;
+    }
+
     console.log('🔍 Filtering venues:', {
       selectedCategories,
       selectedFilters,
@@ -184,15 +191,9 @@ const SearchScreen: React.FC = () => {
   }, [venues, selectedCategories, selectedFilters, selectedPriceRanges, debouncedSearchQuery]);
 
   // Filter venues when dependencies change
-  // Only filter when there's a search query (2+ chars) or active filters
   useEffect(() => {
-    if (searchQuery.length >= 2 || !selectedCategories.includes('All') || !selectedFilters.includes('all') || !selectedPriceRanges.includes('all_prices')) {
-      filterVenues();
-    } else {
-      // Clear filtered venues when search query is too short and no active filters
-      setFilteredVenues([]);
-    }
-  }, [filterVenues, searchQuery]);
+    filterVenues();
+  }, [filterVenues]);
 
   // MVP: User search errors disabled
   // TODO: Re-enable post-MVP
