@@ -20,11 +20,26 @@ import { queryClient, setupQueryPersistence } from './src/lib/queryClient';
 import { setupRealtimeSync } from './src/lib/realtimeSync';
 import { setupNavigationSync } from './src/lib/navigationSync';
 import AppNavigator from './src/navigation/AppNavigator';
+import { useTimezoneMigration } from './src/hooks/useTimezoneMigration';
+import { useTimezoneChangeDetection } from './src/hooks/useTimezoneChangeDetection';
+import TimezoneChangeModal from './src/components/settings/TimezoneChangeModal';
 
 function AppContent() {
   const { isLoading, theme, isDark } = useTheme();
   const systemColorScheme = useColorScheme();
   const navigationRef = useRef<NavigationContainerRef<any>>(null);
+
+  // Integrate timezone migration hook (Requirements 4.1, 4.4)
+  // This hook automatically migrates existing users from UTC to device timezone
+  // if they have no quiet hours configured. Runs once per app session after
+  // user authentication. Non-blocking operation with error handling.
+  useTimezoneMigration();
+
+  // Integrate timezone change detection hook (Requirements 5.1, 5.4)
+  // This hook detects when the device timezone changes and prompts the user
+  // to update their notification preferences. Includes a 7-day cooldown to
+  // prevent prompt fatigue. Runs on app foreground events.
+  const { state: timezoneState, handlers: timezoneHandlers } = useTimezoneChangeDetection();
 
   // Configure deep linking
   const linking = {
@@ -76,6 +91,16 @@ function AppContent() {
       <NavigationContainer ref={navigationRef} linking={linking}>
         <AppNavigator />
       </NavigationContainer>
+      
+      {/* Timezone Change Detection Modal (Requirements 5.1, 5.4) */}
+      {/* Shows when device timezone changes, prompts user to update preferences */}
+      <TimezoneChangeModal
+        visible={timezoneState.showPrompt}
+        oldTimezone={timezoneState.oldTimezone}
+        newTimezone={timezoneState.newTimezone}
+        onAccept={timezoneHandlers.handleAccept}
+        onDecline={timezoneHandlers.handleDecline}
+      />
     </SafeAreaView>
   );
 }

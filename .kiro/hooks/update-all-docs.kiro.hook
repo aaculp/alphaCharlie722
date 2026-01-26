@@ -1,15 +1,15 @@
 {
-  "enabled": true,
   "name": "Update All Documentation",
-  "description": "Click to run: Comprehensive documentation update - updates backend docs, frontend docs, and app overview based on recent code changes",
-  "version": "2",
+  "version": "1.0.0",
+  "description": "Automatically updates all documentation files when code changes are made",
   "when": {
     "type": "userTriggered"
   },
   "then": {
     "type": "askAgent",
-    "prompt": "Perform a comprehensive documentation update based on recent code changes:\n\n1. BACKEND DOCUMENTATION (docs/BACKEND_ARCHITECTURE.md):\n   - Review recent changes in database/**/*.sql, database/**/*.md, supabase/migrations/*.sql, and supabase/functions/**/*.ts\n   - Update database schema documentation for any new tables, columns, or constraints\n   - Document new database functions, triggers, or RLS policies\n   - Update edge functions documentation\n   - Add migration notes with dates and purposes\n   - Ensure all backend changes are accurately documented\n\n2. FRONTEND DOCUMENTATION (docs/frontend-reference.md):\n   - Review recent changes in src/**/*.ts, src/**/*.tsx\n   - Document new or updated custom hooks with interfaces, usage examples, and features\n   - Document new or updated components with props, usage, and features\n   - Update service layer documentation for API changes\n   - Document new types and interfaces\n   - Update context providers if changed\n   - Ensure all frontend changes are accurately documented\n\n3. APP ARCHITECTURE (docs/APP_ARCHITECTURE.md):\n   - Update component hierarchy if new components added\n   - Update data flow diagrams if data patterns changed\n   - Document new hooks usage in screens\n   - Update API service methods documentation\n   - Ensure architecture docs reflect current state\n\n4. APP OVERVIEW (ON_THE_WAY_OVERVIEW.md):\n   - Keep high-level overview current\n   - Update feature list if new features added\n   - Ensure tech stack is accurate\n   - Maintain as entry point for understanding codebase\n\nIMPORTANT:\n- Focus on changes from the current session or recent commits\n- Be specific about what was added, updated, or fixed\n- Include code examples for new hooks/components\n- Update version numbers and dates where applicable\n- Provide a summary of all documentation updates made\n\nProvide a consolidated response listing all documentation files updated and key changes made to each."
+    "prompt": "Review the changes made to the edited file and update any relevant documentation files in the docs/ folder. Specifically check and update: README.md, docs/APP_ARCHITECTURE.md, docs/BACKEND_ARCHITECTURE.md, docs/api-reference.md, docs/frontend-reference.md, and any other relevant documentation. Only update documentation if the changes are significant enough to warrant documentation updates."
   },
+  "enabled": true,
   "workspaceFolderName": "alphaCharlie722",
   "shortName": "update-all-docs"
 }

@@ -128,6 +128,14 @@ For more technical details, see:
 
 > **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
 
+For detailed setup and deployment guides, see the [docs](./docs) folder:
+- [Quick Start Guide](./docs/QUICK_START.md)
+- [Firebase Setup](./docs/FIREBASE_SETUP.md)
+- [Supabase Setup](./docs/supabase-setup.md)
+- [Deployment Quick Reference](./docs/DEPLOYMENT_QUICK_REFERENCE.md)
+- [Production Deployment Guide](./docs/PRODUCTION_DEPLOYMENT_GUIDE.md)
+- [Secrets Management](./docs/SECRETS_MANAGEMENT.md)
+
 ### Step 1: Database Setup
 
 Set up your Supabase database by running the SQL scripts in the `database/` directory. See `database/README.md` for detailed instructions.
@@ -847,3 +855,39 @@ If you're updating existing code that hasn't been refactored yet:
 ## Troubleshooting
 
 If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
+
+## Documentation
+
+For more detailed documentation, see the [docs](./docs) folder:
+
+### Architecture & Design
+- [App Architecture](./docs/APP_ARCHITECTURE.md)
+- [Backend Architecture](./docs/BACKEND_ARCHITECTURE.md)
+- [Venue Data Structure](./docs/VENUE_DATA_STRUCTURE.md)
+- [On The Way Overview](./docs/ON_THE_WAY_OVERVIEW.md)
+
+### Setup & Deployment
+- [Quick Start Guide](./docs/QUICK_START.md)
+- [Firebase Setup](./docs/FIREBASE_SETUP.md)
+- [Supabase Setup](./docs/supabase-setup.md)
+- [Deployment Quick Reference](./docs/DEPLOYMENT_QUICK_REFERENCE.md)
+- [Production Deployment Guide](./docs/PRODUCTION_DEPLOYMENT_GUIDE.md)
+- [Production Deployment Checklist](./docs/PRODUCTION_DEPLOYMENT_CHECKLIST.md)
+- [Production Monitoring Guide](./docs/PRODUCTION_MONITORING_GUIDE.md)
+- [Secrets Management](./docs/SECRETS_MANAGEMENT.md)
+
+### Features
+- [@ Search Feature](./docs/at-search-feature.md)
+- [Push Notifications Production Checklist](./docs/PUSH_NOTIFICATIONS_PRODUCTION_CHECKLIST.md)
+- [Reviews Deployment Guide](./docs/REVIEWS_DEPLOYMENT_GUIDE.md)
+- [Reviews Deployment Checklist](./docs/REVIEWS_DEPLOYMENT_CHECKLIST.md)
+
+### API Reference
+- [API Reference](./docs/api-reference.md)
+- [Frontend Reference](./docs/frontend-reference.md)
+- [Review API Error Codes](./docs/review-api-error-codes.md)
+
+### User Guides
+- [Community Guidelines](./docs/user-guides/community-guidelines.md)
+- [How to Write a Review](./docs/user-guides/how-to-write-a-review.md)
+- [Venue Owner Review Guide](./docs/user-guides/venue-owner-review-guide.md)

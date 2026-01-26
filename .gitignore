@@ -98,5 +98,12 @@ credentials/
 *.cert
 
 # IDE
-.vscode/settings.json
-.idea/workspace.xml
+.vscode/
+.idea/
+
+# Kiro AI assistant files
+.kiro/specs/
+.kiro/steering/
+
+# Build artifacts
+.bundle/

@@ -15,6 +15,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { NotificationPreferencesService, FlashOfferNotificationPreferences } from '../../services/api/notificationPreferences';
 import { PushNotificationStatus } from '../../components/settings/PushNotificationStatus';
+import { getDeviceTimezone, getFriendlyTimezoneName } from '../../utils/timezone';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 /**
@@ -36,6 +37,9 @@ const NotificationSettingsScreen: React.FC<{ navigation: any }> = ({ navigation 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [preferences, setPreferences] = useState<FlashOfferNotificationPreferences | null>(null);
+  const [pendingChanges, setPendingChanges] = useState<Partial<FlashOfferNotificationPreferences>>({});
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [showSavedConfirmation, setShowSavedConfirmation] = useState(false);
   
   // State for UI controls
   const [showStartTimePicker, setShowStartTimePicker] = useState(false);
@@ -45,6 +49,9 @@ const NotificationSettingsScreen: React.FC<{ navigation: any }> = ({ navigation 
   // Temporary state for time pickers
   const [tempStartTime, setTempStartTime] = useState(new Date());
   const [tempEndTime, setTempEndTime] = useState(new Date());
+  
+  // Device timezone detection
+  const [deviceTimezone, setDeviceTimezone] = useState<string>('UTC');
 
   // Common timezones for the dropdown
   const COMMON_TIMEZONES = [
@@ -64,6 +71,13 @@ const NotificationSettingsScreen: React.FC<{ navigation: any }> = ({ navigation 
   // Load preferences on mount
   useEffect(() => {
     loadPreferences();
+  }, []);
+  
+  // Detect device timezone on mount
+  useEffect(() => {
+    const detected = getDeviceTimezone();
+    setDeviceTimezone(detected);
+    console.log('[NotificationSettings] Device timezone detected:', detected);
   }, []);
 
   const loadPreferences = async () => {
@@ -96,13 +110,32 @@ const NotificationSettingsScreen: React.FC<{ navigation: any }> = ({ navigation 
     }
   };
 
-  const updatePreference = async (updates: Partial<FlashOfferNotificationPreferences>) => {
-    if (!user?.id || !preferences) return;
+  const updatePreference = (updates: Partial<FlashOfferNotificationPreferences>) => {
+    if (!preferences) return;
+    
+    // Update local state immediately for UI responsiveness
+    setPreferences({ ...preferences, ...updates });
+    
+    // Track pending changes
+    setPendingChanges(prev => ({ ...prev, ...updates }));
+    setHasUnsavedChanges(true);
+  };
+
+  const savePreferences = async () => {
+    if (!user?.id || !hasUnsavedChanges) return;
     
     try {
       setSaving(true);
-      const updated = await NotificationPreferencesService.updatePreferences(user.id, updates);
+      const updated = await NotificationPreferencesService.updatePreferences(user.id, pendingChanges);
       setPreferences(updated);
+      setPendingChanges({});
+      setHasUnsavedChanges(false);
+      
+      // Show success confirmation
+      setShowSavedConfirmation(true);
+      setTimeout(() => {
+        setShowSavedConfirmation(false);
+      }, 2000);
     } catch (error) {
       console.error('Error updating notification preferences:', error);
       Alert.alert('Error', 'Failed to update preferences. Please try again.');
@@ -111,8 +144,37 @@ const NotificationSettingsScreen: React.FC<{ navigation: any }> = ({ navigation 
     }
   };
 
-  const handleToggleNotifications = async (value: boolean) => {
-    await updatePreference({ flash_offers_enabled: value });
+  const handleBackPress = () => {
+    if (hasUnsavedChanges) {
+      Alert.alert(
+        'Unsaved Changes',
+        'You have unsaved changes. Do you want to save them before leaving?',
+        [
+          {
+            text: 'Discard',
+            style: 'destructive',
+            onPress: () => navigation.goBack(),
+          },
+          {
+            text: 'Cancel',
+            style: 'cancel',
+          },
+          {
+            text: 'Save',
+            onPress: async () => {
+              await savePreferences();
+              navigation.goBack();
+            },
+          },
+        ]
+      );
+    } else {
+      navigation.goBack();
+    }
+  };
+
+  const handleToggleNotifications = (value: boolean) => {
+    updatePreference({ flash_offers_enabled: value });
   };
 
   const handleStartTimeChange = (event: any, selectedDate?: Date) => {
@@ -149,7 +211,7 @@ const NotificationSettingsScreen: React.FC<{ navigation: any }> = ({ navigation 
     }
   };
 
-  const handleClearQuietHours = async () => {
+  const handleClearQuietHours = () => {
     Alert.alert(
       'Clear Quiet Hours',
       'Are you sure you want to remove quiet hours? You\'ll receive notifications at any time.',
@@ -158,8 +220,8 @@ const NotificationSettingsScreen: React.FC<{ navigation: any }> = ({ navigation 
         {
           text: 'Clear',
           style: 'destructive',
-          onPress: async () => {
-            await updatePreference({
+          onPress: () => {
+            updatePreference({
               quiet_hours_start: null,
               quiet_hours_end: null,
             });
@@ -169,9 +231,21 @@ const NotificationSettingsScreen: React.FC<{ navigation: any }> = ({ navigation 
     );
   };
 
-  const handleTimezoneSelect = async (timezone: string) => {
-    await updatePreference({ timezone });
+  const handleTimezoneSelect = (timezone: string) => {
+    updatePreference({ timezone });
     setShowTimezoneModal(false);
+  };
+  
+  const handleUseDeviceTimezone = () => {
+    if (!preferences) return;
+    
+    updatePreference({ timezone: deviceTimezone });
+    console.log('[NotificationSettings] Timezone manually updated to device timezone:', {
+      userId: user?.id,
+      oldTimezone: preferences.timezone,
+      newTimezone: deviceTimezone,
+      source: 'settings-screen',
+    });
   };
 
   const handleDistanceChange = (distance: number | null) => {
@@ -214,11 +288,28 @@ const NotificationSettingsScreen: React.FC<{ navigation: any }> = ({ navigation 
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       {/* Header */}
       <View style={[styles.header, { backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.border }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton} testID="back-button">
+        <TouchableOpacity onPress={handleBackPress} style={styles.backButton} testID="back-button">
           <Icon name="arrow-back" size={24} color={theme.colors.text} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Flash Offer Notifications</Text>
-        <View style={styles.headerRight} />
+        <TouchableOpacity 
+          onPress={savePreferences} 
+          style={styles.saveButton}
+          disabled={!hasUnsavedChanges || saving}
+        >
+          {showSavedConfirmation ? (
+            <Icon name="checkmark-circle" size={24} color="#34C759" />
+          ) : (
+            <Text style={[
+              styles.saveButtonText, 
+              { 
+                color: hasUnsavedChanges && !saving ? theme.colors.primary : theme.colors.textSecondary 
+              }
+            ]}>
+              {saving ? 'Saving...' : 'Save'}
+            </Text>
+          )}
+        </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
@@ -269,7 +360,7 @@ const NotificationSettingsScreen: React.FC<{ navigation: any }> = ({ navigation 
             </View>
             <TouchableOpacity
               onPress={() => setShowStartTimePicker(true)}
-              disabled={saving || !preferences.flash_offers_enabled}
+              disabled={!preferences.flash_offers_enabled}
               style={[styles.timeButton, { backgroundColor: theme.colors.primary + '20' }]}
             >
               <Text style={[styles.timeButtonText, { color: theme.colors.primary }]}>Set</Text>
@@ -288,7 +379,7 @@ const NotificationSettingsScreen: React.FC<{ navigation: any }> = ({ navigation 
             </View>
             <TouchableOpacity
               onPress={() => setShowEndTimePicker(true)}
-              disabled={saving || !preferences.flash_offers_enabled}
+              disabled={!preferences.flash_offers_enabled}
               style={[styles.timeButton, { backgroundColor: theme.colors.primary + '20' }]}
             >
               <Text style={[styles.timeButtonText, { color: theme.colors.primary }]}>Set</Text>
@@ -299,7 +390,6 @@ const NotificationSettingsScreen: React.FC<{ navigation: any }> = ({ navigation 
             <TouchableOpacity
               style={[styles.clearButton, { borderTopColor: theme.colors.border }]}
               onPress={handleClearQuietHours}
-              disabled={saving}
             >
               <Icon name="close-circle" size={20} color="#FF3B30" />
               <Text style={styles.clearButtonText}>Clear Quiet Hours</Text>
@@ -311,9 +401,9 @@ const NotificationSettingsScreen: React.FC<{ navigation: any }> = ({ navigation 
         <Text style={[styles.sectionHeader, { color: theme.colors.textSecondary }]}>Timezone</Text>
         <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
           <TouchableOpacity
-            style={[styles.settingItem, { borderBottomWidth: 0 }]}
+            style={[styles.settingItem, { borderBottomColor: theme.colors.border }]}
             onPress={() => setShowTimezoneModal(true)}
-            disabled={saving || !preferences.flash_offers_enabled}
+            disabled={!preferences.flash_offers_enabled}
           >
             <View style={styles.settingLeft}>
               <Icon name="time" size={24} color={theme.colors.primary} style={styles.settingIcon} />
@@ -326,6 +416,48 @@ const NotificationSettingsScreen: React.FC<{ navigation: any }> = ({ navigation 
             </View>
             <Icon name="chevron-forward" size={20} color={theme.colors.textSecondary} />
           </TouchableOpacity>
+          
+          {/* Device Timezone Display */}
+          <View style={[styles.deviceTimezoneContainer, { borderBottomColor: theme.colors.border }]}>
+            <View style={styles.deviceTimezoneRow}>
+              <Icon 
+                name={preferences.timezone === deviceTimezone ? "checkmark-circle" : "alert-circle"} 
+                size={20} 
+                color={preferences.timezone === deviceTimezone ? "#34C759" : "#FF9500"} 
+                style={styles.deviceTimezoneIcon}
+              />
+              <View style={styles.deviceTimezoneText}>
+                <Text style={[styles.deviceTimezoneLabel, { color: theme.colors.textSecondary }]}>
+                  Device Timezone
+                </Text>
+                <Text style={[styles.deviceTimezoneValue, { color: theme.colors.text }]}>
+                  {getFriendlyTimezoneName(deviceTimezone)}
+                </Text>
+                <Text style={[styles.deviceTimezoneIana, { color: theme.colors.textSecondary }]}>
+                  {deviceTimezone}
+                </Text>
+              </View>
+            </View>
+            {preferences.timezone !== deviceTimezone && (
+              <Text style={[styles.deviceTimezoneMismatch, { color: '#FF9500' }]}>
+                Your stored timezone differs from your device timezone
+              </Text>
+            )}
+          </View>
+          
+          {/* Use Device Timezone Button */}
+          {preferences.timezone !== deviceTimezone && (
+            <TouchableOpacity
+              style={[styles.useDeviceTimezoneButton, { borderTopColor: theme.colors.border }]}
+              onPress={handleUseDeviceTimezone}
+              disabled={!preferences.flash_offers_enabled}
+            >
+              <Icon name="sync" size={20} color={theme.colors.primary} />
+              <Text style={[styles.useDeviceTimezoneText, { color: theme.colors.primary }]}>
+                Use Device Timezone
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Distance Section */}
@@ -357,7 +489,7 @@ const NotificationSettingsScreen: React.FC<{ navigation: any }> = ({ navigation 
                   },
                 ]}
                 onPress={() => handleDistanceChange(distance)}
-                disabled={saving || !preferences.flash_offers_enabled}
+                disabled={!preferences.flash_offers_enabled}
               >
                 <Text
                   style={[
@@ -462,6 +594,15 @@ const styles = StyleSheet.create({
   },
   headerRight: {
     width: 40,
+  },
+  saveButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  saveButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    fontFamily: 'Inter-SemiBold',
   },
   loadingContainer: {
     flex: 1,
@@ -644,6 +785,58 @@ const styles = StyleSheet.create({
   timezoneLabel: {
     fontSize: 16,
     fontFamily: 'Inter-Regular',
+  },
+  deviceTimezoneContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+  },
+  deviceTimezoneRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  deviceTimezoneIcon: {
+    marginRight: 12,
+    marginTop: 2,
+  },
+  deviceTimezoneText: {
+    flex: 1,
+  },
+  deviceTimezoneLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 4,
+    fontFamily: 'Inter-Medium',
+  },
+  deviceTimezoneValue: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 2,
+    fontFamily: 'Inter-SemiBold',
+  },
+  deviceTimezoneIana: {
+    fontSize: 13,
+    fontFamily: 'Inter-Regular',
+  },
+  deviceTimezoneMismatch: {
+    fontSize: 12,
+    marginTop: 8,
+    fontFamily: 'Inter-Regular',
+  },
+  useDeviceTimezoneButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 15,
+    borderTopWidth: 1,
+  },
+  useDeviceTimezoneText: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 8,
+    fontFamily: 'Inter-SemiBold',
   },
 });
 

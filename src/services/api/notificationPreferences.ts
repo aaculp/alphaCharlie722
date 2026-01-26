@@ -1,4 +1,5 @@
 import { supabase } from '../../lib/supabase';
+import { getDeviceTimezone } from '../../utils/timezone';
 
 /**
  * Flash Offer Notification Preferences
@@ -11,6 +12,7 @@ export interface FlashOfferNotificationPreferences {
   quiet_hours_end: string | null;
   timezone: string;  // IANA timezone
   max_distance_miles: number | null;
+  last_timezone_check: string | null;  // Timestamp of last timezone change check
   created_at: string;
   updated_at: string;
 }
@@ -137,18 +139,28 @@ export class NotificationPreferencesService {
 
   /**
    * Get default notification preferences object
+   * Uses auto-detected device timezone instead of hardcoded 'UTC'
+   * Falls back to 'UTC' if detection fails
    * Private helper method
    * 
    * @param userId - ID of the user
    * @returns Default notification preferences
+   * 
+   * Validates: Requirements 1.1, 1.2, 1.3, 1.4, 3.1, 3.2
    */
   private static getDefaultPreferencesObject(userId: string): FlashOfferNotificationPreferences {
+    // Detect device timezone automatically
+    const detectedTimezone = getDeviceTimezone();
+    
+    // Log detected timezone for monitoring (Requirement 3.4)
+    console.log(`Creating default preferences for user ${userId} with timezone: ${detectedTimezone}`);
+    
     return {
       user_id: userId,
       flash_offers_enabled: true,  // Enabled by default (Requirement 12.2)
       quiet_hours_start: null,
       quiet_hours_end: null,
-      timezone: 'UTC',
+      timezone: detectedTimezone,  // Use detected timezone (Requirement 1.2, 3.2)
       max_distance_miles: null,  // No limit by default
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),

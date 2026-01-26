@@ -371,6 +371,25 @@ export { useAboutMe } from './useAboutMe';
 export { useNotificationPreferences } from './useNotificationPreferences';
 
 /**
+ * useTimezoneMigration - Automatically migrates existing users from UTC to device timezone
+ * 
+ * This hook runs once per app session and migrates users who:
+ * - Have timezone set to 'UTC'
+ * - Have no quiet hours configured
+ * 
+ * The migration is silent and non-blocking. Errors are logged but don't crash the app.
+ * 
+ * @example
+ * ```tsx
+ * function App() {
+ *   useTimezoneMigration();
+ *   return <AppContent />;
+ * }
+ * ```
+ */
+export { useTimezoneMigration } from './useTimezoneMigration';
+
+/**
  * useFlashOffers - Fetches active flash offers near the user's current location
  * 
  * @example
