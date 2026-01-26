@@ -328,6 +328,54 @@ CREATE TABLE notification_preferences (
 
 ---
 
+#### `user_tags` 🆕
+
+User-generated tags/feedback for venues (Pulse system).
+
+```sql
+CREATE TABLE user_tags (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  venue_id UUID REFERENCES venues(id) ON DELETE CASCADE NOT NULL,
+  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+  tag_text VARCHAR(50) NOT NULL,
+  like_count INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Indexes
+CREATE INDEX idx_user_tags_venue ON user_tags(venue_id, like_count DESC);
+CREATE INDEX idx_user_tags_user ON user_tags(user_id);
+CREATE INDEX idx_user_tags_trending ON user_tags(like_count DESC, created_at DESC);
+```
+
+**Purpose**: Community-driven venue feedback system where users can share short tags/vibes about venues and like others' tags.
+
+---
+
+#### `tag_likes` 🆕
+
+Tracks user likes on tags.
+
+```sql
+CREATE TABLE tag_likes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tag_id UUID REFERENCES user_tags(id) ON DELETE CASCADE NOT NULL,
+  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  
+  CONSTRAINT unique_tag_like UNIQUE(tag_id, user_id)
+);
+
+-- Indexes
+CREATE INDEX idx_tag_likes_tag ON tag_likes(tag_id);
+CREATE INDEX idx_tag_likes_user ON tag_likes(user_id);
+```
+
+**Purpose**: Enables users to like/unlike tags, with like counts displayed on tags.
+
+---
+
 ### Database Functions
 
 #### `get_nearby_venues`
@@ -471,7 +519,7 @@ src/services/api/
 ├── checkins.ts          # Check-in management
 ├── reviews.ts           # Review CRUD
 ├── favorites.ts         # Favorites management
-├── feedback.ts          # User tags/feedback
+├── feedback.ts          # User tags/feedback (Pulse system) 🆕
 ├── social.ts            # Social features
 └── notifications.ts     # Push notifications
 ```
@@ -684,6 +732,35 @@ ON CONFLICT (email) DO NOTHING;
 - During data quality audits
 
 **Documentation**: See `database/mockdata/README-VALIDATION.md` for complete guide
+
+---
+
+## API Services
+
+All API services are located in `src/services/api/` and follow a consistent pattern.
+
+### UserFeedbackService 🆕
+**Location:** `src/services/api/feedback.ts`
+
+**Methods:**
+- `getVenueTags(venueId, userId?)` - Get all tags for a venue with user's like status
+- `createTag({ venue_id, tag_text }, userId)` - Create a new tag (max 50 chars)
+- `toggleTagLike(tagId, userId)` - Like/unlike a tag, returns new like count
+- `deleteTag(tagId, userId)` - Delete a tag (creator only)
+- `getTrendingTags(limit)` - Get trending tags across all venues
+
+**Database Tables:**
+- `user_tags` - Tag data
+- `tag_likes` - Like tracking
+
+**Features:**
+- Duplicate tag detection
+- Like count management
+- User-specific like status
+- Trending tags by like count
+- Graceful handling of missing tables
+
+**Purpose**: Powers the "Pulse" community feedback system where users share short vibes/tags about venues.
 
 ---
 
@@ -969,3 +1046,8 @@ See `database/mockdata/check-at-search-data.sql` for comprehensive validation.
 **Migration Version**: 20250125000001
 
 **@ Search Feature**: Implemented (validation scripts added)
+
+**Recent Updates**: 
+- Added user feedback/pulse system (user_tags, tag_likes tables)
+- Improved swipe gesture detection thresholds
+- Enhanced search functionality with @ user search

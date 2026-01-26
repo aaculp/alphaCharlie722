@@ -240,15 +240,16 @@ export function useSwipeGesture(options: UseSwipeGestureOptions): UseSwipeGestur
         const absGestureY = Math.abs(gestureY);
         
         // Check if we need to lock direction
+        // Increased threshold to 30px and require horizontal to be 1.5x vertical for better scroll UX
         if (lockedDirectionValue.value === null) {
-          if (absGestureX > 10 && absGestureX > absGestureY) {
-            // Horizontal movement detected - lock to horizontal
+          if (absGestureX > 30 && absGestureX > absGestureY * 1.5) {
+            // Clear horizontal swipe intent detected - lock to horizontal
             lockedDirectionValue.value = 'horizontal';
             // Disable vertical scrolling if scrollEnabled is provided
             if (scrollEnabled) {
               scrollEnabled.value = false;
             }
-          } else if (absGestureY > 10) {
+          } else if (absGestureY > 20 && absGestureY > absGestureX) {
             // Vertical movement detected - lock to vertical (disable swipe)
             lockedDirectionValue.value = 'vertical';
           }

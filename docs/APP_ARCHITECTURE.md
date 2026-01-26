@@ -363,6 +363,31 @@ AppNavigator
 - `panGestureHandler: GestureHandler` - Pan gesture handler
 - `animatedStyle: AnimatedStyle` - Animated styles
 
+**Features:**
+- **Improved Direction Detection** (Updated 2026-01-25):
+  - Horizontal swipe threshold: 30px (increased from 10px)
+  - Requires horizontal movement to be 1.5x vertical for horizontal lock
+  - Vertical swipe threshold: 20px with dominance check
+  - Better scroll UX with reduced accidental swipe triggers
+- **Direction Locking**: Locks to horizontal or vertical after threshold
+- **Scroll Control**: Disables vertical scrolling during horizontal swipes
+- **Animated Feedback**: Smooth card translation during swipe
+- **Haptic Feedback**: Triggers haptic on swipe completion
+
+**Gesture Detection Logic:**
+```typescript
+// Horizontal swipe detection (improved thresholds)
+if (absGestureX > 30 && absGestureX > absGestureY * 1.5) {
+  lockedDirectionValue.value = 'horizontal';
+  scrollEnabled.value = false; // Disable scroll
+}
+
+// Vertical swipe detection
+else if (absGestureY > 20 && absGestureY > absGestureX) {
+  lockedDirectionValue.value = 'vertical';
+}
+```
+
 **Used In:**
 - WideVenueCard (swipe to check-in/out)
 

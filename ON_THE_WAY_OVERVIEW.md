@@ -157,7 +157,7 @@ src/
 - Rate limiting (max per day)
 - FCM integration
 
-### 7. User Profiles
+### 8. User Profiles
 - Customizable profiles with avatars
 - Username system (@ search enabled)
 - Display name vs username
@@ -166,7 +166,15 @@ src/
 - Friends list
 - Privacy controls
 
-### 8. Venue Owner Dashboard
+### 9. Community Feedback (Pulse System) 🆕
+- User-generated tags/vibes for venues
+- Like/unlike tags
+- Trending tags by popularity
+- Real-time like count updates
+- Community-driven venue insights
+- Short-form feedback (max 50 characters)
+
+### 10. Venue Owner Dashboard
 - Analytics and insights
 - Customer engagement metrics
 - Flash offer creation
@@ -226,7 +234,7 @@ AppNavigator
 - `useUpdateProfileMutation()` - Update profile
 
 ### UI/Interaction Hooks
-- `useSwipeGesture()` - Swipe gesture handling
+- `useSwipeGesture()` - Swipe gesture handling (improved thresholds 2026-01-25)
 - `useHapticFeedback()` - Haptic feedback
 - `useDebounce()` - Debounce values (search)
 - `useSearchMode()` - Detect @ search mode
@@ -243,6 +251,7 @@ Located in `src/services/api/`:
 - `checkins.ts` - Check-in management
 - `reviews.ts` - Review CRUD and voting
 - `flashOffers.ts` - Flash offer operations
+- `feedback.ts` - User tags/feedback (Pulse system) 🆕
 - `social.ts` - Friends, collections, sharing
 - `notifications.ts` - Push notification management
 
@@ -514,6 +523,12 @@ Required environment variables (`.env` or platform-specific):
 **Current Version**: 0.0.1
 
 **Platform**: React Native 0.83.1 | Supabase | Firebase
+
+**Recent Updates**:
+- Added Pulse community feedback system (user_tags, tag_likes)
+- Improved swipe gesture detection thresholds for better UX
+- Enhanced search functionality with @ user search
+- Fixed infinite loop in SearchScreen
 
 ---
 

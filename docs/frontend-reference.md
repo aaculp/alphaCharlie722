@@ -864,25 +864,117 @@ interface PulseLikeButtonProps {
 
 ---
 
-#### UserFeedback
+#### UserFeedback 🆕
 
-Component for collecting user feedback on venues.
+**Location:** `src/components/checkin/UserFeedback.tsx`
+
+Community feedback component for venues (Pulse system). Displays user-generated tags/vibes with like functionality.
 
 **Props:**
 ```typescript
 interface UserFeedbackProps {
-  venueId: string;
-  onSubmit: (feedback: string) => Promise<void>;
+  venue: Venue;
 }
 ```
 
 **Usage:**
 ```typescript
-<UserFeedback
-  venueId="venue-123"
-  onSubmit={handleFeedbackSubmit}
-/>
+import { UserFeedback } from '../../components/checkin';
+
+<UserFeedback venue={venue} />
 ```
+
+**Features:**
+- **Tag Display**: Shows all tags for a venue sorted by like count
+- **Create Tags**: Authenticated users can create new tags (max 50 characters)
+- **Like/Unlike**: Toggle likes on tags with optimistic UI updates
+- **Duplicate Detection**: Prevents creating duplicate tags (case-insensitive)
+- **Color-Coded Engagement**: Tags change color based on like count
+  - 20+ likes: Hot orange-red (#FF4500)
+  - 10-19 likes: Red (#FF6B6B)
+  - 5-9 likes: Light red (#FF8A8A)
+  - 0-4 likes: Default red (#FF6B6B)
+- **Relative Timestamps**: Shows when tags were created (e.g., "2h", "1d")
+- **Empty State**: Contextual empty state for venues with no tags
+- **Loading State**: Shows loading indicator while fetching tags
+- **Error Handling**: Gracefully handles missing database tables
+- **Authentication**: Login required for creating and liking tags
+- **Scrollable List**: Vertical scroll for long tag lists (max height 240pt)
+
+**UI Components:**
+- Header with Pulse icon and title
+- Add button (authenticated users only)
+- Create form with text input and submit button
+- Tag cards with text, timestamp, and like button
+- Empty state with icon and message
+
+**Tag Card Layout:**
+```
+┌─────────────────────────────────────┐
+│ Tag text here                       │
+│ 2h                    ❤️ 15         │
+└─────────────────────────────────────┘
+```
+
+**State Management:**
+```typescript
+const [tags, setTags] = useState<UserTag[]>([]);
+const [loading, setLoading] = useState(true);
+const [creating, setCreating] = useState(false);
+const [newTagText, setNewTagText] = useState('');
+const [showCreateForm, setShowCreateForm] = useState(false);
+const [likingTags, setLikingTags] = useState<Set<string>>(new Set());
+const [tablesExist, setTablesExist] = useState(true);
+```
+
+**API Integration:**
+```typescript
+// Load tags on mount
+const loadTags = useCallback(async () => {
+  const venueTags = await UserFeedbackService.getVenueTags(venue.id, user?.id);
+  setTags(venueTags);
+}, [venue.id, user?.id]);
+
+// Create new tag
+const handleCreateTag = async () => {
+  const newTag = await UserFeedbackService.createTag(
+    { venue_id: venue.id, tag_text: trimmedText },
+    user.id
+  );
+  setTags(prev => [{ ...newTag, user_has_liked: false }, ...prev]);
+};
+
+// Toggle like on tag
+const handleLikeTag = async (tagId: string) => {
+  const result = await UserFeedbackService.toggleTagLike(tagId, user.id);
+  setTags(prev => prev.map(tag =>
+    tag.id === tagId
+      ? { ...tag, user_has_liked: result.liked, like_count: result.newCount }
+      : tag
+  ));
+};
+```
+
+**Validation:**
+- Tag text required (trimmed)
+- Max length: 50 characters
+- Duplicate check (case-insensitive)
+- Authentication required for create/like
+
+**Used In:**
+- `VenueDetailScreen` - Displayed as "Pulse" section
+
+**Related Components:**
+- `PulseLikeButton` - Like button with animation
+- Uses `UserFeedbackService` for API calls
+- Integrates with `AuthContext` for user state
+- Integrates with `ThemeContext` for styling
+
+**Database Tables:**
+- `user_tags` - Tag data
+- `tag_likes` - Like tracking
+
+**Purpose**: Enables community-driven venue feedback where users share short vibes/tags and engage with others' tags through likes.
 
 ---
 
