@@ -370,10 +370,11 @@ const SettingsScreen: React.FC = () => {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={[styles.header, { backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.border }]}>
-        <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Settings</Text>
-        <TouchableOpacity onPress={handleLogout} style={styles.logoutHeaderButton}>
-          <Icon name="log-out-outline" size={24} color={theme.colors.primary} />
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Icon name="arrow-back" size={24} color={theme.colors.text} />
         </TouchableOpacity>
+        <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Settings</Text>
+        <View style={styles.headerSpacer} />
       </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
@@ -964,10 +965,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  backButton: {
+    padding: 8,
+  },
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
     fontFamily: 'Poppins-Bold', // Primary font for headings
+  },
+  headerSpacer: {
+    width: 40, // Same width as back button to center title
   },
   logoutHeaderButton: {
     padding: 8,

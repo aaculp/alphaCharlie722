@@ -229,6 +229,8 @@ export class ProfileService {
    */
   static async fetchCompleteUserProfile(userId: string): Promise<FetchUserProfileResponse> {
     try {
+      console.log('🔍 ProfileService: Fetching profile for userId:', userId);
+      
       // Fetch basic profile data
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
@@ -237,74 +239,166 @@ export class ProfileService {
         .single();
 
       if (profileError || !profileData) {
-        console.error('Profile fetch error:', profileError);
+        console.error('❌ ProfileService: Profile fetch error:', profileError);
         return {
           success: false,
           error: profileError?.message || 'Profile not found',
         };
       }
 
-      // Fetch check-ins count
-      const { count: checkInsCount, error: checkInsError } = await supabase
-        .from('check_ins')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', userId);
+      console.log('✅ ProfileService: Profile data fetched:', {
+        id: profileData.id,
+        email: profileData.email,
+        hasAvatar: !!profileData.avatar_url,
+      });
 
-      if (checkInsError) {
-        console.warn('Check-ins count fetch error:', checkInsError);
+      // Fetch check-ins count (with error handling)
+      let checkInsCount = 0;
+      try {
+        const { count, error: checkInsError } = await supabase
+          .from('check_ins')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', userId);
+
+        if (checkInsError) {
+          console.warn('⚠️ ProfileService: Check-ins count fetch error:', checkInsError.message);
+        } else {
+          checkInsCount = count || 0;
+          console.log('📊 ProfileService: Check-ins count:', checkInsCount);
+        }
+      } catch (error) {
+        console.warn('⚠️ ProfileService: Check-ins count exception:', error);
       }
 
-      // Fetch favorites count
-      const { count: favoritesCount, error: favoritesError } = await supabase
-        .from('favorites')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', userId);
+      // Fetch unique venues count (with error handling)
+      let uniqueVenuesCount = 0;
+      try {
+        const { data: venuesData, error: venuesError } = await supabase
+          .from('check_ins')
+          .select('venue_id')
+          .eq('user_id', userId);
 
-      if (favoritesError) {
-        console.warn('Favorites count fetch error:', favoritesError);
+        if (venuesError) {
+          console.warn('⚠️ ProfileService: Unique venues fetch error:', venuesError.message);
+        } else if (venuesData) {
+          const uniqueVenues = new Set(venuesData.map(item => item.venue_id));
+          uniqueVenuesCount = uniqueVenues.size;
+          console.log('📊 ProfileService: Unique venues count:', uniqueVenuesCount);
+        }
+      } catch (error) {
+        console.warn('⚠️ ProfileService: Unique venues exception:', error);
       }
 
-      // Fetch friends count (bidirectional)
-      const { data: friendships, error: friendsError } = await supabase
-        .from('friendships')
-        .select('user_id_1, user_id_2', { count: 'exact', head: true })
-        .or(`user_id_1.eq.${userId},user_id_2.eq.${userId}`);
+      // Fetch this month's check-ins count (with error handling)
+      let monthlyCheckInsCount = 0;
+      try {
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        startOfMonth.setHours(0, 0, 0, 0);
 
-      if (friendsError) {
-        console.warn('Friends count fetch error:', friendsError);
+        const { count, error: monthlyError } = await supabase
+          .from('check_ins')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', userId)
+          .gte('checked_in_at', startOfMonth.toISOString());
+
+        if (monthlyError) {
+          console.warn('⚠️ ProfileService: Monthly check-ins fetch error:', monthlyError.message);
+        } else {
+          monthlyCheckInsCount = count || 0;
+          console.log('📊 ProfileService: Monthly check-ins count:', monthlyCheckInsCount);
+        }
+      } catch (error) {
+        console.warn('⚠️ ProfileService: Monthly check-ins exception:', error);
       }
 
-      // Count followers (friend requests received and accepted)
-      const { count: followerCount, error: followerError } = await supabase
-        .from('friendships')
-        .select('user_id_1, user_id_2', { count: 'exact', head: true })
-        .or(`user_id_1.eq.${userId},user_id_2.eq.${userId}`);
+      // Fetch favorites count (with error handling)
+      let favoritesCount = 0;
+      try {
+        const { count, error: favoritesError } = await supabase
+          .from('favorites')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', userId);
 
-      if (followerError) {
-        console.warn('Follower count fetch error:', followerError);
+        if (favoritesError) {
+          console.warn('⚠️ ProfileService: Favorites count fetch error:', favoritesError.message);
+        } else {
+          favoritesCount = count || 0;
+          console.log('📊 ProfileService: Favorites count:', favoritesCount);
+        }
+      } catch (error) {
+        console.warn('⚠️ ProfileService: Favorites count exception:', error);
+      }
+
+      // Fetch friends count (with error handling)
+      let friendsCount = 0;
+      try {
+        const { data: friendships, error: friendsError } = await supabase
+          .from('friendships')
+          .select('user_id_1, user_id_2', { count: 'exact', head: false })
+          .or(`user_id_1.eq.${userId},user_id_2.eq.${userId}`);
+
+        if (friendsError) {
+          console.warn('⚠️ ProfileService: Friends count fetch error:', friendsError.message);
+        } else {
+          friendsCount = friendships?.length || 0;
+          console.log('📊 ProfileService: Friends count:', friendsCount);
+        }
+      } catch (error) {
+        console.warn('⚠️ ProfileService: Friends count exception:', error);
+      }
+
+      // Count followers (with error handling)
+      let followerCount = 0;
+      try {
+        const { count, error: followerError } = await supabase
+          .from('friendships')
+          .select('user_id_1, user_id_2', { count: 'exact', head: true })
+          .or(`user_id_1.eq.${userId},user_id_2.eq.${userId}`);
+
+        if (followerError) {
+          console.warn('⚠️ ProfileService: Follower count fetch error:', followerError.message);
+        } else {
+          followerCount = count || 0;
+          console.log('📊 ProfileService: Follower count:', followerCount);
+        }
+      } catch (error) {
+        console.warn('⚠️ ProfileService: Follower count exception:', error);
       }
 
       // Construct complete user profile
       const userProfile: UserProfile = {
         id: profileData.id,
         email: profileData.email || '',
-        username: profileData.name || profileData.email?.split('@')[0] || 'User',
+        username: profileData.username || profileData.name || profileData.email?.split('@')[0] || 'User',
+        display_name: profileData.display_name || null,
         profilePhotoUrl: profileData.avatar_url || null,
         aboutText: profileData.bio || '',
-        followerCount: followerCount || 0,
-        checkInsCount: checkInsCount || 0,
-        favoritesCount: favoritesCount || 0,
-        friendsCount: friendships?.length || 0,
+        followerCount: followerCount,
+        checkInsCount: checkInsCount,
+        uniqueVenuesCount: uniqueVenuesCount,
+        monthlyCheckInsCount: monthlyCheckInsCount,
+        favoritesCount: favoritesCount,
+        friendsCount: friendsCount,
         createdAt: profileData.created_at || new Date().toISOString(),
         updatedAt: profileData.updated_at || new Date().toISOString(),
       };
+
+      console.log('✅ ProfileService: Complete profile constructed:', {
+        username: userProfile.username,
+        checkInsCount,
+        uniqueVenuesCount,
+        monthlyCheckInsCount,
+        favoritesCount,
+        friendsCount,
+      });
 
       return {
         success: true,
         profile: userProfile,
       };
     } catch (error) {
-      console.error('Complete profile fetch error:', error);
+      console.error('❌ ProfileService: Complete profile fetch exception:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to fetch profile',

@@ -37,6 +37,8 @@ export interface UserProfile {
   aboutText: string;
   followerCount: number;
   checkInsCount: number;
+  uniqueVenuesCount?: number; // Number of unique venues visited
+  monthlyCheckInsCount?: number; // Check-ins this month
   favoritesCount: number;
   friendsCount: number;
   createdAt: string;

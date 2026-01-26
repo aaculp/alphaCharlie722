@@ -223,6 +223,10 @@ export function useSwipeGesture(options: UseSwipeGestureOptions): UseSwipeGestur
   // Memoize the pan gesture to prevent recreation on every render (Requirement 8.5)
   const panGesture = useMemo(() => {
     const gesture = Gesture.Pan()
+      // Configure gesture to work with ScrollView
+      .activeOffsetX([-50, 50]) // Only activate after 50px horizontal movement
+      .failOffsetY([-15, 15]) // Fail if vertical movement exceeds 15px
+      .enableTrackpadTwoFingerGesture(false) // Disable trackpad gestures
       .onStart(() => {
         'worklet';
         // Store initial position when gesture starts
@@ -236,22 +240,32 @@ export function useSwipeGesture(options: UseSwipeGestureOptions): UseSwipeGestur
         const gestureY = event.translationY;
         
         // Detect dominant direction and lock gesture (Requirements 12.1, 12.2)
+        // UPDATED 2026-01-25: Prioritize vertical scrolling to fix scroll issues on HomeScreen
+        // - Vertical threshold: 15px (very sensitive, checked first)
+        // - Horizontal threshold: 50px (much higher to prevent accidental swipes)
+        // - Dominance ratio: 2x (horizontal must be twice vertical movement)
+        // This ensures users can scroll freely without triggering swipe gestures
         const absGestureX = Math.abs(gestureX);
         const absGestureY = Math.abs(gestureY);
         
         // Check if we need to lock direction
-        // Increased threshold to 30px and require horizontal to be 1.5x vertical for better scroll UX
+        // Prioritize vertical scrolling - check vertical first with lower threshold
+        // Horizontal swipe requires much higher threshold and stronger dominance
         if (lockedDirectionValue.value === null) {
-          if (absGestureX > 30 && absGestureX > absGestureY * 1.5) {
+          // Check vertical first with lower threshold to prioritize scrolling
+          if (absGestureY > 15) {
+            // Vertical movement detected - lock to vertical (disable swipe)
+            lockedDirectionValue.value = 'vertical';
+          } 
+          // Only lock to horizontal if gesture is clearly horizontal
+          // Requires 50px horizontal movement AND horizontal must be 2x vertical
+          else if (absGestureX > 50 && absGestureX > absGestureY * 2) {
             // Clear horizontal swipe intent detected - lock to horizontal
             lockedDirectionValue.value = 'horizontal';
             // Disable vertical scrolling if scrollEnabled is provided
             if (scrollEnabled) {
               scrollEnabled.value = false;
             }
-          } else if (absGestureY > 20 && absGestureY > absGestureX) {
-            // Vertical movement detected - lock to vertical (disable swipe)
-            lockedDirectionValue.value = 'vertical';
           }
         }
         

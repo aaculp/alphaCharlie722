@@ -360,15 +360,19 @@ AppNavigator
 - `scrollEnabled: SharedValue<boolean>` - Control scroll
 
 **Returns:**
-- `panGestureHandler: GestureHandler` - Pan gesture handler
+- `panGesture: GestureHandler` - Pan gesture handler
 - `animatedStyle: AnimatedStyle` - Animated styles
 
 **Features:**
 - **Improved Direction Detection** (Updated 2026-01-25):
-  - Horizontal swipe threshold: 30px (increased from 10px)
-  - Requires horizontal movement to be 1.5x vertical for horizontal lock
-  - Vertical swipe threshold: 20px with dominance check
-  - Better scroll UX with reduced accidental swipe triggers
+  - **Gesture Configuration**:
+    - `activeOffsetX: [-50, 50]` - Only activates after 50px horizontal movement
+    - `failOffsetY: [-15, 15]` - Automatically fails if vertical movement exceeds 15px
+  - **Vertical scroll priority**: Vertical threshold only 15px (very sensitive)
+  - **Horizontal swipe threshold**: 50px (increased from 30px)
+  - **Dominance ratio**: Requires horizontal to be 2x vertical (increased from 1.5x)
+  - **Scroll-first approach**: Checks vertical movement first to prioritize scrolling
+  - **Prevents accidental swipes**: Much harder to trigger horizontal swipe accidentally
 - **Direction Locking**: Locks to horizontal or vertical after threshold
 - **Scroll Control**: Disables vertical scrolling during horizontal swipes
 - **Animated Feedback**: Smooth card translation during swipe
@@ -376,17 +380,27 @@ AppNavigator
 
 **Gesture Detection Logic:**
 ```typescript
-// Horizontal swipe detection (improved thresholds)
-if (absGestureX > 30 && absGestureX > absGestureY * 1.5) {
+// Configure gesture with offset thresholds
+Gesture.Pan()
+  .activeOffsetX([-50, 50])  // Activate after 50px horizontal
+  .failOffsetY([-15, 15])    // Fail if 15px vertical movement
+
+// Prioritize vertical scrolling - check vertical first
+if (absGestureY > 15) {
+  lockedDirectionValue.value = 'vertical'; // Allow scroll
+}
+// Only lock to horizontal if clearly horizontal
+else if (absGestureX > 50 && absGestureX > absGestureY * 2) {
   lockedDirectionValue.value = 'horizontal';
   scrollEnabled.value = false; // Disable scroll
 }
-
-// Vertical swipe detection
-else if (absGestureY > 20 && absGestureY > absGestureX) {
-  lockedDirectionValue.value = 'vertical';
-}
 ```
+
+**How It Works:**
+1. **activeOffsetX**: Gesture won't activate until user moves 50px horizontally
+2. **failOffsetY**: If user moves 15px vertically first, gesture automatically fails and scroll takes over
+3. **Direction locking**: Once direction is determined, it's locked for that gesture
+4. **Scroll control**: Only disables scroll when horizontal swipe is confirmed
 
 **Used In:**
 - WideVenueCard (swipe to check-in/out)

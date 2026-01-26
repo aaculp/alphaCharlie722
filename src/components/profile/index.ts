@@ -11,3 +11,4 @@ export { TabNavigation } from './TabNavigation';
 export { FollowersCard } from './FollowersCard';
 export { StatisticsCard } from './StatisticsCard';
 export { SettingsMenu } from './SettingsMenu';
+export { StatCard } from './StatCard';

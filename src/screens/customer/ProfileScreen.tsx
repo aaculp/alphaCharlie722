@@ -3,386 +3,182 @@ import {
   View,
   StyleSheet,
   ScrollView,
-  Alert,
-  ActivityIndicator,
   Text,
   TouchableOpacity,
+  Image,
+  ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import type { NavigationProp } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-} from 'react-native-reanimated';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { launchImageLibrary } from 'react-native-image-picker';
+import { useNavigation } from '@react-navigation/native';
+import type { NavigationProp } from '@react-navigation/native';
+import type { ProfileStackParamList } from '../../types';
 import { ProfileService } from '../../services/api/profile';
-import { RESPONSIVE_SPACING } from '../../utils/responsive';
-import type { UserProfile, TabType, SettingType } from '../../types/profile.types';
-import type { SocialProfile } from '../../types/social.types';
-import type { ProfileStackParamList, SearchStackParamList } from '../../types';
-
-// Import profile components
-import { HeroSection } from '../../components/profile/HeroSection';
-import { AboutMeSection } from '../../components/profile/AboutMeSection';
-import { TabNavigation } from '../../components/profile/TabNavigation';
-import { FollowersCard } from '../../components/profile/FollowersCard';
-import { StatisticsCard } from '../../components/profile/StatisticsCard';
-import { SettingsMenu } from '../../components/profile/SettingsMenu';
-
-// Route params type for viewing other users' profiles
-type ProfileScreenRouteProp = RouteProp<SearchStackParamList, 'UserProfile'>;
-
-interface ProfileScreenState {
-  // User data
-  user: UserProfile | null;
-  profileImageUri: string | null;
-  aboutText: string;
-  
-  // UI state
-  activeTab: TabType;
-  isEditingAbout: boolean;
-  
-  // Loading states
-  isUploadingPhoto: boolean;
-  isSavingAbout: boolean;
-  isLoadingProfile: boolean;
-  
-  // Statistics
-  followerCount: number;
-  checkInsCount: number;
-  favoritesCount: number;
-  friendsCount: number;
-  recentFollowers: SocialProfile[];
-  
-  // Error states
-  photoUploadError: string | null;
-  aboutSaveError: string | null;
-  profileLoadError: string | null;
-}
+import { StatCard } from '../../components/profile/StatCard';
 
 const ProfileScreen: React.FC = () => {
   const { theme } = useTheme();
-  const { user: authUser } = useAuth();
+  const { user, signOut } = useAuth();
   const navigation = useNavigation<NavigationProp<ProfileStackParamList>>();
-  const route = useRoute<ProfileScreenRouteProp>();
-  
-  // Get userId from route params (if viewing another user's profile)
-  const viewingUserId = route.params?.userId;
-  const isViewingOwnProfile = !viewingUserId || viewingUserId === authUser?.id;
-  
-  // Animation value for tab transitions (Requirement 3.7)
-  const contentOpacity = useSharedValue(1);
-  
-  // Initialize state with default values (Requirement 6.5)
-  const [state, setState] = useState<ProfileScreenState>({
-    user: null,
-    profileImageUri: null,
-    aboutText: '',
-    activeTab: 'main',
-    isEditingAbout: false,
-    isUploadingPhoto: false,
-    isSavingAbout: false,
-    isLoadingProfile: true,
-    followerCount: 0,
-    checkInsCount: 0,
-    favoritesCount: 0,
-    friendsCount: 0,
-    recentFollowers: [],
-    photoUploadError: null,
-    aboutSaveError: null,
-    profileLoadError: null,
-  });
 
-  // Fetch profile data on mount (Requirement 6.5)
+  const [profileData, setProfileData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+
   useEffect(() => {
-    const userIdToLoad = viewingUserId || authUser?.id;
-    if (userIdToLoad) {
-      loadProfileData();
-    }
-  }, [authUser?.id, viewingUserId]);
+    loadProfile();
+  }, [user?.id]);
 
-  // Animated style for tab content transitions (Requirement 3.7)
-  const animatedContentStyle = useAnimatedStyle(() => ({
-    opacity: contentOpacity.value,
-  }));
+  const loadProfile = async () => {
+    if (!user?.id) return;
 
-  /**
-   * Handle tab change with animation
-   * Requirement 3.7: Animate content transition when switching tabs
-   */
-  const handleTabChange = (tab: TabType) => {
-    if (tab === state.activeTab) return;
-
-    // Update tab state immediately
-    setState((prev) => ({ ...prev, activeTab: tab }));
-    
-    // Animate opacity for smooth transition
-    contentOpacity.value = 0;
-    contentOpacity.value = withTiming(1, { duration: 200 });
-  };
-
-  /**
-   * Load complete profile data including statistics
-   * Validates: Requirements 6.5, 6.6
-   */
-  const loadProfileData = async () => {
-    const userIdToLoad = viewingUserId || authUser?.id;
-    if (!userIdToLoad) return;
-
-    setState(prev => ({ ...prev, isLoadingProfile: true, profileLoadError: null }));
-
+    setLoading(true);
     try {
-      const response = await ProfileService.fetchCompleteUserProfile(userIdToLoad);
-
+      const response = await ProfileService.fetchCompleteUserProfile(user.id);
       if (response.success && response.profile) {
-        const profile = response.profile;
-        
-        setState(prev => ({
-          ...prev,
-          user: profile,
-          profileImageUri: profile.profilePhotoUrl,
-          aboutText: profile.aboutText,
-          followerCount: profile.followerCount,
-          checkInsCount: profile.checkInsCount,
-          favoritesCount: profile.favoritesCount,
-          friendsCount: profile.friendsCount,
-          isLoadingProfile: false,
-          profileLoadError: null,
-        }));
-      } else {
-        // Handle error state (Requirement 6.6)
-        setState(prev => ({
-          ...prev,
-          isLoadingProfile: false,
-          profileLoadError: response.error || 'Failed to load profile',
-        }));
+        setProfileData(response.profile);
       }
     } catch (error) {
-      console.error('Error loading profile:', error);
-      setState(prev => ({
-        ...prev,
-        isLoadingProfile: false,
-        profileLoadError: error instanceof Error ? error.message : 'Failed to load profile',
-      }));
+      console.error('Failed to load profile:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleSettingsPress = () => {
-    // Navigate to Settings in the Profile stack
-    navigation.navigate('Settings');
+  const handleLogout = () => {
+    console.log('Logout button pressed');
+    setShowLogoutModal(true);
   };
 
-  const handleInviteFriend = () => {
-    // TODO: Implement invite functionality
-    Alert.alert('Invite Friend', 'Invite functionality coming soon!');
+  const confirmLogout = async () => {
+    console.log('Confirming logout');
+    setShowLogoutModal(false);
+    await signOut();
   };
 
-  const handleSettingPress = (setting: SettingType) => {
-    // TODO: Implement navigation to setting screens
-    Alert.alert('Settings', `Navigate to ${setting} settings`);
-  };
+  console.log('ProfileScreen render - showLogoutModal:', showLogoutModal);
 
-  const handleImagePicker = () => {
-    launchImageLibrary(
-      {
-        mediaType: 'photo',
-        quality: 0.8,
-        maxWidth: 1000,
-        maxHeight: 1000,
-      },
-      async (response) => {
-        if (response.didCancel) {
-          console.log('User cancelled image picker');
-        } else if (response.errorCode) {
-          Alert.alert('Error', 'Failed to pick image');
-        } else if (response.assets && response.assets[0] && authUser?.id) {
-          const asset = response.assets[0];
-          const uri = asset.uri;
-          const fileName = asset.fileName || 'profile.jpg';
-
-          if (!uri) return;
-
-          // Set uploading state
-          setState(prev => ({ ...prev, isUploadingPhoto: true, photoUploadError: null }));
-
-          try {
-            const result = await ProfileService.uploadProfilePhoto(
-              authUser.id,
-              uri,
-              fileName
-            );
-
-            if (result.success && result.photoUrl) {
-              setState(prev => ({
-                ...prev,
-                profileImageUri: result.photoUrl || null,
-                isUploadingPhoto: false,
-                photoUploadError: null,
-              }));
-              Alert.alert('Success', 'Profile photo updated!');
-            } else {
-              setState(prev => ({
-                ...prev,
-                isUploadingPhoto: false,
-                photoUploadError: result.error || 'Failed to upload photo',
-              }));
-              Alert.alert('Error', result.error || 'Failed to upload photo');
-            }
-          } catch (error) {
-            console.error('Photo upload error:', error);
-            setState(prev => ({
-              ...prev,
-              isUploadingPhoto: false,
-              photoUploadError: error instanceof Error ? error.message : 'Failed to upload photo',
-            }));
-            Alert.alert('Error', 'Failed to upload photo');
-          }
-        }
-      }
-    );
-  };
-
-  const handleSaveAbout = async () => {
-    if (!authUser?.id) return;
-
-    setState(prev => ({ ...prev, isSavingAbout: true, aboutSaveError: null }));
-
-    try {
-      const response = await ProfileService.updateAboutText(authUser.id, state.aboutText);
-
-      if (response.success) {
-        setState(prev => ({
-          ...prev,
-          isEditingAbout: false,
-          isSavingAbout: false,
-          aboutSaveError: null,
-          aboutText: response.aboutText || prev.aboutText,
-        }));
-        Alert.alert('Success', 'About me updated!');
-      } else {
-        setState(prev => ({
-          ...prev,
-          isSavingAbout: false,
-          aboutSaveError: response.error || 'Failed to save about text',
-        }));
-        Alert.alert('Error', response.error || 'Failed to save about text');
-      }
-    } catch (error) {
-      console.error('About save error:', error);
-      setState(prev => ({
-        ...prev,
-        isSavingAbout: false,
-        aboutSaveError: error instanceof Error ? error.message : 'Failed to save about text',
-      }));
-      Alert.alert('Error', 'Failed to save about text');
-    }
-  };
-
-  // Show loading state while fetching profile
-  if (state.isLoadingProfile) {
+  if (loading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
-          <Text style={[styles.loadingText, { color: theme.colors.textSecondary, fontFamily: theme.fonts.secondary.regular }]}>
-            Loading profile...
-          </Text>
         </View>
       </SafeAreaView>
     );
   }
-
-  // Show error state if profile load failed
-  if (state.profileLoadError) {
-    return (
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-        <View style={styles.errorContainer}>
-          <Icon name="alert-circle-outline" size={64} color={theme.colors.textSecondary} />
-          <Text style={[styles.errorText, { color: theme.colors.text, fontFamily: theme.fonts.secondary.semiBold }]}>
-            Failed to load profile
-          </Text>
-          <Text style={[styles.errorSubtext, { color: theme.colors.textSecondary, fontFamily: theme.fonts.secondary.regular }]}>
-            {state.profileLoadError}
-          </Text>
-          <TouchableOpacity
-            style={[styles.retryButton, { backgroundColor: theme.colors.primary }]}
-            onPress={loadProfileData}
-          >
-            <Text style={[styles.retryButtonText, { fontFamily: theme.fonts.secondary.semiBold }]}>Retry</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  const renderMainInfo = () => (
-    <View style={styles.tabContent}>
-      {/* Followers Card */}
-      <FollowersCard
-        followerCount={state.followerCount}
-        recentFollowers={state.recentFollowers}
-        onInvitePress={handleInviteFriend}
-      />
-
-      {/* Statistics Card */}
-      <StatisticsCard
-        checkInsCount={state.checkInsCount}
-        favoritesCount={state.favoritesCount}
-        friendsCount={state.friendsCount}
-      />
-    </View>
-  );
-
-  const renderSettings = () => (
-    <View style={styles.tabContent}>
-      <SettingsMenu onSettingPress={handleSettingPress} />
-    </View>
-  );
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Hero Section with Profile Image */}
-        <HeroSection
-          profileImageUri={state.profileImageUri}
-          username={state.user?.username || null}
-          displayName={state.user?.display_name || null}
-          onCameraPress={handleImagePicker}
-          onSettingsPress={handleSettingsPress}
-          isUploading={state.isUploadingPhoto}
-          isViewingOwnProfile={isViewingOwnProfile}
-        />
+    <View style={{ flex: 1 }}>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <ScrollView showsVerticalScrollIndicator={false}>
+          {/* Profile Image */}
+          <View style={styles.profileImageContainer}>
+            <View style={[styles.profileImageWrapper, { backgroundColor: theme.colors.border }]}>
+              <Image
+                source={
+                  profileData?.profilePhotoUrl
+                    ? { uri: profileData.profilePhotoUrl }
+                    : require('../../assets/images/OTW_Block_O.png')
+                }
+                style={styles.profileImage}
+              />
+            </View>
+          </View>
 
-        {/* About Me Section */}
-        <AboutMeSection
-          aboutText={state.aboutText}
-          isEditing={state.isEditingAbout}
-          onEditPress={() => setState(prev => ({ ...prev, isEditingAbout: !prev.isEditingAbout }))}
-          onSavePress={handleSaveAbout}
-          onTextChange={(text) => setState(prev => ({ ...prev, aboutText: text }))}
-          isSaving={state.isSavingAbout}
-        />
+          {/* Name and Logout Button */}
+          <View style={styles.nameLogoutContainer}>
+            <Text style={[styles.name, { color: theme.colors.text, fontFamily: theme.fonts.primary.bold }]}>
+              {profileData?.display_name || profileData?.username || 'User'}
+            </Text>
+            <View style={styles.iconButtonsContainer}>
+              <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Settings')}>
+                <Icon name="settings-outline" size={24} color={theme.colors.text} />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.iconButton} onPress={handleLogout}>
+                <Icon name="log-out-outline" size={24} color={theme.colors.error} />
+              </TouchableOpacity>
+            </View>
+          </View>
 
-        {/* Tab Navigation */}
-        <TabNavigation
-          activeTab={state.activeTab}
-          onTabChange={handleTabChange}
-        />
 
-        {/* Animated Tab Content */}
-        <Animated.View style={animatedContentStyle}>
-          {state.activeTab === 'main' ? renderMainInfo() : renderSettings()}
-        </Animated.View>
-        
-        {/* Bottom spacing for tab bar */}
-        <View style={{ height: 100 }} />
-      </ScrollView>
-    </SafeAreaView>
+          {/* Email */}
+          <Text style={[styles.email, { color: theme.colors.textSecondary, fontFamily: theme.fonts.secondary.regular }]}>
+            {user?.email || 'email@example.com'}
+          </Text>
+
+          {/* Stats Cards */}
+          <View style={styles.statsContainer}>
+            <StatCard
+              icon="location"
+              label="Check-ins"
+              value={profileData?.checkInsCount || 0}
+              iconColor={theme.colors.primary}
+            />
+            <StatCard
+              icon="business"
+              label="Venues"
+              value={profileData?.uniqueVenuesCount || 0}
+              iconColor={theme.colors.success}
+            />
+            <StatCard
+              icon="calendar"
+              label="This Month"
+              value={profileData?.monthlyCheckInsCount || 0}
+              iconColor={theme.colors.warning}
+            />
+            <StatCard
+              icon="heart"
+              label="Favorites"
+              value={profileData?.favoritesCount || 0}
+              iconColor={theme.colors.error}
+            />
+          </View>
+
+          <View style={{ height: 100 }} />
+        </ScrollView>
+      </SafeAreaView>
+
+      {/* Logout Confirmation Modal */}
+      <Modal
+        visible={showLogoutModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowLogoutModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: theme.colors.surface }]}>
+            <Text style={[styles.modalTitle, { color: theme.colors.text, fontFamily: theme.fonts.primary.bold }]}>
+              Logout
+            </Text>
+            <Text style={[styles.modalMessage, { color: theme.colors.textSecondary, fontFamily: theme.fonts.secondary.regular }]}>
+              Are you sure you want to logout?
+            </Text>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}
+                onPress={() => setShowLogoutModal(false)}
+              >
+                <Text style={[styles.modalButtonText, { color: theme.colors.text, fontFamily: theme.fonts.secondary.medium }]}>
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: theme.colors.error }]}
+                onPress={confirmLogout}
+              >
+                <Text style={[styles.modalButtonText, { color: theme.colors.surface, fontFamily: theme.fonts.secondary.medium }]}>
+                  Logout
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </View>
   );
 };
 
@@ -394,47 +190,130 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: RESPONSIVE_SPACING.sectionHorizontal,
   },
-  loadingText: {
-    marginTop: RESPONSIVE_SPACING.elementGap + 8,
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  headerText: {
+    fontSize: 24,
+  },
+  topLogoutButton: {
+    padding: 8,
+  },
+  iconButtonsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  iconButton: {
+    padding: 4,
+  },
+  nameLogoutContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 16,
+  },
+  profileImageContainer: {
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  profileImageWrapper: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    overflow: 'hidden',
+  },
+  profileImage: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+  },
+  name: {
+    fontSize: 28,
+    textAlign: 'center',
+    marginTop: 16,
+  },
+  email: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginTop: 4,
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: 16,
+    marginTop: 24,
+    gap: 12,
+  },
+  menuContainer: {
+    marginTop: 32,
+    paddingHorizontal: 16,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 20,
+    borderBottomWidth: 1,
+  },
+  menuItemLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  menuItemText: {
     fontSize: 16,
   },
-  errorContainer: {
+  modalOverlay: {
     flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: RESPONSIVE_SPACING.sectionHorizontal,
+    padding: 20,
   },
-  errorText: {
-    marginTop: RESPONSIVE_SPACING.elementGap + 8,
-    fontSize: 18,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  errorSubtext: {
-    marginTop: RESPONSIVE_SPACING.elementGap,
-    fontSize: 14,
-    textAlign: 'center',
-  },
-  retryButton: {
-    marginTop: RESPONSIVE_SPACING.cardMargin + 8,
-    paddingVertical: RESPONSIVE_SPACING.buttonVertical,
-    paddingHorizontal: RESPONSIVE_SPACING.buttonHorizontal,
-    borderRadius: 12,
+  modalContent: {
+    width: '100%',
+    maxWidth: 340,
+    borderRadius: 20,
+    padding: 24,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 10,
   },
-  retryButtonText: {
-    color: '#fff',
+  modalTitle: {
+    fontSize: 22,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  modalMessage: {
     fontSize: 16,
-    fontWeight: '600',
+    marginBottom: 24,
+    textAlign: 'center',
+    lineHeight: 22,
   },
-  tabContent: {
-    padding: RESPONSIVE_SPACING.sectionHorizontal,
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  cancelButton: {
+    borderWidth: 1,
+  },
+  modalButtonText: {
+    fontSize: 16,
   },
 });
 
