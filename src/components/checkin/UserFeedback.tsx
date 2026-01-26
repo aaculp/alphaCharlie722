@@ -46,7 +46,7 @@ const TagItem: React.FC<TagItemProps> = ({ tag, onLike, isLiking }) => {
     const date = new Date(dateString);
     const now = new Date();
     const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
-    
+
     if (diffInHours < 1) {
       const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
       return diffInMinutes <= 1 ? 'now' : `${diffInMinutes}m`;
@@ -67,13 +67,13 @@ const TagItem: React.FC<TagItemProps> = ({ tag, onLike, isLiking }) => {
         <Text style={[styles.tagTextHorizontal, { color: theme.colors.text }]}>
           {tag.tag_text}
         </Text>
-        
+
         {/* Bottom Row - Date and Like Icon */}
         <View style={styles.bottomRow}>
           <Text style={[styles.dateText, { color: theme.colors.textSecondary }]}>
             {formatDate(tag.created_at)}
           </Text>
-          
+
           <PulseLikeButton
             likeCount={tag.like_count}
             userHasLiked={tag.user_has_liked || false}
@@ -143,7 +143,7 @@ const UserFeedback: React.FC<UserFeedbackProps> = ({ venue }) => {
     }
 
     // Check for duplicate tags
-    const isDuplicate = tags.some(tag => 
+    const isDuplicate = tags.some(tag =>
       tag.tag_text.toLowerCase() === trimmedText.toLowerCase()
     );
 
@@ -182,12 +182,12 @@ const UserFeedback: React.FC<UserFeedbackProps> = ({ venue }) => {
 
     try {
       setLikingTags(prev => new Set(prev).add(tagId));
-      
+
       const result = await UserFeedbackService.toggleTagLike(tagId, user.id);
       console.log('Like result:', result);
-      
-      setTags(prev => prev.map(tag => 
-        tag.id === tagId 
+
+      setTags(prev => prev.map(tag =>
+        tag.id === tagId
           ? { ...tag, user_has_liked: result.liked, like_count: result.newCount }
           : tag
       ));
@@ -225,7 +225,7 @@ const UserFeedback: React.FC<UserFeedbackProps> = ({ venue }) => {
   }
 
   return (
-    <View style={[styles.container, { 
+    <View style={[styles.container, {
       backgroundColor: theme.colors.surface,
       borderColor: '#FF6B6B',
       borderWidth: 2,
@@ -235,16 +235,16 @@ const UserFeedback: React.FC<UserFeedbackProps> = ({ venue }) => {
           <Icon name="pulse-outline" size={24} color="#FF6B6B" />
           <Text style={[styles.title, { color: '#FF6B6B' }]}>Pulse</Text>
         </View>
-        
+
         {user && (
           <TouchableOpacity
             style={[styles.addButton, { backgroundColor: '#FF6B6B' + '20', borderColor: '#FF6B6B' + '40' }]}
             onPress={() => setShowCreateForm(!showCreateForm)}
           >
-            <Icon 
-              name={showCreateForm ? 'close' : 'add'} 
-              size={20} 
-              color="#FF6B6B" 
+            <Icon
+              name={showCreateForm ? 'close' : 'add'}
+              size={20}
+              color="#FF6B6B"
             />
           </TouchableOpacity>
         )}
@@ -254,10 +254,10 @@ const UserFeedback: React.FC<UserFeedbackProps> = ({ venue }) => {
       {showCreateForm && user && (
         <View style={[styles.createForm, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
           <TextInput
-            style={[styles.tagInput, { 
-              color: theme.colors.text, 
+            style={[styles.tagInput, {
+              color: theme.colors.text,
               borderColor: theme.colors.border,
-              backgroundColor: theme.colors.background 
+              backgroundColor: theme.colors.background
             }]}
             placeholder="Share the pulse..."
             placeholderTextColor={theme.colors.textSecondary}
@@ -271,7 +271,7 @@ const UserFeedback: React.FC<UserFeedbackProps> = ({ venue }) => {
           <TouchableOpacity
             style={[
               styles.createButton,
-              { 
+              {
                 backgroundColor: newTagText.trim() ? theme.colors.primary : theme.colors.textSecondary + '40',
                 opacity: creating ? 0.6 : 1
               }
@@ -290,19 +290,19 @@ const UserFeedback: React.FC<UserFeedbackProps> = ({ venue }) => {
 
       {/* Tags list */}
       {tags.length > 0 ? (
-        <ScrollView 
-          horizontal
+        <ScrollView
           style={styles.tagsListHorizontal}
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.tagsContentHorizontal}
+          showsVerticalScrollIndicator={false}
+          nestedScrollEnabled={true}
         >
           {tags.map((tag) => (
-            <TagItem
-              key={tag.id}
-              tag={tag}
-              onLike={handleLikeTag}
-              isLiking={likingTags.has(tag.id)}
-            />
+            <View key={tag.id} style={styles.tagWrapper}>
+              <TagItem
+                tag={tag}
+                onLike={handleLikeTag}
+                isLiking={likingTags.has(tag.id)}
+              />
+            </View>
           ))}
         </ScrollView>
       ) : (
@@ -403,10 +403,12 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   tagsListHorizontal: {
-    maxHeight: 120,
+    maxHeight: 240,
+  },
+  tagWrapper: {
+    marginBottom: 12,
   },
   tagsContentHorizontal: {
-    paddingRight: 20,
     gap: 12,
   },
   tagItem: {
@@ -430,7 +432,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 6,
     elevation: 3,
-    minWidth: 140,
   },
   tagContent: {
     flexDirection: 'row',
@@ -441,13 +442,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   tagContentHorizontal: {
-    flexDirection: 'column',
+    flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'stretch',
+    alignItems: 'center',
     padding: 16,
     borderRadius: 16,
     borderWidth: 1,
-    minHeight: 90,
+    gap: 16,
   },
   tagText: {
     fontSize: 16,
@@ -459,13 +460,13 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontFamily: 'Inter-SemiBold',
     lineHeight: 24,
-    marginBottom: 12,
-    textAlign: 'left',
+    flex: 1,
+    flexWrap: 'wrap',
   },
   bottomRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 12,
   },
   dateText: {
     fontSize: 12,
