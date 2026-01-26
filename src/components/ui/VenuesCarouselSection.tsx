@@ -4,12 +4,12 @@ import {
   Text,
   StyleSheet,
   FlatList,
+  ActivityIndicator,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import type { Venue, VenueCheckInStats } from '../../types/venue.types';
-import { CarouselSkeleton } from '../social/SkeletonLoaders';
 import { calculateDaysSinceSignup, formatSignupText } from '../../utils/formatting/venue';
 import { CheckInService } from '../../services/api/checkins';
 import CompactVenueCard from './CompactVenueCard';
@@ -82,7 +82,7 @@ const VenuesCarouselSection: React.FC<VenuesCarouselSectionProps> = ({
     return null;
   }
 
-  // Show skeleton loader while loading
+  // Show minimal loading indicator while loading
   if (loading) {
     return (
       <View style={styles.container}>
@@ -100,15 +100,19 @@ const VenuesCarouselSection: React.FC<VenuesCarouselSectionProps> = ({
             />
           </View>
           <View style={styles.headerText}>
-            <View
+            <Text
               style={[
-                styles.skeletonTitle,
-                { backgroundColor: theme.colors.border }
+                styles.headerTitle,
+                { color: theme.colors.text }
               ]}
-            />
+            >
+              {title}
+            </Text>
           </View>
         </View>
-        <CarouselSkeleton count={3} />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="small" color={theme.colors.primary} />
+        </View>
       </View>
     );
   }
@@ -227,10 +231,9 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontFamily: 'Poppins-SemiBold',
   },
-  skeletonTitle: {
-    width: 120,
-    height: 20,
-    borderRadius: 4,
+  loadingContainer: {
+    paddingVertical: 40,
+    alignItems: 'center',
   },
   carouselContent: {
     paddingHorizontal: 15,

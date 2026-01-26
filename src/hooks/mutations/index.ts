@@ -11,6 +11,9 @@ export type { CheckInMutationData, UseCheckInMutationOptions } from './useCheckI
 export { useCheckOutMutation } from './useCheckOutMutation';
 export type { CheckOutMutationData, UseCheckOutMutationOptions } from './useCheckOutMutation';
 
+export { useSubmitReviewMutation } from './useSubmitReviewMutation';
+export type { SubmitReviewMutationData, UseSubmitReviewMutationOptions } from './useSubmitReviewMutation';
+
 export { useUpdateProfileMutation } from './useUpdateProfileMutation';
 export type { UpdateProfileMutationData, UseUpdateProfileMutationOptions } from './useUpdateProfileMutation';
 

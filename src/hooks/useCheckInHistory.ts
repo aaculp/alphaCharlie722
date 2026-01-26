@@ -55,6 +55,8 @@ export function useCheckInHistory(options: UseCheckInHistoryOptions = {}): UseCh
         return { checkIns: [], hasMore: false };
       }
 
+      console.log('🔄 useCheckInHistory: Fetching check-in history for user:', userId);
+
       const response = await CheckInService.getUserCheckInHistory({
         userId,
         limit: 50,
@@ -62,14 +64,18 @@ export function useCheckInHistory(options: UseCheckInHistoryOptions = {}): UseCh
         daysBack
       });
 
+      console.log('✅ useCheckInHistory: Fetched', response.checkIns.length, 'check-ins');
+
       return {
         checkIns: response.checkIns,
         hasMore: response.hasMore,
       };
     },
     enabled: enabled && !!userId,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 0, // Always consider data stale so refetchOnMount works immediately after invalidation
     gcTime: 1000 * 60 * 30, // 30 minutes (formerly cacheTime)
+    refetchOnMount: 'always', // Always refetch when component mounts, even if data is fresh
+    refetchOnWindowFocus: false, // Don't refetch on window focus (mobile doesn't need this)
   });
 
   const refetch = async () => {

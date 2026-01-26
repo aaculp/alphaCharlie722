@@ -23,7 +23,7 @@ import {
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { ReviewService } from '../../services/api/reviews';
+import { useSubmitReviewMutation } from '../../hooks/mutations';
 import { ACTIVITY_COLORS } from '../../utils/constants';
 import type { ActivityLevel } from '../../utils/formatting/activity';
 
@@ -57,14 +57,41 @@ const ReviewPromptModal: React.FC<ReviewPromptModalProps> = ({
   // State
   const [selectedVibe, setSelectedVibe] = useState<ActivityLevel['level'] | undefined>();
   const [selectedRating, setSelectedRating] = useState<number>(0);
-  const [loading, setLoading] = useState<boolean>(false);
+
+  // React Query mutation
+  const submitReviewMutation = useSubmitReviewMutation({
+    onSuccess: (review) => {
+      // Call success callback
+      onQuickRating(selectedRating, selectedVibe);
+
+      // Show success message
+      Alert.alert(
+        'Thank you!',
+        'Your rating has been submitted.',
+        [
+          {
+            text: 'OK',
+            onPress: onClose,
+          },
+        ]
+      );
+    },
+    onError: (error) => {
+      console.error('Error submitting quick rating:', error);
+      Alert.alert(
+        'Error',
+        error.message || 'Failed to submit rating. Please try again.',
+        [{ text: 'OK' }]
+      );
+      setSelectedRating(0);
+    }
+  });
 
   // Reset state when modal opens
   useEffect(() => {
     if (visible) {
       setSelectedVibe(undefined);
       setSelectedRating(0);
-      setLoading(false);
     }
   }, [visible]);
 
@@ -99,49 +126,21 @@ const ReviewPromptModal: React.FC<ReviewPromptModalProps> = ({
    * Requirement 2.3: Include optional vibe in submission
    */
   const handleRatingSelect = async (rating: number) => {
-    try {
-      if (!user?.id) {
-        Alert.alert('Authentication Required', 'You must be signed in to submit a review.');
-        return;
-      }
-
-      setSelectedRating(rating);
-      setLoading(true);
-
-      // Submit quick rating (vibe is optional)
-      await ReviewService.submitReview({
-        venueId,
-        userId: user.id,
-        rating,
-        // Note: Backend doesn't currently support vibe storage
-        // When backend support is added, include: vibe: selectedVibe
-      });
-
-      // Call success callback
-      onQuickRating(rating, selectedVibe);
-
-      // Show success message
-      Alert.alert(
-        'Thank you!',
-        'Your rating has been submitted.',
-        [
-          {
-            text: 'OK',
-            onPress: onClose,
-          },
-        ]
-      );
-    } catch (error: any) {
-      console.error('Error submitting quick rating:', error);
-      Alert.alert(
-        'Error',
-        error.message || 'Failed to submit rating. Please try again.',
-        [{ text: 'OK' }]
-      );
-      setSelectedRating(0);
-    } finally {
-      setLoading(false);
+    if (!user?.id) {
+      Alert.alert('Authentication Required', 'You must be signed in to submit a review.');
+      return;
     }
+
+    setSelectedRating(rating);
+
+    // Submit quick rating using React Query mutation
+    submitReviewMutation.mutate({
+      venueId,
+      userId: user.id,
+      rating,
+      // Note: Backend doesn't currently support vibe storage
+      // When backend support is added, include: vibe: selectedVibe
+    });
   };
 
   /**
@@ -180,7 +179,7 @@ const ReviewPromptModal: React.FC<ReviewPromptModalProps> = ({
                 ]}
                 onPress={() => handleVibeSelect(vibe.level)}
                 activeOpacity={0.7}
-                disabled={loading}
+                disabled={submitReviewMutation.isPending}
               >
                 <Text style={styles.vibeEmoji}>{vibe.emoji}</Text>
                 <Text
@@ -219,7 +218,7 @@ const ReviewPromptModal: React.FC<ReviewPromptModalProps> = ({
               onPress={() => handleRatingSelect(star)}
               style={styles.starButton}
               activeOpacity={0.7}
-              disabled={loading}
+              disabled={submitReviewMutation.isPending}
             >
               <Icon
                 name={star <= selectedRating ? 'star' : 'star-outline'}
@@ -262,7 +261,7 @@ const ReviewPromptModal: React.FC<ReviewPromptModalProps> = ({
             <TouchableOpacity
               onPress={onClose}
               style={styles.closeButton}
-              disabled={loading}
+              disabled={submitReviewMutation.isPending}
             >
               <Icon name="close" size={24} color={theme.colors.textSecondary} />
             </TouchableOpacity>
@@ -285,7 +284,7 @@ const ReviewPromptModal: React.FC<ReviewPromptModalProps> = ({
             {renderStarSelector()}
 
             {/* Loading Indicator */}
-            {loading && (
+            {submitReviewMutation.isPending && (
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="small" color={theme.colors.primary} />
                 <Text style={[styles.loadingText, { color: theme.colors.textSecondary }]}>
@@ -295,7 +294,7 @@ const ReviewPromptModal: React.FC<ReviewPromptModalProps> = ({
             )}
 
             {/* Helper Text */}
-            {!loading && (
+            {!submitReviewMutation.isPending && (
               <Text style={[styles.helperText, { color: theme.colors.textSecondary }]}>
                 Tap a star to submit a quick rating
               </Text>
@@ -307,7 +306,7 @@ const ReviewPromptModal: React.FC<ReviewPromptModalProps> = ({
             <TouchableOpacity
               style={[styles.dismissButton, { borderColor: theme.colors.border }]}
               onPress={onClose}
-              disabled={loading}
+              disabled={submitReviewMutation.isPending}
             >
               <Text style={[styles.dismissButtonText, { color: theme.colors.textSecondary }]}>
                 Maybe Later
@@ -320,7 +319,7 @@ const ReviewPromptModal: React.FC<ReviewPromptModalProps> = ({
                 { backgroundColor: theme.colors.primary },
               ]}
               onPress={handleAddWrittenReview}
-              disabled={loading}
+              disabled={submitReviewMutation.isPending}
             >
               <Icon name="create-outline" size={18} color="white" />
               <Text style={styles.fullReviewButtonText}>Add Written Review</Text>
