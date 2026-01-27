@@ -114,6 +114,8 @@ For more technical details, see:
 - Operating hours
 - Amenities and features
 - Google Maps integration for directions
+- **Flash offers with one-tap claiming** 🆕
+- **Claim token display and management** 🆕
 
 ### Settings Screen
 - User profile management

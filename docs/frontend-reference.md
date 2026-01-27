@@ -979,6 +979,85 @@ const handleLikeTag = async (tagId: string) => {
 ---
 
 
+### Claim Button Components
+
+**Location:** `src/components/ClaimButton/`
+
+#### ClaimButton 🆕
+
+**Location:** `src/components/ClaimButton/ClaimButton.tsx`
+
+Interactive button for claiming flash offers directly from venue detail cards.
+
+**Props:**
+```typescript
+interface ClaimButtonProps {
+  offer: FlashOffer;
+  userClaim: FlashOfferClaim | null;
+  isCheckedIn: boolean;
+  onNavigate?: (target: string) => void;
+  compact?: boolean;
+}
+```
+
+**Usage:**
+```typescript
+<ClaimButton
+  offer={flashOffer}
+  userClaim={userClaim}
+  isCheckedIn={isCheckedIn}
+  onNavigate={handleNavigation}
+/>
+```
+
+**Features:**
+- State-driven button that adapts based on eligibility
+- Multiple button states: claimable, claimed, loading, not_checked_in, full, expired
+- Integrated with useClaimFlashOfferMutation hook
+- Optimistic UI updates for instant feedback
+- Haptic feedback on successful claim
+- Error handling with retry options
+- Success modal with claim token display
+- Navigation to ClaimDetailScreen for claimed offers
+- Memoized for performance in scroll views
+
+**Button States:**
+- **Claimable**: Primary button, "Claim Offer" - user can claim
+- **Claimed**: Success color with checkmark, "View Claim" - navigates to claim details
+- **Loading**: Disabled with spinner, "Claiming..." - claim in progress
+- **Not Checked In**: Secondary style, "Check In to Claim" - prompts check-in
+- **Full**: Disabled gray, "Offer Full" - no claims remaining
+- **Expired**: Disabled gray, "Expired" - offer no longer active
+
+**State Derivation Priority:**
+1. Loading (mutation in progress)
+2. Claimed (user has claimed)
+3. Not checked in (user must check in first)
+4. Full (no claims remaining)
+5. Expired (offer ended or cancelled)
+6. Claimable (eligible to claim)
+
+**Error Handling:**
+- Eligibility errors: Clear messages explaining why claim failed
+- Network errors: Retry option with connection guidance
+- Timeout errors: Check claims option with status guidance
+- Race condition errors: Appropriate message when offer becomes full
+- Optimistic update rollback on failure
+
+**Related Components:**
+- `ClaimFeedbackModal` - Success confirmation modal
+- `FlashOfferCard` - Integrates ClaimButton
+- Uses `useClaimFlashOfferMutation` hook
+- Uses `deriveClaimButtonState` utility
+
+**Requirements:**
+- Validates check-in status before allowing claim
+- Enforces all eligibility requirements
+- Provides immediate user feedback
+- Handles edge cases gracefully
+
+---
+
 ### Venue Components
 
 **Location:** `src/components/venue/`

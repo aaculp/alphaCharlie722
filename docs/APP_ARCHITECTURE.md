@@ -92,6 +92,7 @@ AppNavigator
 - `useCheckInStats({ venueIds: venueId })` - Venue check-in stats
 - `useCollections()` - User's collections
 - `useFriends()` - User's friends list
+- `useFlashOffersQuery()` 🆕 - Flash offers for venue with user claims
 
 **API Calls:**
 - `VenueService.getVenueById(venueId)` - Fetch venue details
@@ -99,6 +100,8 @@ AppNavigator
 - `ReviewService.getVenueReviews({ venueId, limit: 3 })` - Get recent reviews
 - `ReviewService.toggleHelpfulVote(reviewId, userId)` - Toggle helpful vote
 - `ReviewService.deleteReview(reviewId, userId)` - Delete review
+- `FlashOfferService.getVenueFlashOffers(venueId)` 🆕 - Get venue's flash offers
+- `ClaimService.claimOffer(offerId, userId)` 🆕 - Claim flash offer
 
 **Child Components:**
 - `AggregateRatingDisplay` - Star rating display
@@ -109,6 +112,9 @@ AppNavigator
 - `QuickShareButton` - Share with friends
 - `CollectionManager` - Add to collections
 - `VenueCustomerCountChip` - Active check-ins count
+- `FlashOfferCard` 🆕 - Flash offer cards with claim button
+- `ClaimButton` 🆕 - Interactive claim button
+- `ClaimFeedbackModal` 🆕 - Claim success modal
 
 ---
 
@@ -605,6 +611,75 @@ WideVenueCard renders
   ↓ Enables swipe gestures
 ```
 
+### Flash Offer Claim Flow 🆕
+
+```
+User (VenueDetailScreen)
+  ↓ Views FlashOfferCard
+  ↓ Sees ClaimButton (state: claimable)
+  ↓ Taps "Claim Offer"
+  ↓
+ClaimButton.onPress()
+  ↓ Derives button state (checks eligibility)
+  ↓ Validates: checked in, offer active, not claimed, claims available
+  ↓
+useClaimFlashOfferMutation.mutate()
+  ↓ Optimistic Update: increment claimed_count, add to user claims
+  ↓ Button state → loading
+  ↓
+ClaimService.claimOffer(offerId, userId)
+  ↓ Validates eligibility server-side
+  ↓ Calls claim_flash_offer_atomic() DB function
+  ↓ Generates 6-digit claim token
+  ↓ INSERT into flash_offer_claims
+  ↓ UPDATE flash_offers.claimed_count
+  ↓ Returns claim record
+  ↓
+Success Response
+  ↓ Trigger haptic feedback
+  ↓ Show ClaimFeedbackModal with token
+  ↓ Invalidate flash offers query cache
+  ↓ Invalidate user claims query cache
+  ↓ Button state → claimed
+  ↓
+User taps "View Claim"
+  ↓ Navigate to ClaimDetailScreen
+  ↓ Display full claim details and token
+```
+
+### Claim Error Handling Flow 🆕
+
+```
+Claim Mutation Fails
+  ↓
+handleClaimError(error)
+  ↓ Categorize error type
+  ↓
+If Eligibility Error:
+  ↓ Show specific message (not checked in, already claimed, full, expired)
+  ↓ Action: dismiss or navigate to check-in
+  ↓ Revert optimistic update
+  ↓ Button state → appropriate disabled state
+
+If Network Error:
+  ↓ Show "Unable to connect" message
+  ↓ Action: retry button
+  ↓ Maintain claimable state
+  ↓ Don't revert (no optimistic update made)
+
+If Timeout Error:
+  ↓ Show "Request timed out" message
+  ↓ Action: check claims or retry
+  ↓ Query user claims to verify status
+  ↓ Update UI based on actual state
+
+If Race Condition (offer became full):
+  ↓ Show "Offer just claimed by someone else" message
+  ↓ Revert optimistic update
+  ↓ Invalidate queries to get latest data
+  ↓ Button state → full
+```
+
 ---
 
 ## Component Hierarchy
@@ -643,6 +718,17 @@ VenueDetailScreen
 ├── ReviewButton
 ├── UserFeedback (Pulse Section)
 │   └── CheckInButton
+├── FlashOffersSection 🆕
+│   └── ScrollView (horizontal)
+│       └── FlashOfferCard (multiple)
+│           ├── OfferContent (title, countdown, badges)
+│           ├── ClaimButton 🆕
+│           │   ├── ClaimableButton
+│           │   ├── ClaimedButton
+│           │   ├── LoadingButton
+│           │   ├── IneligibleButton
+│           │   └── DisabledButton
+│           └── ClaimFeedbackModal 🆕
 ├── ReviewsSection
 │   ├── ReviewCard (multiple)
 │   └── SeeAllReviewsButton
