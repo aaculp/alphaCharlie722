@@ -92,6 +92,13 @@ function HomeStackNavigator() {
           presentation: 'modal',
         }}
       />
+      <HomeStack.Screen
+        name="ClaimDetail"
+        component={ClaimDetailScreen}
+        options={{
+          animation: 'slide_from_bottom',
+        }}
+      />
     </HomeStack.Navigator>
   );
 }

@@ -475,7 +475,7 @@ export class ClaimService {
             start_time,
             end_time,
             status,
-            venues!inner(
+            venues(
               id,
               name,
               location,
@@ -517,12 +517,12 @@ export class ClaimService {
             end_time: offer.end_time,
             status: offer.status,
           },
-          venue: {
+          venue: venue ? {
             id: venue.id,
             name: venue.name,
             location: venue.location,
             image_url: venue.image_url,
-          },
+          } : null,
           flash_offers: undefined, // Remove the nested object
         };
       });

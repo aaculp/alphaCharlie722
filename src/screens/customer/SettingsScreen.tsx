@@ -17,30 +17,25 @@ import { useNavigationStyle, NavigationStyleType } from '../../contexts/Navigati
 import { useLocationContext } from '../../contexts/LocationContext';
 import { useNotificationPreferences } from '../../hooks';
 import { useFriendsQuery } from '../../hooks/queries/useFriendsQuery';
-import { populateVenuesDatabase } from '../../utils/populateVenues';
 import { PushPermissionService, PermissionStatus } from '../../services/PushPermissionService';
 import { ClaimService } from '../../services/api/flashOfferClaims';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 const SettingsScreen: React.FC = () => {
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [experimentalFeaturesEnabled, setExperimentalFeaturesEnabled] = useState(false);
   const [gridLayoutExpanded, setGridLayoutExpanded] = useState(false);
   const [navigationStyleExpanded, setNavigationStyleExpanded] = useState(false);
-  const [privacyExpanded, setPrivacyExpanded] = useState(false);
-  const [notificationTypesExpanded, setNotificationTypesExpanded] = useState(false);
   const [pushPermissionStatus, setPushPermissionStatus] = useState<PermissionStatus>('not_determined');
   const [pushEnabled, setPushEnabled] = useState(false);
   const [activeClaimsCount, setActiveClaimsCount] = useState(0);
-  
+
   const { signOut, user } = useAuth();
   const { theme, themeMode, setThemeMode } = useTheme();
   const { gridLayout, setGridLayout } = useGridLayout();
   const { navigationStyle, setNavigationStyle } = useNavigationStyle();
   const { locationEnabled, setLocationEnabled } = useLocationContext();
-  const { data: friends = [], isLoading: friendsLoading } = useFriendsQuery({ 
-    userId: user?.id || '', 
-    enabled: !!user?.id 
+  const { data: friends = [], isLoading: friendsLoading } = useFriendsQuery({
+    userId: user?.id || '',
+    enabled: !!user?.id
   });
   const { preferences, loading: prefsLoading, updatePreference } = useNotificationPreferences();
   const navigation = useNavigation<any>();
@@ -61,7 +56,7 @@ const SettingsScreen: React.FC = () => {
   useEffect(() => {
     if (preferences) {
       // Check if any push notification type is enabled
-      const anyEnabled = 
+      const anyEnabled =
         preferences.friend_requests ||
         preferences.friend_accepted ||
         preferences.venue_shares;
@@ -80,10 +75,10 @@ const SettingsScreen: React.FC = () => {
 
   const loadActiveClaimsCount = async () => {
     if (!user?.id) return;
-    
+
     try {
-      const claims = await ClaimService.getUserClaims(user.id, 'active');
-      setActiveClaimsCount(claims.length);
+      const result = await ClaimService.getUserClaims(user.id, 'active');
+      setActiveClaimsCount(result.total);
     } catch (error) {
       console.error('Error loading active claims count:', error);
     }
@@ -94,27 +89,27 @@ const SettingsScreen: React.FC = () => {
       // If enabling, check permission first
       if (value) {
         const isEnabled = await PushPermissionService.isEnabled();
-        
+
         if (!isEnabled) {
           // Check if permanently denied first
           const isPermanentlyDenied = await PushPermissionService.isPermanentlyDenied();
-          
+
           if (isPermanentlyDenied) {
             // Show platform-specific instructions for permanently denied
             await PushPermissionService.handleNeverAskAgain();
             return;
           }
-          
+
           // Request permission
           const result = await PushPermissionService.requestPermission();
           setPushPermissionStatus(result.status);
-          
+
           if (result.isPermanentlyDenied) {
             // Show alert with instructions
             PushPermissionService.showPermissionDeniedAlert();
             return;
           }
-          
+
           if (result.status !== 'authorized' && result.status !== 'provisional') {
             console.log('⚠️ Push notification permission not granted');
             return;
@@ -168,37 +163,15 @@ const SettingsScreen: React.FC = () => {
     }
   };
 
-  const handleUpdateVenueData = async () => {
-    Alert.alert(
-      'Update Venue Data',
-      'This will update all venues with enhanced information including wait times, popular items, atmosphere tags, and parking info. Continue?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Update', 
-          onPress: async () => {
-            try {
-              await populateVenuesDatabase();
-              Alert.alert('Success', 'Venue data has been updated with enhanced information!');
-            } catch (error) {
-              console.error('Error updating venue data:', error);
-              Alert.alert('Error', 'Failed to update venue data. Please try again.');
-            }
-          }
-        },
-      ]
-    );
-  };
-
   const handleLogout = () => {
     Alert.alert(
       'Logout',
       'Are you sure you want to logout?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Logout', 
-          style: 'destructive', 
+        {
+          text: 'Logout',
+          style: 'destructive',
           onPress: async () => {
             try {
               await signOut();
@@ -224,13 +197,13 @@ const SettingsScreen: React.FC = () => {
     );
   };
 
-  const SettingItem = ({ 
-    icon, 
-    title, 
-    subtitle, 
-    onPress, 
-    showArrow = true, 
-    rightComponent 
+  const SettingItem = ({
+    icon,
+    title,
+    subtitle,
+    onPress,
+    showArrow = true,
+    rightComponent
   }: {
     icon: string;
     title: string;
@@ -260,90 +233,90 @@ const SettingsScreen: React.FC = () => {
     <Text style={[styles.sectionHeader, { color: theme.colors.textSecondary }]}>{title}</Text>
   );
 
-  const GridLayoutOption = ({ 
-    layout, 
-    title, 
-    description, 
-    isSelected 
-  }: { 
-    layout: GridLayoutType; 
-    title: string; 
-    description: string; 
-    isSelected: boolean; 
+  const GridLayoutOption = ({
+    layout,
+    title,
+    description,
+    isSelected
+  }: {
+    layout: GridLayoutType;
+    title: string;
+    description: string;
+    isSelected: boolean;
   }) => (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={[
-        styles.gridLayoutOption, 
-        { 
+        styles.gridLayoutOption,
+        {
           borderBottomColor: theme.colors.border,
           backgroundColor: isSelected ? theme.colors.primary + '10' : 'transparent'
         }
-      ]} 
+      ]}
       onPress={() => setGridLayout(layout)}
     >
       <View style={styles.gridLayoutLeft}>
         <View style={[
-          styles.radioButton, 
-          { 
+          styles.radioButton,
+          {
             borderColor: isSelected ? theme.colors.primary : theme.colors.border,
             backgroundColor: isSelected ? theme.colors.primary : 'transparent'
           }
         ]}>
-          {isSelected && <View style={styles.radioButtonInner} />}
+          {isSelected && <View style={[styles.radioButtonInner, { backgroundColor: theme.colors.surface }]} />}
         </View>
         <View style={styles.gridLayoutText}>
           <Text style={[styles.gridLayoutTitle, { color: theme.colors.text }]}>{title}</Text>
           <Text style={[styles.gridLayoutDescription, { color: theme.colors.textSecondary }]}>{description}</Text>
         </View>
       </View>
-      <Icon 
-        name={layout === '1-column' ? 'list' : 'grid'} 
-        size={20} 
-        color={theme.colors.textSecondary} 
+      <Icon
+        name={layout === '1-column' ? 'list' : 'grid'}
+        size={20}
+        color={theme.colors.textSecondary}
       />
     </TouchableOpacity>
   );
 
-  const NavigationStyleOption = ({ 
-    style, 
-    title, 
-    description, 
-    isSelected 
-  }: { 
-    style: NavigationStyleType; 
-    title: string; 
-    description: string; 
-    isSelected: boolean; 
+  const NavigationStyleOption = ({
+    style,
+    title,
+    description,
+    isSelected
+  }: {
+    style: NavigationStyleType;
+    title: string;
+    description: string;
+    isSelected: boolean;
   }) => (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={[
-        styles.gridLayoutOption, 
-        { 
+        styles.gridLayoutOption,
+        {
           borderBottomColor: theme.colors.border,
           backgroundColor: isSelected ? theme.colors.primary + '10' : 'transparent'
         }
-      ]} 
+      ]}
       onPress={() => setNavigationStyle(style)}
     >
       <View style={styles.gridLayoutLeft}>
         <View style={[
-          styles.radioButton, 
-          { 
+          styles.radioButton,
+          {
             borderColor: isSelected ? theme.colors.primary : theme.colors.border,
             backgroundColor: isSelected ? theme.colors.primary : 'transparent'
           }
         ]}>
-          {isSelected && <View style={styles.radioButtonInner} />}
+          {isSelected && <View style={[styles.radioButtonInner, { backgroundColor: theme.colors.surface }]} />}
         </View>
         <View style={styles.gridLayoutText}>
           <Text style={[styles.gridLayoutTitle, { color: theme.colors.text }]}>{title}</Text>
           <Text style={[styles.gridLayoutDescription, { color: theme.colors.textSecondary }]}>{description}</Text>
         </View>
       </View>
-      <Icon 
-        name={style === 'floating' ? 'radio-button-on' : 'menu'} 
-        size={20} 
-        color={theme.colors.textSecondary} 
+      <Icon
+        name={style === 'floating' ? 'radio-button-on' : 'menu'}
+        size={20}
+        color={theme.colors.textSecondary}
       />
     </TouchableOpacity>
   );
@@ -388,6 +361,12 @@ const SettingsScreen: React.FC = () => {
             onPress={() => navigation.navigate('FlashOffersHelp')}
           />
           <SettingItem
+            icon="flash"
+            title="Flash Offer Notifications"
+            subtitle="Configure flash offer notification preferences"
+            onPress={() => navigation.navigate('NotificationSettings')}
+          />
+          <SettingItem
             icon="notifications"
             title="Push Notifications"
             subtitle={`${getPermissionStatusText()} • Real-time social updates`}
@@ -402,15 +381,9 @@ const SettingsScreen: React.FC = () => {
             }
             showArrow={false}
           />
-          <SettingItem
-            icon="flash"
-            title="Flash Offer Notifications"
-            subtitle="Configure flash offer notification preferences"
-            onPress={() => navigation.navigate('NotificationSettings')}
-          />
-          
+
           {/* Notification Types Accordion */}
-          <TouchableOpacity 
+          {/* <TouchableOpacity
             style={[styles.settingItem, { borderBottomColor: theme.colors.border }]}
             onPress={() => setNotificationTypesExpanded(!notificationTypesExpanded)}
           >
@@ -424,16 +397,16 @@ const SettingsScreen: React.FC = () => {
               </View>
             </View>
             <View style={styles.settingRight}>
-              <Icon 
-                name={notificationTypesExpanded ? 'chevron-up' : 'chevron-down'} 
-                size={20} 
-                color={theme.colors.textSecondary} 
+              <Icon
+                name={notificationTypesExpanded ? 'chevron-up' : 'chevron-down'}
+                size={20}
+                color={theme.colors.textSecondary}
               />
             </View>
-          </TouchableOpacity>
-          
+          </TouchableOpacity> */}
+
           {/* Notification Type Toggles */}
-          {notificationTypesExpanded && preferences && (
+          {/* {notificationTypesExpanded && preferences && (
             <View style={styles.accordionContent}>
               <View style={[styles.notificationTypeOption, { borderBottomColor: theme.colors.border }]}>
                 <View style={styles.notificationTypeLeft}>
@@ -450,7 +423,7 @@ const SettingsScreen: React.FC = () => {
                   thumbColor={preferences.friend_requests ? theme.colors.primary : '#f4f3f4'}
                 />
               </View>
-              
+
               <View style={[styles.notificationTypeOption, { borderBottomColor: theme.colors.border }]}>
                 <View style={styles.notificationTypeLeft}>
                   <Text style={[styles.notificationTypeTitle, { color: theme.colors.text }]}>Friend Accepted</Text>
@@ -466,7 +439,7 @@ const SettingsScreen: React.FC = () => {
                   thumbColor={preferences.friend_accepted ? theme.colors.primary : '#f4f3f4'}
                 />
               </View>
-              
+
               <View style={[styles.notificationTypeOption, { borderBottomColor: theme.colors.border }]}>
                 <View style={styles.notificationTypeLeft}>
                   <Text style={[styles.notificationTypeTitle, { color: theme.colors.text }]}>Venue Shares</Text>
@@ -482,7 +455,7 @@ const SettingsScreen: React.FC = () => {
                   thumbColor={preferences.venue_shares ? theme.colors.primary : '#f4f3f4'}
                 />
               </View>
-              
+
               <View style={[styles.notificationTypeOption, { borderBottomColor: theme.colors.border }]}>
                 <View style={styles.notificationTypeLeft}>
                   <Text style={[styles.notificationTypeTitle, { color: theme.colors.text }]}>Collection Follows</Text>
@@ -498,7 +471,7 @@ const SettingsScreen: React.FC = () => {
                   thumbColor={preferences.collection_follows ? theme.colors.primary : '#f4f3f4'}
                 />
               </View>
-              
+
               <View style={[styles.notificationTypeOption, { borderBottomColor: theme.colors.border }]}>
                 <View style={styles.notificationTypeLeft}>
                   <Text style={[styles.notificationTypeTitle, { color: theme.colors.text }]}>Activity Likes</Text>
@@ -514,7 +487,7 @@ const SettingsScreen: React.FC = () => {
                   thumbColor={preferences.activity_likes ? theme.colors.primary : '#f4f3f4'}
                 />
               </View>
-              
+
               <View style={[styles.notificationTypeOption, { borderBottomColor: theme.colors.border }]}>
                 <View style={styles.notificationTypeLeft}>
                   <Text style={[styles.notificationTypeTitle, { color: theme.colors.text }]}>Activity Comments</Text>
@@ -531,22 +504,8 @@ const SettingsScreen: React.FC = () => {
                 />
               </View>
             </View>
-          )}
-          
-          <SettingItem
-            icon="notifications-outline"
-            title="In-App Notifications"
-            subtitle="Manage your notification preferences"
-            rightComponent={
-              <Switch
-                value={notificationsEnabled}
-                onValueChange={setNotificationsEnabled}
-                trackColor={{ false: '#767577', true: theme.colors.primary + '80' }}
-                thumbColor={notificationsEnabled ? theme.colors.primary : '#f4f3f4'}
-              />
-            }
-            showArrow={false}
-          />
+          )} */}
+
           <SettingItem
             icon="location"
             title="Location Services"
@@ -561,151 +520,7 @@ const SettingsScreen: React.FC = () => {
             }
             showArrow={false}
           />
-        </View>
-
-        {/* Friends Section */}
-        <SectionHeader title="Social" />
-        <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
-          <SettingItem
-            icon="people"
-            title="Friends"
-            subtitle={friendsLoading ? 'Loading...' : `${friends.length} friends`}
-            onPress={() => {
-              Alert.alert(
-                'Friends',
-                'Friends list feature coming soon! You can manage your friend connections here.',
-                [{ text: 'OK' }]
-              );
-            }}
-          />
-          
-          {/* Privacy Settings Accordion */}
-          <TouchableOpacity 
-            style={[styles.settingItem, { borderBottomColor: theme.colors.border }]}
-            onPress={() => setPrivacyExpanded(!privacyExpanded)}
-          >
-            <View style={styles.settingLeft}>
-              <Icon name="shield-checkmark" size={24} color={theme.colors.primary} style={styles.settingIcon} />
-              <View style={styles.settingText}>
-                <Text style={[styles.settingTitle, { color: theme.colors.text }]}>Privacy Settings</Text>
-                <Text style={[styles.settingSubtitle, { color: theme.colors.textSecondary }]}>
-                  Control who can see your activity
-                </Text>
-              </View>
-            </View>
-            <View style={styles.settingRight}>
-              <Icon 
-                name={privacyExpanded ? 'chevron-up' : 'chevron-down'} 
-                size={20} 
-                color={theme.colors.textSecondary} 
-              />
-            </View>
-          </TouchableOpacity>
-          
-          {/* Privacy Settings Options */}
-          {privacyExpanded && (
-            <View style={styles.accordionContent}>
-              <View style={[styles.privacyOption, { borderBottomColor: theme.colors.border }]}>
-                <View style={styles.privacyOptionLeft}>
-                  <Text style={[styles.privacyOptionTitle, { color: theme.colors.text }]}>Check-in Visibility</Text>
-                  <Text style={[styles.privacyOptionSubtitle, { color: theme.colors.textSecondary }]}>
-                    Who can see when you check in
-                  </Text>
-                </View>
-                <TouchableOpacity 
-                  style={[styles.privacyButton, { backgroundColor: theme.colors.primary + '20' }]}
-                  onPress={() => {
-                    Alert.alert(
-                      'Check-in Visibility',
-                      'Choose who can see your check-ins',
-                      [
-                        { text: 'Public' },
-                        { text: 'Friends' },
-                        { text: 'Close Friends' },
-                        { text: 'Private' },
-                        { text: 'Cancel', style: 'cancel' },
-                      ]
-                    );
-                  }}
-                >
-                  <Text style={[styles.privacyButtonText, { color: theme.colors.primary }]}>Friends</Text>
-                </TouchableOpacity>
-              </View>
-              
-              <View style={[styles.privacyOption, { borderBottomColor: theme.colors.border }]}>
-                <View style={styles.privacyOptionLeft}>
-                  <Text style={[styles.privacyOptionTitle, { color: theme.colors.text }]}>Favorites Visibility</Text>
-                  <Text style={[styles.privacyOptionSubtitle, { color: theme.colors.textSecondary }]}>
-                    Who can see your favorite venues
-                  </Text>
-                </View>
-                <TouchableOpacity 
-                  style={[styles.privacyButton, { backgroundColor: theme.colors.primary + '20' }]}
-                  onPress={() => {
-                    Alert.alert(
-                      'Favorites Visibility',
-                      'Choose who can see your favorites',
-                      [
-                        { text: 'Public' },
-                        { text: 'Friends' },
-                        { text: 'Close Friends' },
-                        { text: 'Private' },
-                        { text: 'Cancel', style: 'cancel' },
-                      ]
-                    );
-                  }}
-                >
-                  <Text style={[styles.privacyButtonText, { color: theme.colors.primary }]}>Friends</Text>
-                </TouchableOpacity>
-              </View>
-              
-              <View style={[styles.privacyOption, { borderBottomColor: theme.colors.border }]}>
-                <View style={styles.privacyOptionLeft}>
-                  <Text style={[styles.privacyOptionTitle, { color: theme.colors.text }]}>Collections Visibility</Text>
-                  <Text style={[styles.privacyOptionSubtitle, { color: theme.colors.textSecondary }]}>
-                    Default privacy for new collections
-                  </Text>
-                </View>
-                <TouchableOpacity 
-                  style={[styles.privacyButton, { backgroundColor: theme.colors.primary + '20' }]}
-                  onPress={() => {
-                    Alert.alert(
-                      'Collections Visibility',
-                      'Choose default privacy for collections',
-                      [
-                        { text: 'Public' },
-                        { text: 'Friends' },
-                        { text: 'Close Friends' },
-                        { text: 'Private' },
-                        { text: 'Cancel', style: 'cancel' },
-                      ]
-                    );
-                  }}
-                >
-                  <Text style={[styles.privacyButtonText, { color: theme.colors.primary }]}>Friends</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
-          
-          <SettingItem
-            icon="ban"
-            title="Blocked Users"
-            subtitle="Manage blocked users"
-            onPress={() => {
-              Alert.alert(
-                'Blocked Users',
-                'Blocked users list feature coming soon! You can manage blocked users here.',
-                [{ text: 'OK' }]
-              );
-            }}
-          />
-        </View>
-
-        {/* App Preferences */}
-        <SectionHeader title="Preferences" />
-        <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.settingItem, { borderBottomColor: theme.colors.border }]}
             onPress={() => {
               Alert.alert(
@@ -731,40 +546,153 @@ const SettingsScreen: React.FC = () => {
               <Icon name="chevron-forward" size={20} color={theme.colors.textSecondary} />
             </View>
           </TouchableOpacity>
-          <SettingItem
-            icon="language"
-            title="Language"
-            subtitle="English"
-            onPress={() => console.log('Language pressed')}
-          />
-          <SettingItem
-            icon="map"
-            title="Default Location"
-            subtitle="Set your preferred search area"
-            onPress={() => console.log('Default location pressed')}
-          />
         </View>
 
-        {/* Experimental Features */}
-        <SectionHeader title="Experimental Features" />
+        {/* Friends Section - Commented Out */}
+        {/* 
+        <SectionHeader title="Social (Coming Soon...)" />
         <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
           <SettingItem
-            icon="flask"
-            title="Beta Features"
-            subtitle="Try out new features before they're released"
-            rightComponent={
-              <Switch
-                value={experimentalFeaturesEnabled}
-                onValueChange={setExperimentalFeaturesEnabled}
-                trackColor={{ false: '#767577', true: theme.colors.primary + '80' }}
-                thumbColor={experimentalFeaturesEnabled ? theme.colors.primary : '#f4f3f4'}
-              />
-            }
-            showArrow={false}
+            icon="people"
+            title="Friends"
+            subtitle={friendsLoading ? 'Loading...' : `${friends.length} friends`}
+            onPress={() => {
+              Alert.alert(
+                'Friends',
+                'Friends list feature coming soon! You can manage your friend connections here.',
+                [{ text: 'OK' }]
+              );
+            }}
           />
-          
+
+          <TouchableOpacity
+            style={[styles.settingItem, { borderBottomColor: theme.colors.border }]}
+            onPress={() => setPrivacyExpanded(!privacyExpanded)}
+          >
+            <View style={styles.settingLeft}>
+              <Icon name="shield-checkmark" size={24} color={theme.colors.primary} style={styles.settingIcon} />
+              <View style={styles.settingText}>
+                <Text style={[styles.settingTitle, { color: theme.colors.text }]}>Privacy Settings</Text>
+                <Text style={[styles.settingSubtitle, { color: theme.colors.textSecondary }]}>
+                  Control who can see your activity
+                </Text>
+              </View>
+            </View>
+            <View style={styles.settingRight}>
+              <Icon
+                name={privacyExpanded ? 'chevron-up' : 'chevron-down'}
+                size={20}
+                color={theme.colors.textSecondary}
+              />
+            </View>
+          </TouchableOpacity>
+
+          {privacyExpanded && (
+            <View style={styles.accordionContent}>
+              <View style={[styles.privacyOption, { borderBottomColor: theme.colors.border }]}>
+                <View style={styles.privacyOptionLeft}>
+                  <Text style={[styles.privacyOptionTitle, { color: theme.colors.text }]}>Check-in Visibility</Text>
+                  <Text style={[styles.privacyOptionSubtitle, { color: theme.colors.textSecondary }]}>
+                    Who can see when you check in
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  style={[styles.privacyButton, { backgroundColor: theme.colors.primary + '20' }]}
+                  onPress={() => {
+                    Alert.alert(
+                      'Check-in Visibility',
+                      'Choose who can see your check-ins',
+                      [
+                        { text: 'Public' },
+                        { text: 'Friends' },
+                        { text: 'Close Friends' },
+                        { text: 'Private' },
+                        { text: 'Cancel', style: 'cancel' },
+                      ]
+                    );
+                  }}
+                >
+                  <Text style={[styles.privacyButtonText, { color: theme.colors.primary }]}>Friends</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={[styles.privacyOption, { borderBottomColor: theme.colors.border }]}>
+                <View style={styles.privacyOptionLeft}>
+                  <Text style={[styles.privacyOptionTitle, { color: theme.colors.text }]}>Favorites Visibility</Text>
+                  <Text style={[styles.privacyOptionSubtitle, { color: theme.colors.textSecondary }]}>
+                    Who can see your favorite venues
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  style={[styles.privacyButton, { backgroundColor: theme.colors.primary + '20' }]}
+                  onPress={() => {
+                    Alert.alert(
+                      'Favorites Visibility',
+                      'Choose who can see your favorites',
+                      [
+                        { text: 'Public' },
+                        { text: 'Friends' },
+                        { text: 'Close Friends' },
+                        { text: 'Private' },
+                        { text: 'Cancel', style: 'cancel' },
+                      ]
+                    );
+                  }}
+                >
+                  <Text style={[styles.privacyButtonText, { color: theme.colors.primary }]}>Friends</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={[styles.privacyOption, { borderBottomColor: theme.colors.border }]}>
+                <View style={styles.privacyOptionLeft}>
+                  <Text style={[styles.privacyOptionTitle, { color: theme.colors.text }]}>Collections Visibility</Text>
+                  <Text style={[styles.privacyOptionSubtitle, { color: theme.colors.textSecondary }]}>
+                    Default privacy for new collections
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  style={[styles.privacyButton, { backgroundColor: theme.colors.primary + '20' }]}
+                  onPress={() => {
+                    Alert.alert(
+                      'Collections Visibility',
+                      'Choose default privacy for collections',
+                      [
+                        { text: 'Public' },
+                        { text: 'Friends' },
+                        { text: 'Close Friends' },
+                        { text: 'Private' },
+                        { text: 'Cancel', style: 'cancel' },
+                      ]
+                    );
+                  }}
+                >
+                  <Text style={[styles.privacyButtonText, { color: theme.colors.primary }]}>Friends</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
+          <SettingItem
+            icon="ban"
+            title="Blocked Users"
+            subtitle="Manage blocked users"
+            onPress={() => {
+              Alert.alert(
+                'Blocked Users',
+                'Blocked users list feature coming soon! You can manage blocked users here.',
+                [{ text: 'OK' }]
+              );
+            }}
+          />
+        </View>
+        */}
+
+
+        {/* Experimental Beta Features */}
+        <SectionHeader title="Experimental Beta Features" />
+        <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
           {/* Grid Layout Accordion */}
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.settingItem, { borderBottomColor: theme.colors.border }]}
             onPress={() => setGridLayoutExpanded(!gridLayoutExpanded)}
           >
@@ -778,17 +706,17 @@ const SettingsScreen: React.FC = () => {
               </View>
             </View>
             <View style={styles.settingRight}>
-              <Icon 
-                name={gridLayoutExpanded ? 'chevron-up' : 'chevron-down'} 
-                size={20} 
-                color={theme.colors.textSecondary} 
+              <Icon
+                name={gridLayoutExpanded ? 'chevron-up' : 'chevron-down'}
+                size={20}
+                color={theme.colors.textSecondary}
               />
             </View>
           </TouchableOpacity>
-          
+
           {/* Grid Layout Options */}
           {gridLayoutExpanded && (
-            <View style={styles.accordionContent}>
+            <View style={[styles.accordionContent, { backgroundColor: theme.colors.background }]}>
               <GridLayoutOption
                 layout="1-column"
                 title="1 Column Grid"
@@ -803,9 +731,9 @@ const SettingsScreen: React.FC = () => {
               />
             </View>
           )}
-          
+
           {/* Navigation Style Accordion */}
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.settingItem, { borderBottomColor: theme.colors.border }]}
             onPress={() => setNavigationStyleExpanded(!navigationStyleExpanded)}
           >
@@ -819,17 +747,17 @@ const SettingsScreen: React.FC = () => {
               </View>
             </View>
             <View style={styles.settingRight}>
-              <Icon 
-                name={navigationStyleExpanded ? 'chevron-up' : 'chevron-down'} 
-                size={20} 
-                color={theme.colors.textSecondary} 
+              <Icon
+                name={navigationStyleExpanded ? 'chevron-up' : 'chevron-down'}
+                size={20}
+                color={theme.colors.textSecondary}
               />
             </View>
           </TouchableOpacity>
-          
+
           {/* Navigation Style Options */}
           {navigationStyleExpanded && (
-            <View style={styles.accordionContent}>
+            <View style={[styles.accordionContent, { backgroundColor: theme.colors.background }]}>
               <NavigationStyleOption
                 style="floating"
                 title="Floating Tab Bar"
@@ -844,25 +772,6 @@ const SettingsScreen: React.FC = () => {
               />
             </View>
           )}
-          
-          <SettingItem
-            icon="refresh"
-            title="Update Venue Data"
-            subtitle="Refresh venues with enhanced information"
-            onPress={handleUpdateVenueData}
-          />
-          <SettingItem
-            icon="analytics"
-            title="Usage Analytics"
-            subtitle="Help improve the app by sharing usage data"
-            onPress={() => console.log('Analytics pressed')}
-          />
-          <SettingItem
-            icon="bug"
-            title="Debug Mode"
-            subtitle="Enable advanced debugging features"
-            onPress={() => console.log('Debug mode pressed')}
-          />
         </View>
 
         {/* Support & Legal */}
@@ -1014,7 +923,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 15,
-    borderBottomWidth: 1,
   },
   settingLeft: {
     flexDirection: 'row',
@@ -1055,10 +963,10 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Medium', // Secondary font for UI elements
   },
   bottomSpacing: {
-    height: 50,
+    height: 100,
   },
   accordionContent: {
-    backgroundColor: '#E8E8E8', // Solid color for light theme
+    // Background color is set inline based on theme
   },
   gridLayoutOption: {
     flexDirection: 'row',
@@ -1086,7 +994,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: 'white',
+    // Background color is set inline based on theme
   },
   gridLayoutText: {
     flex: 1,

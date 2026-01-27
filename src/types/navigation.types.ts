@@ -37,7 +37,9 @@ export type HomeStackParamList = {
     offerTitle: string; 
     venueName: string;
   };
+  ClaimDetail: { claimId: string };
 };
+
 
 // Search stack navigation types
 export type SearchStackParamList = {

@@ -526,6 +526,180 @@ export class FlashOfferService {
   }
 
   /**
+   * Get all flash offers for the current calendar day
+   * 
+   * Retrieves flash offers where start_time is on the current calendar day (local timezone)
+   * and end_time has not yet passed. Optionally filters and sorts by distance when location
+   * is provided. Includes venue information and supports caching with date-based keys.
+   * 
+   * @param options - Optional configuration
+   * @param options.latitude - User's latitude for distance calculation
+   * @param options.longitude - User's longitude for distance calculation
+   * @param options.radiusMiles - Radius in miles for prioritizing nearby offers (default: 10)
+   * @param options.prioritizeNearby - If true, show within-radius offers first (default: true)
+   * @returns Promise resolving to array of same-day offers with venue names and optional distance
+   * @throws {Error} If query fails and no cached data is available
+   * 
+   * @example
+   * ```typescript
+   * // Get all same-day offers without location
+   * const offers = await FlashOfferService.getSameDayOffers();
+   * 
+   * // Get same-day offers with location-based sorting
+   * const nearbyOffers = await FlashOfferService.getSameDayOffers({
+   *   latitude: 40.7128,
+   *   longitude: -74.0060,
+   *   radiusMiles: 10,
+   *   prioritizeNearby: true
+   * });
+   * ```
+   */
+  static async getSameDayOffers(
+    options?: {
+      latitude?: number;
+      longitude?: number;
+      radiusMiles?: number;
+      prioritizeNearby?: boolean;
+    }
+  ): Promise<Array<FlashOffer & { venue_name: string; distance_miles?: number }>> {
+    try {
+      // Try to get from cache first
+      const cached = await FlashOfferCache.getCachedSameDayOffers<FlashOffer & { venue_name: string; distance_miles?: number }>(options);
+      if (cached) {
+        console.log('✅ Returning cached same-day offers');
+        return cached;
+      }
+
+      // Fetch with retry logic
+      const offers = await NetworkErrorHandler.withRetry(
+        async () => {
+          // Get current date boundaries in local timezone
+          const now = new Date();
+          const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+          const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+
+          // Fetch all offers with start_time on current day
+          const { data: offers, error: offersError } = await supabase
+            .from('flash_offers')
+            .select(`
+              *,
+              venues!inner(
+                id,
+                name,
+                latitude,
+                longitude
+              )
+            `)
+            .eq('status', 'active')
+            .gte('start_time', startOfDay.toISOString())
+            .lte('start_time', endOfDay.toISOString())
+            .gte('end_time', now.toISOString());
+
+          if (offersError) {
+            throw new Error(`Failed to fetch same-day offers: ${offersError.message}`);
+          }
+
+          return offers;
+        },
+        {
+          maxRetries: 2,
+          retryDelay: 1000,
+          onRetry: (attempt) => {
+            console.log(`Retrying fetch same-day offers (attempt ${attempt})...`);
+          },
+        }
+      );
+
+      if (!offers || offers.length === 0) {
+        // Cache empty result
+        await FlashOfferCache.cacheSameDayOffers([], options);
+        await FlashOfferCache.updateLastSync();
+        return [];
+      }
+
+      // Transform offers and calculate distances if location provided
+      const hasLocation = options?.latitude !== undefined && options?.longitude !== undefined;
+      const radiusMiles = options?.radiusMiles || 10;
+      const prioritizeNearby = options?.prioritizeNearby !== false; // Default true
+
+      let transformedOffers = offers.map((offer: any) => {
+        const { venues, ...cleanOffer } = offer;
+        const result: FlashOffer & { venue_name: string; distance_miles?: number } = {
+          ...cleanOffer,
+          venue_name: venues.name,
+        };
+
+        // Calculate distance if location is available
+        if (hasLocation && venues.latitude && venues.longitude) {
+          result.distance_miles = this.calculateDistance(
+            options!.latitude!,
+            options!.longitude!,
+            venues.latitude,
+            venues.longitude
+          );
+        }
+
+        return result;
+      });
+
+      // Sort offers based on location availability
+      if (hasLocation) {
+        if (prioritizeNearby) {
+          // Separate into within-radius and outside-radius
+          const withinRadius = transformedOffers.filter(
+            offer => offer.distance_miles !== undefined && offer.distance_miles <= radiusMiles
+          );
+          const outsideRadius = transformedOffers.filter(
+            offer => offer.distance_miles === undefined || offer.distance_miles > radiusMiles
+          );
+
+          // Sort each group by distance
+          withinRadius.sort((a, b) => (a.distance_miles || 0) - (b.distance_miles || 0));
+          outsideRadius.sort((a, b) => (a.distance_miles || 0) - (b.distance_miles || 0));
+
+          // Combine: within-radius first, then outside-radius
+          transformedOffers = [...withinRadius, ...outsideRadius];
+        } else {
+          // Just sort all by distance
+          transformedOffers.sort((a, b) => (a.distance_miles || 0) - (b.distance_miles || 0));
+        }
+      } else {
+        // No location: sort by start_time (soonest first)
+        transformedOffers.sort((a, b) => 
+          new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
+        );
+      }
+
+      // Cache the result using enhanced FlashOfferCache
+      await FlashOfferCache.cacheSameDayOffers(transformedOffers, options);
+      await FlashOfferCache.updateLastSync();
+
+      return transformedOffers;
+    } catch (error) {
+      console.error('Error fetching same-day offers:', error);
+      
+      // If network error, try to return cached data even if expired
+      if (NetworkErrorHandler.isNetworkError(error)) {
+        console.log('Network error detected, attempting to use cached data...');
+        const cached = await FlashOfferCache.getCachedSameDayOffers<FlashOffer & { venue_name: string; distance_miles?: number }>(options);
+        if (cached) {
+          console.log('Returning cached same-day offers (offline mode)');
+          return cached;
+        }
+        
+        // If no cached data, throw a user-friendly network error
+        throw NetworkErrorHandler.createNetworkError(
+          'Unable to load flash offers. Please check your internet connection.',
+          undefined,
+          true
+        );
+      }
+      
+      throw error;
+    }
+  }
+
+  /**
    * Calculate distance between two geographic coordinates using Haversine formula
    * 
    * Computes the great-circle distance between two points on Earth's surface.

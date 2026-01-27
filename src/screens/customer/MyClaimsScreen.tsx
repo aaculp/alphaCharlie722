@@ -19,6 +19,11 @@ import type { FlashOfferClaimWithDetails, ClaimStatus } from '../../types/flashO
 import type { RootTabParamList } from '../../types/navigation.types';
 import { RESPONSIVE_SPACING } from '../../utils/responsive';
 import { ClaimListItemSkeleton } from '../../components/flashOffer/SkeletonLoaders';
+import { useSubscriptionManager } from '../../hooks/useSubscriptionManager';
+import { useFeedbackManager } from '../../hooks/useFeedbackManager';
+import { stateCache } from '../../utils/cache/StateCache';
+import type { ConnectionState } from '../../services/SubscriptionManager';
+import { ConnectionWarningBanner } from '../../components/shared/ConnectionWarningBanner';
 
 interface ClaimSection {
   title: string;
@@ -30,11 +35,24 @@ const MyClaimsScreen: React.FC = () => {
   const { theme } = useTheme();
   const { user } = useAuth();
   const navigation = useNavigation<NavigationProp<RootTabParamList>>();
+  const subscriptionManager = useSubscriptionManager();
+  const { showAcceptedFeedback, showRejectedFeedback, showConnectionWarning, hideConnectionWarning } = useFeedbackManager();
 
   const [claims, setClaims] = useState<FlashOfferClaimWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [connectionState, setConnectionState] = useState<ConnectionState>('disconnected');
+
+  // Initialize state cache on mount
+  useEffect(() => {
+    const initCache = async () => {
+      if (!stateCache.isInitialized()) {
+        await stateCache.initialize();
+      }
+    };
+    initCache();
+  }, []);
 
   // Fetch claims on mount
   useEffect(() => {
@@ -43,13 +61,107 @@ const MyClaimsScreen: React.FC = () => {
     }
   }, [user?.id]);
 
+  // Subscribe to real-time updates for all user claims
+  useEffect(() => {
+    if (!user?.id) return;
+
+    console.log('📡 Setting up real-time subscription for user claims');
+
+    // Subscribe to user claims updates
+    const subscription = subscriptionManager.subscribeToUserClaims(
+      user.id,
+      (update) => {
+        console.log('🔄 Received claim update:', update);
+
+        // Update state cache
+        stateCache.updateClaim(update.claimId, {
+          claimId: update.claimId,
+          status: update.status,
+          updatedAt: update.updatedAt,
+          rejectionReason: update.rejectionReason,
+        });
+
+        // Update local state - find and update the specific claim
+        setClaims((prevClaims) => {
+          return prevClaims.map((claim) => {
+            if (claim.id === update.claimId) {
+              // Merge update with existing claim
+              return {
+                ...claim,
+                status: update.status,
+                updated_at: update.updatedAt,
+                redeemed_at: update.redeemedAt || claim.redeemed_at,
+                redeemed_by_user_id: update.redeemedByUserId || claim.redeemed_by_user_id,
+              };
+            }
+            return claim;
+          });
+        });
+
+        // Trigger appropriate feedback
+        if (update.status === 'redeemed') {
+          showAcceptedFeedback(update.claimId);
+        } else if (update.status === 'expired' && update.rejectionReason) {
+          // Handle rejected claims (expired with reason indicates rejection)
+          showRejectedFeedback(update.claimId, update.rejectionReason);
+        }
+      },
+      (error) => {
+        console.error('❌ Subscription error:', error);
+        
+        // Show connection warning for connection failures
+        if (error.type === 'connection_failed' && error.retryable) {
+          showConnectionWarning();
+        }
+      }
+    );
+
+    // Monitor connection state changes
+    const unsubscribeState = subscriptionManager.onConnectionStateChange((state) => {
+      console.log('📡 Connection state changed:', state);
+      setConnectionState(state);
+
+      // Show/hide connection warning based on state
+      if (state === 'connected') {
+        hideConnectionWarning();
+      } else if (state === 'failed') {
+        showConnectionWarning();
+      }
+    });
+
+    // Cleanup on unmount
+    return () => {
+      console.log('🔌 Cleaning up subscription');
+      subscription.unsubscribe();
+      unsubscribeState();
+    };
+  }, [user?.id, subscriptionManager, showAcceptedFeedback, showRejectedFeedback, showConnectionWarning, hideConnectionWarning]);
+
   const loadClaims = async () => {
     if (!user?.id) return;
 
     try {
       setError(null);
-      const claimsWithDetails = await ClaimService.getUserClaimsWithDetails(user.id);
-      setClaims(claimsWithDetails);
+      const result = await ClaimService.getUserClaimsWithDetails(user.id);
+      const fetchedClaims = result.claims; // Extract the claims array from the result object
+      
+      setClaims(fetchedClaims);
+
+      // Update state cache with fetched claims
+      fetchedClaims.forEach((claim) => {
+        stateCache.updateClaim(claim.id, {
+          claimId: claim.id,
+          userId: claim.user_id,
+          status: claim.status,
+          claimToken: claim.token,
+          promotionId: claim.promotion_id,
+          createdAt: claim.created_at,
+          updatedAt: claim.updated_at,
+          lastSyncedAt: new Date().toISOString(),
+        });
+      });
+
+      console.log(`✅ Loaded ${fetchedClaims.length} claims and updated cache`);
     } catch (err) {
       console.error('Error loading claims:', err);
       setError(err instanceof Error ? err.message : 'Failed to load claims');
@@ -88,7 +200,7 @@ const MyClaimsScreen: React.FC = () => {
     },
   ];
 
-  const renderClaimItem = ({ item }: { item: FlashOfferClaimWithDetails }) => {
+  const renderClaimItem = useCallback(({ item }: { item: FlashOfferClaimWithDetails }) => {
     const isActive = item.status === 'active';
     const isRedeemed = item.status === 'redeemed';
     const isExpired = item.status === 'expired';
@@ -190,7 +302,7 @@ const MyClaimsScreen: React.FC = () => {
         )}
       </TouchableOpacity>
     );
-  };
+  }, [theme, handleClaimPress]);
 
   const renderSectionHeader = (section: ClaimSection) => {
     if (section.data.length === 0) return null;
@@ -326,6 +438,9 @@ const MyClaimsScreen: React.FC = () => {
     );
   }
 
+  // Check if there are any claims at all
+  const hasAnyClaims = claims.length > 0;
+
   return (
     <SafeAreaView
       style={[styles.container, { backgroundColor: theme.colors.background }]}
@@ -346,32 +461,54 @@ const MyClaimsScreen: React.FC = () => {
         <View style={styles.headerSpacer} />
       </View>
 
-      <FlatList
-        data={sections.flatMap((section) => [
-          { type: 'header' as const, section },
-          ...section.data.map((claim) => ({ type: 'item' as const, claim })),
-        ])}
-        renderItem={({ item }) => {
-          if (item.type === 'header') {
-            return renderSectionHeader(item.section);
+      {/* Connection Warning Banner */}
+      {connectionState !== 'connected' && connectionState !== 'disconnected' && (
+        <ConnectionWarningBanner 
+          message={
+            connectionState === 'reconnecting'
+              ? 'Reconnecting...'
+              : connectionState === 'failed'
+              ? 'Real-time updates unavailable'
+              : 'Connecting...'
           }
-          return renderClaimItem({ item: item.claim });
-        }}
-        keyExtractor={(item) =>
-          item.type === 'header' ? `header-${item.section.status}` : `claim-${item.claim.id}`
-        }
-        contentContainerStyle={styles.listContent}
-        ListEmptyComponent={renderEmptyState}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={handleRefresh}
-            tintColor={theme.colors.primary}
-            colors={[theme.colors.primary]}
-          />
-        }
-        showsVerticalScrollIndicator={false}
-      />
+          onRetry={connectionState === 'failed' ? handleRefresh : undefined}
+        />
+      )}
+
+      {!hasAnyClaims ? (
+        renderEmptyState()
+      ) : (
+        <FlatList
+          data={sections.flatMap((section) => [
+            { type: 'header' as const, section },
+            ...section.data.map((claim) => ({ type: 'item' as const, claim })),
+          ])}
+          renderItem={({ item }) => {
+            if (item.type === 'header') {
+              return renderSectionHeader(item.section);
+            }
+            return renderClaimItem({ item: item.claim });
+          }}
+          keyExtractor={(item) =>
+            item.type === 'header' ? `header-${item.section.status}` : `claim-${item.claim.id}`
+          }
+          contentContainerStyle={styles.listContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={handleRefresh}
+              tintColor={theme.colors.primary}
+              colors={[theme.colors.primary]}
+            />
+          }
+          showsVerticalScrollIndicator={false}
+          // Optimize FlatList rendering for real-time updates
+          removeClippedSubviews={true}
+          maxToRenderPerBatch={10}
+          updateCellsBatchingPeriod={50}
+          windowSize={10}
+        />
+      )}
     </SafeAreaView>
   );
 };

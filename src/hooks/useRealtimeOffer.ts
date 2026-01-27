@@ -30,6 +30,7 @@ export interface UseRealtimeOfferReturn {
  * - Only subscribes when enabled
  * - Automatically unsubscribes on unmount
  * - Filters out duplicate updates
+ * - Falls back to polling when subscription fails
  * 
  * @param options - Configuration options
  * @returns Object containing offer data, loading state, error, and refetch function
@@ -54,6 +55,26 @@ export const useRealtimeOffer = (options: UseRealtimeOfferOptions): UseRealtimeO
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastUpdateRef = useRef<number>(0);
   const DEBOUNCE_MS = 500; // Wait 500ms between updates
+  
+  // Polling fallback refs
+  const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const subscriptionFailedRef = useRef<boolean>(false);
+  const POLLING_INTERVAL_MS = 30000; // Poll every 30 seconds
+  
+  // Track previous offer to avoid including offer state in effect dependencies
+  const previousOfferRef = useRef<FlashOffer | null>(null);
+  
+  // Store callbacks in refs to avoid effect re-runs when they change
+  const onOfferUpdateRef = useRef(onOfferUpdate);
+  const onOfferExpiredRef = useRef(onOfferExpired);
+  const onOfferFullRef = useRef(onOfferFull);
+  
+  // Update refs when callbacks change
+  useEffect(() => {
+    onOfferUpdateRef.current = onOfferUpdate;
+    onOfferExpiredRef.current = onOfferExpired;
+    onOfferFullRef.current = onOfferFull;
+  }, [onOfferUpdate, onOfferExpired, onOfferFull]);
 
   const fetchOffer = useCallback(async () => {
     if (!enabled) {
@@ -72,10 +93,11 @@ export const useRealtimeOffer = (options: UseRealtimeOfferOptions): UseRealtimeO
 
       if (fetchError) throw fetchError;
 
+      previousOfferRef.current = data;
       setOffer(data);
       
-      if (onOfferUpdate) {
-        onOfferUpdate(data);
+      if (onOfferUpdateRef.current) {
+        onOfferUpdateRef.current(data);
       }
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to fetch offer');
@@ -84,7 +106,32 @@ export const useRealtimeOffer = (options: UseRealtimeOfferOptions): UseRealtimeO
     } finally {
       setLoading(false);
     }
-  }, [offerId, enabled, onOfferUpdate]);
+  }, [offerId, enabled]);
+
+  // Start polling fallback
+  const startPolling = useCallback(() => {
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+    }
+    
+    console.log('📊 Starting polling fallback (30s interval)');
+    subscriptionFailedRef.current = true;
+    
+    pollingIntervalRef.current = setInterval(() => {
+      console.log('📊 Polling for offer updates...');
+      fetchOffer();
+    }, POLLING_INTERVAL_MS);
+  }, [fetchOffer, POLLING_INTERVAL_MS]);
+
+  // Stop polling fallback
+  const stopPolling = useCallback(() => {
+    if (pollingIntervalRef.current) {
+      console.log('📊 Stopping polling fallback');
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
+    subscriptionFailedRef.current = false;
+  }, []);
 
   useEffect(() => {
     if (!enabled) return;
@@ -101,9 +148,14 @@ export const useRealtimeOffer = (options: UseRealtimeOfferOptions): UseRealtimeO
           event: 'UPDATE',
           schema: 'public',
           table: 'flash_offers',
-          filter: `id=eq.${offerId}`,
         },
         (payload) => {
+          // Only process updates for this specific offer
+          const updatedOffer = payload.new as FlashOffer;
+          if (updatedOffer.id !== offerId) {
+            return;
+          }
+
           // Debounce rapid updates
           const now = Date.now();
           if (now - lastUpdateRef.current < DEBOUNCE_MS) {
@@ -123,15 +175,28 @@ export const useRealtimeOffer = (options: UseRealtimeOfferOptions): UseRealtimeO
           }
         }
       )
-      .subscribe((status) => {
+      .subscribe((status, err) => {
         console.log('📡 Subscription status:', status);
+        
+        // Handle subscription failures (but not CLOSED, which is expected during cleanup)
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.error('📡 Subscription failed:', status, err);
+          startPolling();
+        } else if (status === 'SUBSCRIBED') {
+          console.log('📡 Successfully subscribed to real-time updates');
+          // Stop polling if it was running
+          stopPolling();
+        } else if (status === 'CLOSED') {
+          // CLOSED is expected during unsubscribe/cleanup, not an error
+          console.log('📡 Channel closed');
+        }
       });
 
     const processUpdate = (payload: any) => {
       console.log('📡 Real-time offer update:', payload);
       
       const updatedOffer = payload.new as FlashOffer;
-      const previousOffer = offer;
+      const previousOffer = previousOfferRef.current;
       
       // Check if the update is actually different (prevent duplicate updates)
       if (previousOffer && 
@@ -142,10 +207,12 @@ export const useRealtimeOffer = (options: UseRealtimeOfferOptions): UseRealtimeO
         return;
       }
       
+      // Update the ref before setting state
+      previousOfferRef.current = updatedOffer;
       setOffer(updatedOffer);
       
-      if (onOfferUpdate) {
-        onOfferUpdate(updatedOffer);
+      if (onOfferUpdateRef.current) {
+        onOfferUpdateRef.current(updatedOffer);
       }
 
       // Check for status changes
@@ -156,16 +223,16 @@ export const useRealtimeOffer = (options: UseRealtimeOfferOptions): UseRealtimeO
           (updatedOffer.status === 'full' || updatedOffer.claimed_count >= updatedOffer.max_claims)
         ) {
           console.log('🔴 Offer is now full');
-          if (onOfferFull) {
-            onOfferFull();
+          if (onOfferFullRef.current) {
+            onOfferFullRef.current();
           }
         }
 
         // Offer expired
         if (previousOffer.status !== 'expired' && updatedOffer.status === 'expired') {
           console.log('⏰ Offer has expired');
-          if (onOfferExpired) {
-            onOfferExpired();
+          if (onOfferExpiredRef.current) {
+            onOfferExpiredRef.current();
           }
         }
       }
@@ -179,9 +246,12 @@ export const useRealtimeOffer = (options: UseRealtimeOfferOptions): UseRealtimeO
         clearTimeout(debounceTimerRef.current);
       }
       
+      // Stop polling
+      stopPolling();
+      
       subscription.unsubscribe();
     };
-  }, [offerId, enabled, fetchOffer, offer, onOfferUpdate, onOfferExpired, onOfferFull]);
+  }, [offerId, enabled, fetchOffer]);
 
   return {
     offer,

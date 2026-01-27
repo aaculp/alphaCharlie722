@@ -223,7 +223,11 @@ const FlashOfferListScreen: React.FC<FlashOfferListScreenProps> = ({ navigation 
         </View>
 
         {/* Description */}
-        <Text style={[styles.offerDescription, { color: theme.colors.textSecondary }]} numberOfLines={2}>
+        <Text 
+          style={[styles.offerDescription, { color: theme.colors.textSecondary }]} 
+          numberOfLines={2}
+          ellipsizeMode="tail"
+        >
           {item.description}
         </Text>
 
@@ -498,11 +502,12 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Regular',
     lineHeight: 20,
     marginBottom: 12,
+    paddingRight: 30, // Add padding to prevent overlap with chevron
   },
   statsContainer: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     flexWrap: 'wrap',
-    gap: 12,
   },
   statItem: {
     flexDirection: 'row',

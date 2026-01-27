@@ -479,96 +479,153 @@ export class FCMService {
       });
 
       // Call the Edge Function with JWT token in Authorization header
-      const response = await fetch(edgeFunctionUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${jwtToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          offerId,
-        }),
-      });
+      // Add timeout to prevent infinite hanging
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
-      console.log(`📥 Edge Function response status: ${response.status}`);
-      DebugLogger.logFCMEvent('edge_function_response', {
-        status: response.status,
-        statusText: response.statusText,
-      });
-
-      // Parse response body
-      const responseData = await response.json();
-
-      // Handle successful response
-      if (response.ok && responseData.success) {
-        console.log('✅ Edge Function call successful');
-        console.log(`📊 Targeted: ${responseData.targetedUserCount}, Sent: ${responseData.sentCount}, Failed: ${responseData.failedCount}`);
+      try {
+        const response = await fetch(edgeFunctionUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${jwtToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            offerId,
+          }),
+          signal: controller.signal,
+        });
         
-        DebugLogger.logFCMEvent('edge_function_success', {
-          targetedUserCount: responseData.targetedUserCount,
-          sentCount: responseData.sentCount,
-          failedCount: responseData.failedCount,
+        clearTimeout(timeoutId);
+
+        console.log(`📥 Edge Function response status: ${response.status}`);
+        DebugLogger.logFCMEvent('edge_function_response', {
+          status: response.status,
+          statusText: response.statusText,
         });
 
-        trackSuccess();
+        // Parse response body
+        const responseData = await response.json();
 
-        return {
-          success: true,
-          targetedUserCount: responseData.targetedUserCount || 0,
-          sentCount: responseData.sentCount || 0,
-          failedCount: responseData.failedCount || 0,
-          errors: responseData.errors || [],
-        };
-      }
+        // Handle successful response
+        if (response.ok && responseData.success) {
+          console.log('✅ Edge Function call successful');
+          console.log(`📊 Targeted: ${responseData.targetedUserCount}, Sent: ${responseData.sentCount}, Failed: ${responseData.failedCount}`);
+          
+          DebugLogger.logFCMEvent('edge_function_success', {
+            targetedUserCount: responseData.targetedUserCount,
+            sentCount: responseData.sentCount,
+            failedCount: responseData.failedCount,
+          });
 
-      // Handle error response
-      const errorMessage = responseData.error || `Edge Function returned status ${response.status}`;
-      const errorCode = responseData.code || 'UNKNOWN_ERROR';
+          trackSuccess();
 
-      console.error(`❌ Edge Function error: ${errorMessage} (${errorCode})`);
-      
-      const pushError = new PushNotificationError(
-        errorMessage,
-        this.mapErrorCodeToCategory(errorCode, response.status),
-        ErrorSeverity.HIGH,
-        this.isRetryableError(response.status, errorCode),
-        { offerId, errorCode, status: response.status }
-      );
+          return {
+            success: true,
+            targetedUserCount: responseData.targetedUserCount || 0,
+            sentCount: responseData.sentCount || 0,
+            failedCount: responseData.failedCount || 0,
+            errors: responseData.errors || [],
+          };
+        }
 
-      ErrorLogger.logError(pushError);
-      DebugLogger.logError('FCM', pushError, {
-        offerId,
-        errorCode,
-        status: response.status,
-        retryCount,
-      });
+        // Handle error response
+        const errorMessage = responseData.error || `Edge Function returned status ${response.status}`;
+        const errorCode = responseData.code || 'UNKNOWN_ERROR';
 
-      trackError(pushError, 'sendViaEdgeFunction');
+        console.error(`❌ Edge Function error: ${errorMessage} (${errorCode})`);
+        
+        const pushError = new PushNotificationError(
+          errorMessage,
+          this.mapErrorCodeToCategory(errorCode, response.status),
+          ErrorSeverity.HIGH,
+          this.isRetryableError(response.status, errorCode),
+          { offerId, errorCode, status: response.status }
+        );
 
-      // Retry logic for retryable errors (once after 2 seconds)
-      if (pushError.isRetryable && retryCount < 1) {
-        console.log(`🔄 Retrying Edge Function call (attempt ${retryCount + 1}/1)...`);
-        DebugLogger.logFCMEvent('edge_function_retry', {
+        ErrorLogger.logError(pushError);
+        DebugLogger.logError('FCM', pushError, {
           offerId,
-          retryCount: retryCount + 1,
+          errorCode,
+          status: response.status,
+          retryCount,
         });
 
-        // Wait 2 seconds before retry
-        await this.sleep(2000);
+        trackError(pushError, 'sendViaEdgeFunction');
 
-        return this.sendViaEdgeFunction(offerId, retryCount + 1);
+        // Retry logic for retryable errors (once after 2 seconds)
+        if (pushError.isRetryable && retryCount < 1) {
+          console.log(`🔄 Retrying Edge Function call (attempt ${retryCount + 1}/1)...`);
+          DebugLogger.logFCMEvent('edge_function_retry', {
+            offerId,
+            retryCount: retryCount + 1,
+          });
+
+          // Wait 2 seconds before retry
+          await this.sleep(2000);
+
+          return this.sendViaEdgeFunction(offerId, retryCount + 1);
+        }
+
+        // Return error response
+        return {
+          success: false,
+          targetedUserCount: 0,
+          sentCount: 0,
+          failedCount: 0,
+          errors: [{ token: '', error: errorMessage }],
+          errorCode: errorCode,
+          errorDetails: responseData.details || undefined,
+        };
+
+      } catch (fetchError) {
+        clearTimeout(timeoutId);
+        
+        // Handle timeout/abort errors
+        if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+          const timeoutError = new PushNotificationError(
+            'Edge Function request timed out after 30 seconds',
+            PushErrorCategory.NETWORK_ERROR,
+            ErrorSeverity.HIGH,
+            true, // Retryable
+            { offerId, retryCount }
+          );
+          
+          ErrorLogger.logError(timeoutError);
+          DebugLogger.logError('FCM', timeoutError, {
+            offerId,
+            retryCount,
+          });
+          
+          trackError(timeoutError, 'sendViaEdgeFunction');
+          
+          // Retry logic for timeout (once after 2 seconds)
+          if (retryCount < 1) {
+            console.log(`🔄 Retrying Edge Function call after timeout (attempt ${retryCount + 1}/1)...`);
+            DebugLogger.logFCMEvent('edge_function_retry', {
+              offerId,
+              retryCount: retryCount + 1,
+              reason: 'timeout',
+            });
+
+            await this.sleep(2000);
+
+            return this.sendViaEdgeFunction(offerId, retryCount + 1);
+          }
+          
+          return {
+            success: false,
+            targetedUserCount: 0,
+            sentCount: 0,
+            failedCount: 0,
+            errors: [{ token: '', error: 'Request timed out. Please try again.' }],
+            errorCode: PushErrorCategory.NETWORK_ERROR,
+          };
+        }
+        
+        // Re-throw to be caught by outer catch
+        throw fetchError;
       }
-
-      // Return error response
-      return {
-        success: false,
-        targetedUserCount: 0,
-        sentCount: 0,
-        failedCount: 0,
-        errors: [{ token: '', error: errorMessage }],
-        errorCode: errorCode,
-        errorDetails: responseData.details || undefined,
-      };
 
     } catch (error) {
       console.error('❌ Edge Function call failed:', error);

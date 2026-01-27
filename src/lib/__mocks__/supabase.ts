@@ -478,6 +478,12 @@ export const supabase = {
   },
   from: (table: string) => new MockQueryBuilder(table),
   rpc: jest.fn().mockResolvedValue({ data: null, error: null }),
+  channel: jest.fn((channelName: string) => ({
+    on: jest.fn().mockReturnThis(),
+    subscribe: jest.fn().mockReturnValue({
+      unsubscribe: jest.fn(),
+    }),
+  })),
 };
 
 // Helper to reset mock database

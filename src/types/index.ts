@@ -32,6 +32,8 @@ export type {
   SettingsStackParamList,
   HomeStackParamList,
   SearchStackParamList,
+  FavoritesStackParamList,
+  HistoryStackParamList,
   VenueStackParamList,
 } from './navigation.types';
 
@@ -168,6 +170,15 @@ export type {
   ClaimOfferResponse,
   RedeemClaimResponse,
 } from './flashOfferClaim.types';
+
+// Claim Button types
+export type {
+  ClaimButtonState,
+  ClaimButtonVariant,
+  ClaimButtonConfig,
+  MutationState,
+  DeriveClaimButtonStateInput,
+} from './claimButton.types';
 
 // Review types
 export type {

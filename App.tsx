@@ -19,6 +19,9 @@ import { TokenCleanupScheduler } from './src/services/TokenCleanupScheduler';
 import { queryClient, setupQueryPersistence } from './src/lib/queryClient';
 import { setupRealtimeSync } from './src/lib/realtimeSync';
 import { setupNavigationSync } from './src/lib/navigationSync';
+import { setupNetworkSync } from './src/lib/networkSync';
+import { ClaimSyncService } from './src/services/ClaimSyncService';
+import { useAuth } from './src/contexts/AuthContext';
 import AppNavigator from './src/navigation/AppNavigator';
 import { useTimezoneMigration } from './src/hooks/useTimezoneMigration';
 import { useTimezoneChangeDetection } from './src/hooks/useTimezoneChangeDetection';
@@ -26,6 +29,7 @@ import TimezoneChangeModal from './src/components/settings/TimezoneChangeModal';
 
 function AppContent() {
   const { isLoading, theme, isDark } = useTheme();
+  const { user } = useAuth();
   const systemColorScheme = useColorScheme();
   const navigationRef = useRef<NavigationContainerRef<any>>(null);
 
@@ -40,6 +44,20 @@ function AppContent() {
   // to update their notification preferences. Includes a 7-day cooldown to
   // prevent prompt fatigue. Runs on app foreground events.
   const { state: timezoneState, handlers: timezoneHandlers } = useTimezoneChangeDetection();
+
+  // Initialize ClaimSyncService when user is authenticated
+  // Requirements: 5.1, 5.2, 5.3 - Network state monitoring and sync logic
+  useEffect(() => {
+    if (user?.id) {
+      console.log('🔄 Initializing ClaimSyncService for user:', user.id);
+      ClaimSyncService.getInstance().initialize(user.id).catch((error) => {
+        console.error('Failed to initialize ClaimSyncService:', error);
+      });
+    } else {
+      // Clean up when user logs out
+      ClaimSyncService.getInstance().cleanup();
+    }
+  }, [user?.id]);
 
   // Configure deep linking
   const linking = {
@@ -125,6 +143,14 @@ function App() {
   // Set up real-time sync for React Query cache invalidation
   useEffect(() => {
     const cleanup = setupRealtimeSync(queryClient);
+    
+    return cleanup; // Cleanup on unmount
+  }, []);
+
+  // Set up network sync for React Query (Requirements 5.1, 5.2)
+  // Resumes paused mutations and invalidates queries when device comes online
+  useEffect(() => {
+    const cleanup = setupNetworkSync(queryClient);
     
     return cleanup; // Cleanup on unmount
   }, []);

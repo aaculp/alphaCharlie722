@@ -5,6 +5,7 @@
  */
 
 export { FlashOfferCard } from './FlashOfferCard';
+export { EmptyState } from './EmptyState';
 export { default as FlashOfferNotificationBanner } from './FlashOfferNotificationBanner';
 export {
   FlashOfferCardSkeleton,

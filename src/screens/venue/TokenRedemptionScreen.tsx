@@ -9,6 +9,7 @@ import {
   Alert,
   Animated,
   Keyboard,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -213,11 +214,8 @@ const TokenRedemptionScreen: React.FC<TokenRedemptionScreenProps> = ({ navigatio
                   {
                     text: 'OK',
                     onPress: () => {
-                      // Reset form
-                      setToken('');
-                      setClaim(null);
-                      setError(null);
-                      inputRef.current?.focus();
+                      // Navigate back instead of resetting form
+                      navigation.goBack();
                     },
                   },
                 ]
@@ -302,7 +300,11 @@ const TokenRedemptionScreen: React.FC<TokenRedemptionScreenProps> = ({ navigatio
         <View style={styles.headerRight} />
       </View>
 
-      <View style={styles.content}>
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+      >
         {/* Instructions */}
         <View style={styles.instructionsContainer}>
           <Icon name="information-circle-outline" size={24} color={theme.colors.primary} />
@@ -498,7 +500,7 @@ const TokenRedemptionScreen: React.FC<TokenRedemptionScreenProps> = ({ navigatio
             </TouchableOpacity>
           </View>
         )}
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -528,10 +530,13 @@ const styles = StyleSheet.create({
   headerRight: {
     width: 40,
   },
-  content: {
+  scrollView: {
     flex: 1,
+  },
+  content: {
     paddingHorizontal: 20,
     paddingTop: 20,
+    paddingBottom: 40,
   },
   instructionsContainer: {
     flexDirection: 'row',

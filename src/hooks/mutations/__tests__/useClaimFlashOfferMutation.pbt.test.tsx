@@ -76,14 +76,16 @@ describe('Feature: react-query-integration, Property 7: Flash offer mutation inv
    * **Validates: Requirements 4.3**
    * 
    * Property: For any flash offer claim mutation, upon success, the system SHALL
-   * invalidate queries with keys ["flash-offers", venueId] and ["venue", venueId].
+   * invalidate queries with keys ["flash-offers", venueId], ["flash-offer-claims", userId],
+   * ["venues", "detail", venueId], and ["venues", "list"].
    * 
    * This property verifies that:
    * 1. Flash offer queries for the venue are invalidated
-   * 2. Venue detail query is invalidated
-   * 3. Venue list queries are invalidated
-   * 4. Invalidation happens for any offer/venue/user combination
-   * 5. Only the correct queries are invalidated (selective invalidation)
+   * 2. User claims queries are invalidated
+   * 3. Venue detail query is invalidated
+   * 4. Venue list queries are invalidated
+   * 5. Invalidation happens for any offer/venue/user combination
+   * 6. Only the correct queries are invalidated (selective invalidation)
    */
   it('should invalidate correct queries after successful claim for any offer/venue/user', async () => {
     await fc.assert(
@@ -195,25 +197,30 @@ describe('Feature: react-query-integration, Property 7: Flash offer mutation inv
             JSON.stringify(queryKeys.flashOffers.byVenue(venueId, undefined))
           );
 
-          // Property 2: Venue detail query should be invalidated
+          // Property 2: User claims query should be invalidated
+          expect(invalidatedQueries).toContainEqual(
+            JSON.stringify(queryKeys.flashOfferClaims.byUser(userId))
+          );
+
+          // Property 3: Venue detail query should be invalidated
           expect(invalidatedQueries).toContainEqual(
             JSON.stringify(queryKeys.venues.detail(venueId))
           );
 
-          // Property 3: Venue list queries should be invalidated
+          // Property 4: Venue list queries should be invalidated
           expect(invalidatedQueries).toContainEqual(
             JSON.stringify(queryKeys.venues.lists())
           );
 
-          // Property 4: Exactly 3 query patterns should be invalidated
-          expect(invalidatedQueries).toHaveLength(3);
+          // Property 5: Exactly 4 query patterns should be invalidated
+          expect(invalidatedQueries).toHaveLength(4);
 
-          // Property 5: Other venue's flash offer queries should NOT be invalidated
+          // Property 6: Other venue's flash offer queries should NOT be invalidated
           expect(invalidatedQueries).not.toContainEqual(
             JSON.stringify(queryKeys.flashOffers.byVenue(otherVenueId, undefined))
           );
 
-          // Property 6: Other venue's detail query should NOT be invalidated
+          // Property 7: Other venue's detail query should NOT be invalidated
           expect(invalidatedQueries).not.toContainEqual(
             JSON.stringify(queryKeys.venues.detail(otherVenueId))
           );
@@ -303,10 +310,13 @@ describe('Feature: react-query-integration, Property 7: Flash offer mutation inv
             expect(result.current.isSuccess).toBe(true);
           });
 
-          // Property: All 3 query patterns should still be invalidated
-          expect(invalidatedQueries).toHaveLength(3);
+          // Property: All 4 query patterns should still be invalidated
+          expect(invalidatedQueries).toHaveLength(4);
           expect(invalidatedQueries).toContainEqual(
             JSON.stringify(queryKeys.flashOffers.byVenue(venueId, undefined))
+          );
+          expect(invalidatedQueries).toContainEqual(
+            JSON.stringify(queryKeys.flashOfferClaims.byUser(userId))
           );
           expect(invalidatedQueries).toContainEqual(
             JSON.stringify(queryKeys.venues.detail(venueId))
@@ -407,10 +417,13 @@ describe('Feature: react-query-integration, Property 7: Flash offer mutation inv
               { timeout: 3000 }
             );
 
-            // Property: Each claim should invalidate the same 3 query patterns
-            expect(invalidatedQueries).toHaveLength(3);
+            // Property: Each claim should invalidate the same 4 query patterns
+            expect(invalidatedQueries).toHaveLength(4);
             expect(invalidatedQueries).toContainEqual(
               JSON.stringify(queryKeys.flashOffers.byVenue(venueId, undefined))
+            );
+            expect(invalidatedQueries).toContainEqual(
+              JSON.stringify(queryKeys.flashOfferClaims.byUser(userId))
             );
             expect(invalidatedQueries).toContainEqual(
               JSON.stringify(queryKeys.venues.detail(venueId))
@@ -628,9 +641,12 @@ describe('Feature: react-query-integration, Property 7: Flash offer mutation inv
           });
 
           // Property: Edge case counts should still trigger correct invalidation
-          expect(invalidatedQueries).toHaveLength(3);
+          expect(invalidatedQueries).toHaveLength(4);
           expect(invalidatedQueries).toContainEqual(
             JSON.stringify(queryKeys.flashOffers.byVenue(venueId, undefined))
+          );
+          expect(invalidatedQueries).toContainEqual(
+            JSON.stringify(queryKeys.flashOfferClaims.byUser(userId))
           );
           expect(invalidatedQueries).toContainEqual(
             JSON.stringify(queryKeys.venues.detail(venueId))

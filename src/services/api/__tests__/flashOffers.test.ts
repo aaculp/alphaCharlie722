@@ -34,7 +34,9 @@ jest.mock('../../../utils/cache/FlashOfferCache', () => ({
   FlashOfferCache: {
     cacheActiveOffers: jest.fn(),
     updateLastSync: jest.fn(),
-    getCachedActiveOffers: jest.fn()
+    getCachedActiveOffers: jest.fn(),
+    getCachedOfferDetails: jest.fn().mockResolvedValue(null),
+    cacheOfferDetails: jest.fn().mockResolvedValue(undefined)
   }
 }));
 
@@ -186,9 +188,11 @@ describe('FlashOfferService - Offer Creation Flow', () => {
       const mockQuery = {
         select: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),
-        order: jest.fn().mockResolvedValue({
+        order: jest.fn().mockReturnThis(),
+        range: jest.fn().mockResolvedValue({
           data: mockOffers,
-          error: null
+          error: null,
+          count: 1
         })
       };
 
@@ -196,7 +200,7 @@ describe('FlashOfferService - Offer Creation Flow', () => {
 
       const result = await FlashOfferService.getVenueOffers(venueId);
 
-      expect(result).toEqual(mockOffers);
+      expect(result.offers).toEqual(mockOffers);
       expect(mockQuery.eq).toHaveBeenCalledWith('venue_id', venueId);
     });
 
@@ -230,11 +234,13 @@ describe('FlashOfferService - Offer Creation Flow', () => {
           select: jest.fn(),
           eq: jest.fn(),
           order: jest.fn(),
-          then: (resolve: any) => resolve({ data: mockOffers, error: null })
+          range: jest.fn(),
+          then: (resolve: any) => resolve({ data: mockOffers, error: null, count: 1 })
         };
         mockQuery.select.mockReturnValue(mockQuery);
         mockQuery.eq.mockReturnValue(mockQuery);
         mockQuery.order.mockReturnValue(mockQuery);
+        mockQuery.range.mockReturnValue(mockQuery);
         return mockQuery;
       };
 
@@ -242,7 +248,7 @@ describe('FlashOfferService - Offer Creation Flow', () => {
 
       const result = await FlashOfferService.getVenueOffers(venueId, status);
 
-      expect(result).toEqual(mockOffers);
+      expect(result.offers).toEqual(mockOffers);
       expect(supabase.from).toHaveBeenCalledWith('flash_offers');
     });
   });

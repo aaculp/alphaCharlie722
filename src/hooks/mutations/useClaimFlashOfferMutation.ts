@@ -9,7 +9,17 @@
  * - Query invalidation on success
  * - Type-safe mutation interface
  * 
- * Validates Requirements: 4.3, 9.3
+ * Optimistic Update Behavior:
+ * 1. Immediately increments offer.claimed_count in cache
+ * 2. Updates offer status to 'full' if max_claims reached
+ * 3. Creates temporary claim object and adds to user's claims cache
+ * 4. Button state changes to "claimed" immediately (via userClaim prop)
+ * 5. On success: Replaces optimistic claim with real claim from server
+ * 6. On error: Reverts all optimistic updates and shows error message
+ * 
+ * This provides instant feedback to users while maintaining data consistency.
+ * 
+ * Validates Requirements: 4.4, 6.2, 6.3
  * 
  * @example
  * ```tsx
@@ -56,6 +66,8 @@ export interface UseClaimFlashOfferMutationOptions {
 interface ClaimFlashOfferMutationContext {
   previousOffer?: FlashOffer;
   previousOffers?: FlashOffer[];
+  previousClaims?: FlashOfferClaim[];
+  optimisticClaim?: FlashOfferClaim;
 }
 
 /**
@@ -86,16 +98,38 @@ export function useClaimFlashOfferMutation(
     },
 
     // Optimistic update: Update UI before server confirmation
-    onMutate: async ({ offerId, venueId }: ClaimFlashOfferMutationData) => {
+    onMutate: async ({ offerId, userId, venueId }: ClaimFlashOfferMutationData) => {
       // Cancel any outgoing refetches to prevent them from overwriting our optimistic update
       await queryClient.cancelQueries({
         queryKey: queryKeys.flashOffers.byVenue(venueId, undefined),
+      });
+      await queryClient.cancelQueries({
+        queryKey: queryKeys.flashOfferClaims.byUser(userId),
       });
 
       // Snapshot the previous values for rollback
       const previousOffers = queryClient.getQueryData<FlashOffer[]>(
         queryKeys.flashOffers.byVenue(venueId, undefined)
       );
+      const previousClaims = queryClient.getQueryData<FlashOfferClaim[]>(
+        queryKeys.flashOfferClaims.byUser(userId)
+      );
+
+      // Create optimistic claim object
+      const now = new Date().toISOString();
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // 24 hours from now
+      const optimisticClaim: FlashOfferClaim = {
+        id: `optimistic-${offerId}-${Date.now()}`, // Temporary ID
+        offer_id: offerId,
+        user_id: userId,
+        token: '------', // Placeholder token (will be replaced by server response)
+        status: 'active',
+        claimed_at: now,
+        expires_at: expiresAt,
+        redeemed_at: null,
+        created_at: now,
+        updated_at: now,
+      };
 
       // Optimistically update the flash offers list
       if (previousOffers) {
@@ -122,12 +156,25 @@ export function useClaimFlashOfferMutation(
         );
       }
 
+      // Optimistically add the claim to user's claims
+      queryClient.setQueryData<FlashOfferClaim[]>(
+        queryKeys.flashOfferClaims.byUser(userId),
+        (old) => {
+          if (!old) {
+            // If no claims exist yet, create array with optimistic claim
+            return [optimisticClaim];
+          }
+          // Add optimistic claim to the beginning of the array
+          return [optimisticClaim, ...old];
+        }
+      );
+
       // Return context with previous values for potential rollback
-      return { previousOffers };
+      return { previousOffers, previousClaims, optimisticClaim };
     },
 
     // Rollback on error: Restore previous state
-    onError: (error, { venueId }, context) => {
+    onError: (error, { venueId, userId }, context) => {
       // Restore the previous flash offers state if we have it
       if (context?.previousOffers) {
         queryClient.setQueryData(
@@ -136,22 +183,60 @@ export function useClaimFlashOfferMutation(
         );
       }
 
+      // Restore the previous claims state if we have it
+      if (context?.previousClaims !== undefined) {
+        queryClient.setQueryData(
+          queryKeys.flashOfferClaims.byUser(userId),
+          context.previousClaims
+        );
+      } else if (context?.optimisticClaim) {
+        // If we didn't have previous claims but added an optimistic one, remove it
+        queryClient.setQueryData<FlashOfferClaim[]>(
+          queryKeys.flashOfferClaims.byUser(userId),
+          (old) => {
+            if (!old) return old;
+            return old.filter((claim) => claim.id !== context.optimisticClaim?.id);
+          }
+        );
+      }
+
       // Call user-provided error handler
       options?.onError?.(error);
     },
 
     // Success handler
-    onSuccess: (data, variables, context) => {
+    onSuccess: (data, { userId }, context) => {
+      // Replace optimistic claim with real claim from server
+      if (context?.optimisticClaim) {
+        queryClient.setQueryData<FlashOfferClaim[]>(
+          queryKeys.flashOfferClaims.byUser(userId),
+          (old) => {
+            if (!old) return [data];
+            
+            // Replace optimistic claim with real claim
+            return old.map((claim) =>
+              claim.id === context.optimisticClaim?.id ? data : claim
+            );
+          }
+        );
+      }
+
       // Call user-provided success handler
       options?.onSuccess?.(data);
     },
 
     // Always refetch after mutation (success or error) to ensure data consistency
-    onSettled: (data, error, { offerId, venueId }) => {
+    onSettled: (data, error, { offerId, venueId, userId }) => {
       // Requirement 4.3: Invalidate flash offer queries
       queryClient.invalidateQueries({
         queryKey: queryKeys.flashOffers.byVenue(venueId, undefined),
         exact: true, // Only invalidate this venue's flash offers
+      });
+
+      // Invalidate user claims queries to ensure fresh data
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.flashOfferClaims.byUser(userId),
+        exact: true,
       });
 
       // Requirement 4.3: Invalidate venue queries (venue may show flash offer status)

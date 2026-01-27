@@ -28,23 +28,33 @@ export class FCMTokenService {
       if (Platform.OS === 'android' && Platform.Version >= 33) {
         console.log('📱 Android 13+ detected, requesting POST_NOTIFICATIONS permission...');
         
-        const granted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
-          {
-            title: 'Enable Notifications',
-            message: 'Allow alphaCharlie722 to send you notifications about flash offers, friend requests, and venue updates?',
-            buttonNeutral: 'Ask Me Later',
-            buttonNegative: 'Don\'t Allow',
-            buttonPositive: 'Allow',
+        try {
+          // Add small delay to ensure Activity is attached
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          const granted = await PermissionsAndroid.request(
+            PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
+            {
+              title: 'Enable Notifications',
+              message: 'Allow alphaCharlie722 to send you notifications about flash offers, friend requests, and venue updates?',
+              buttonNeutral: 'Ask Me Later',
+              buttonNegative: 'Don\'t Allow',
+              buttonPositive: 'Allow',
+            }
+          );
+          
+          if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+            console.log('⚠️ Android notification permission not granted:', granted);
+            return;
           }
-        );
-        
-        if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
-          console.log('⚠️ Android notification permission not granted:', granted);
+          
+          console.log('✅ Android notification permission granted');
+        } catch (permError) {
+          // Handle permission request timing issues gracefully
+          console.log('⚠️ Could not request notification permission (Activity not ready):', permError);
+          // Continue without permissions - will retry later
           return;
         }
-        
-        console.log('✅ Android notification permission granted');
       }
       
       // Request permission from Firebase (iOS and older Android)

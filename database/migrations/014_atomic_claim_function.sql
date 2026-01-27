@@ -91,7 +91,7 @@ BEGIN
     claimed_count = v_new_count,
     status = CASE 
       WHEN v_new_count >= v_offer.max_claims THEN 'full'::VARCHAR(20)
-      ELSE status
+      ELSE flash_offers.status
     END,
     updated_at = NOW()
   WHERE flash_offers.id = p_offer_id;

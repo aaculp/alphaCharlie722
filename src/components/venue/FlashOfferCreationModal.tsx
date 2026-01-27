@@ -259,6 +259,10 @@ export const FlashOfferCreationModal: React.FC<FlashOfferCreationModalProps> = (
                   {
                     text: 'OK',
                     style: 'default',
+                    onPress: () => {
+                      handleClose();
+                      onSuccess?.();
+                    },
                   },
                 ]
               );

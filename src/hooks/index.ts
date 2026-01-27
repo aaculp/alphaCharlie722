@@ -432,3 +432,35 @@ export type { CountdownResult } from './useCountdownTimer';
  */
 export { useRealtimeOffer } from './useRealtimeOffer';
 export type { UseRealtimeOfferOptions, UseRealtimeOfferReturn } from './useRealtimeOffer';
+
+/**
+ * useSubscriptionManager - Provides access to the SubscriptionManager singleton
+ * 
+ * @example
+ * ```tsx
+ * const subscriptionManager = useSubscriptionManager();
+ * const subscription = subscriptionManager.subscribeToClaimUpdates(
+ *   claimId,
+ *   (update) => console.log('Claim updated:', update),
+ *   (error) => console.error('Error:', error)
+ * );
+ * ```
+ */
+export { useSubscriptionManager } from './useSubscriptionManager';
+
+/**
+ * useFeedbackManager - Provides access to the FeedbackManager singleton
+ * 
+ * @example
+ * ```tsx
+ * const { showAcceptedFeedback, showRejectedFeedback } = useFeedbackManager();
+ * 
+ * // Show success feedback
+ * showAcceptedFeedback('claim-123');
+ * 
+ * // Show rejection feedback
+ * showRejectedFeedback('claim-456', 'Invalid claim code');
+ * ```
+ */
+export { useFeedbackManager } from './useFeedbackManager';
+export type { UseFeedbackManagerReturn } from './useFeedbackManager';

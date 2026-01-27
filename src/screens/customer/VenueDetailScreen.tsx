@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Linking,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, RouteProp } from '@react-navigation/native';
@@ -18,6 +19,7 @@ import { VenueService } from '../../services/api/venues';
 import { useCheckInStats } from '../../hooks';
 import { useVenueQuery } from '../../hooks/queries/useVenueQuery';
 import { useCheckInMutation } from '../../hooks/mutations/useCheckInMutation';
+import { useUserClaimsQuery } from '../../hooks/queries/useUserClaimsQuery';
 import { ModernVenueCards } from '../../components/venue/VenueInfoComponents';
 import { VenueCustomerCountChip, VenueCategoryBadge } from '../../components/ui';
 import { UserFeedback } from '../../components/checkin';
@@ -25,9 +27,12 @@ import { CheckInButton } from '../../components/checkin';
 import { MutualFavoritesIndicator } from '../../components/social';
 import { AggregateRatingDisplay, ReviewSubmissionModal, ReviewCard } from '../../components/venue';
 import { ReviewService } from '../../services/api/reviews';
+import { FlashOfferService } from '../../services/api/flashOffers';
+import { FlashOfferCard, EmptyState } from '../../components/flashOffer';
 import { getActivityLevel } from '../../utils/formatting';
 import Icon from 'react-native-vector-icons/Ionicons';
 import type { Review, ReviewWithReviewer } from '../../types';
+import type { FlashOffer } from '../../types/flashOffer.types';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
 
 type VenueDetailRouteProp = RouteProp<SearchStackParamList, 'VenueDetail'> | RouteProp<HomeStackParamList, 'VenueDetail'>;
@@ -164,7 +169,7 @@ const VenueDetailScreen: React.FC = () => {
   const route = useRoute<VenueDetailRouteProp>();
   const navigation = useNavigation<NavigationProp<HomeStackParamList>>();
   const { venueId } = route.params;
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
   const { user } = useAuth();
   const scrollViewRef = useRef<ScrollView>(null);
 
@@ -180,8 +185,12 @@ const VenueDetailScreen: React.FC = () => {
   const [recentReviews, setRecentReviews] = useState<ReviewWithReviewer[]>([]);
   const [loadingReviews, setLoadingReviews] = useState(false);
 
+  // Flash offers state
+  const [flashOffers, setFlashOffers] = useState<FlashOffer[]>([]);
+  const [loadingFlashOffers, setLoadingFlashOffers] = useState(false);
+
   // Use useCheckInStats hook for check-in statistics
-  const { stats } = useCheckInStats({
+  const { stats, refetch: refetchCheckInStats } = useCheckInStats({
     venueIds: venueId,
     enabled: !!venueId
   });
@@ -196,6 +205,12 @@ const VenueDetailScreen: React.FC = () => {
     onError: (error) => {
       console.error('Check-in failed:', error);
     }
+  });
+
+  // Fetch user's claims to determine claim status for each offer
+  const { claims: userClaims } = useUserClaimsQuery({
+    userId: user?.id,
+    enabled: !!user?.id,
   });
 
   // Fetch user's existing review for this venue
@@ -239,6 +254,25 @@ const VenueDetailScreen: React.FC = () => {
     };
 
     fetchRecentReviews();
+  }, [venueId]);
+
+  // Fetch active flash offers for this venue
+  useEffect(() => {
+    const fetchFlashOffers = async () => {
+      if (!venueId) return;
+
+      try {
+        setLoadingFlashOffers(true);
+        const response = await FlashOfferService.getVenueOffers(venueId, 'active');
+        setFlashOffers(response.offers);
+      } catch (error) {
+        console.error('Error fetching flash offers:', error);
+      } finally {
+        setLoadingFlashOffers(false);
+      }
+    };
+
+    fetchFlashOffers();
   }, [venueId]);
 
   // Review handlers
@@ -289,6 +323,31 @@ const VenueDetailScreen: React.FC = () => {
         venueId: venue.id,
         venueName: venue.name,
       });
+    }
+  };
+
+  /**
+   * Handle navigation requests from ClaimButton
+   * Requirements: 1.2 - Guide users to check in when not checked in
+   */
+  const handleClaimButtonNavigation = (target: string) => {
+    if (target === 'check_in') {
+      // Show alert guiding user to check in at the top of the screen
+      Alert.alert(
+        'Check In Required',
+        'To claim this offer, please check in to the venue using the "Arrived" button at the top of the screen.',
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              // Scroll to top to show the CheckInButton
+              if (scrollViewRef.current) {
+                scrollViewRef.current.scrollTo({ y: 0, animated: true });
+              }
+            },
+          },
+        ]
+      );
     }
   };
 
@@ -358,7 +417,7 @@ const VenueDetailScreen: React.FC = () => {
             style={[
               styles.backButton,
               {
-                backgroundColor: theme.isDark
+                backgroundColor: isDark
                   ? 'rgba(255, 255, 255, 0.15)'
                   : 'rgba(0, 0, 0, 0.4)',
               },
@@ -390,6 +449,8 @@ const VenueDetailScreen: React.FC = () => {
                 showModalForCheckout={true}
                 onCheckInChange={async (isCheckedIn) => {
                   console.log('Check-in status changed:', isCheckedIn);
+                  // Refetch check-in stats to update isCheckedIn status for FlashOfferCards
+                  await refetchCheckInStats();
                 }}
               />
             )}
@@ -454,6 +515,51 @@ const VenueDetailScreen: React.FC = () => {
           </View>
         </View>
 
+        {/* Flash Offers Section */}
+        {flashOffers.length > 0 && (
+          <View style={[styles.flashOffersSection, { backgroundColor: theme.colors.surface }]}>
+            <View style={styles.flashOffersSectionHeader}>
+              <Icon name="flash" size={24} color={theme.colors.primary} />
+              <Text style={[styles.flashOffersSectionTitle, { color: theme.colors.text }]}>
+                Flash Offers
+              </Text>
+            </View>
+
+            {loadingFlashOffers ? (
+              <View style={styles.flashOffersLoading}>
+                <ActivityIndicator size="small" color={theme.colors.primary} />
+              </View>
+            ) : (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.flashOffersScroll}
+              >
+                {flashOffers.map((offer) => {
+                  // Find user's claim for this offer
+                  const userClaim = userClaims.find(claim => claim.offer_id === offer.id) || null;
+                  
+                  return (
+                    <FlashOfferCard
+                      key={offer.id}
+                      offer={offer}
+                      venueName={venue.name}
+                      onPress={() => {
+                        // Stay on the same venue detail page since we're already here
+                        console.log('Flash offer pressed:', offer.id);
+                      }}
+                      enableRealtime={true}
+                      userClaim={userClaim}
+                      isCheckedIn={checkInStats?.user_is_checked_in || false}
+                      onNavigate={handleClaimButtonNavigation}
+                    />
+                  );
+                })}
+              </ScrollView>
+            )}
+          </View>
+        )}
+
         {/* Pulse Section - TOP PRIORITY */}
         <UserFeedback venue={venue} />
 
@@ -494,7 +600,6 @@ const VenueDetailScreen: React.FC = () => {
             </View>
           )}
         </View>
-
 
         {/* Reviews Section - Always Show */}
         <View style={[styles.reviewsSection, { backgroundColor: theme.colors.surface }]}>
@@ -762,6 +867,39 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Inter-SemiBold',
     color: 'white',
+  },
+  flashOffersSection: {
+    marginHorizontal: 15,
+    marginVertical: 10,
+    borderRadius: 20,
+    paddingVertical: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  flashOffersSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    paddingHorizontal: 20,
+    gap: 8,
+  },
+  flashOffersSectionTitle: {
+    fontSize: 20,
+    fontFamily: 'Poppins-SemiBold',
+  },
+  flashOffersLoading: {
+    paddingVertical: 20,
+    alignItems: 'center',
+  },
+  flashOffersScroll: {
+    paddingHorizontal: 20,
+    paddingBottom: 4,
   },
   reviewsSection: {
     marginHorizontal: 15,

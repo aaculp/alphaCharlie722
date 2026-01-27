@@ -374,6 +374,20 @@ const FlashOfferDetailScreen: React.FC<FlashOfferDetailScreenProps> = ({ navigat
           </View>
         </View>
 
+        {/* Redeem Token Section - Moved here for easier access */}
+        <TouchableOpacity
+          style={[
+            styles.redeemTokenButton,
+            {
+              backgroundColor: theme.colors.primary,
+            },
+          ]}
+          onPress={() => navigation.navigate('TokenRedemption')}
+        >
+          <Icon name="scan-outline" size={24} color="#fff" />
+          <Text style={styles.redeemTokenButtonText}>Redeem Token</Text>
+        </TouchableOpacity>
+
         {/* Analytics Dashboard */}
         {analytics && (
           <View
@@ -759,6 +773,21 @@ const styles = StyleSheet.create({
   claimLabel: {
     fontSize: 12,
     fontFamily: 'Inter-Regular',
+  },
+  redeemTokenButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    borderRadius: 12,
+    gap: 8,
+    marginBottom: 16,
+  },
+  redeemTokenButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    fontFamily: 'Inter-SemiBold',
   },
   cancelButton: {
     flexDirection: 'row',

@@ -27,7 +27,7 @@ import { VenuesCarouselSection } from '../../components/ui';
 import { QuickPickChip } from '../../components/quickpicks';
 import { RecentCheckInsSection } from '../../components/checkin';
 import { FriendVenueCarousel, SharedCollectionCarousel, FriendActivityFeed } from '../../components/social';
-import { FlashOfferCard } from '../../components/flashOffer';
+import { FlashOfferCard, EmptyState } from '../../components/flashOffer';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<HomeStackParamList, 'HomeList'>;
@@ -155,9 +155,12 @@ const HomeScreen: React.FC = () => {
     locationPermissionDenied,
     requestLocationPermission,
     isOffline: flashOffersOffline,
+    isEmpty: flashOffersIsEmpty,
+    hasLocation: flashOffersHasLocation,
   } = useFlashOffers({
     radiusMiles: 10,
-    enabled: locationEnabled,
+    enabled: true,
+    sameDayMode: true,
   });
 
   // Debug logging
@@ -383,15 +386,27 @@ const HomeScreen: React.FC = () => {
           showNewBadge={true}
         />
 
-        {/* Flash Offers Section */}
-        {locationEnabled && flashOffers.length > 0 && (
-          <View style={styles.flashOffersSection}>
-            <View style={styles.sectionHeader}>
-              <Icon name="flash" size={20} color={theme.colors.primary} />
-              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-                Flash Offers
-              </Text>
+        {/* Flash Offers Section - Always visible with empty state when no offers */}
+        <View style={styles.flashOffersSection}>
+          <View style={styles.sectionHeader}>
+            <Icon name="flash" size={20} color={theme.colors.primary} />
+            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+              Flash Offers
+            </Text>
+          </View>
+          {flashOffersLoading ? (
+            <View style={styles.flashOffersScroll}>
+              <ActivityIndicator size="small" color={theme.colors.primary} />
             </View>
+          ) : flashOffersIsEmpty ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.flashOffersScroll}
+            >
+              <EmptyState />
+            </ScrollView>
+          ) : (
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -403,38 +418,22 @@ const HomeScreen: React.FC = () => {
                   offer={offer}
                   venueName={offer.venue_name}
                   onPress={() => {
-                    // TODO: Navigate to FlashOfferDetail screen when implemented
-                    console.log('Flash offer pressed:', offer.id);
+                    navigation.navigate('VenueDetail', {
+                      venueId: offer.venue_id,
+                      venueName: offer.venue_name,
+                    });
                   }}
+                  distanceMiles={offer.distance_miles}
+                  showDistance={flashOffersHasLocation}
+                  enableRealtime={true}
                 />
               ))}
             </ScrollView>
-          </View>
-        )}
-
-        {/* Location permission prompt for flash offers */}
-        {locationPermissionDenied && user && (
-          <View style={styles.flashOffersPrompt}>
-            <Icon name="location-outline" size={24} color={theme.colors.primary} />
-            <View style={{ flex: 1, marginLeft: 12 }}>
-              <Text style={[styles.promptText, { color: theme.colors.text, fontWeight: '600' }]}>
-                Location Permission Required
-              </Text>
-              <Text style={[styles.promptSubtext, { color: theme.colors.textSecondary, fontSize: 14 }]}>
-                Enable location to see flash offers near you
-              </Text>
-              <TouchableOpacity
-                style={[styles.permissionButton, { backgroundColor: theme.colors.primary }]}
-                onPress={requestLocationPermission}
-              >
-                <Text style={styles.permissionButtonText}>Grant Permission</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
+          )}
+        </View>
 
         {/* Offline indicator for flash offers */}
-        {flashOffersOffline && !locationPermissionDenied && user && (
+        {flashOffersOffline && user && (
           <View style={[styles.flashOffersPrompt, { backgroundColor: '#FFF3E0' }]}>
             <Icon name="cloud-offline-outline" size={24} color="#FF9800" />
             <View style={{ flex: 1, marginLeft: 12 }}>

@@ -307,71 +307,7 @@ const VenueDashboardScreen: React.FC = () => {
               </Text>
             </View>
 
-            {/* Today's Stats */}
-            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-              Today's Performance {analyticsLoading && '(Updating...)'}
-            </Text>
-            
-            <View style={styles.statsGrid}>
-              <DashboardCard
-                title="Check-ins"
-                value={analytics?.todayCheckIns?.toString() || '0'}
-                icon="people-outline"
-                color="#2196F3"
-              />
-              <DashboardCard
-                title="New Customers"
-                value={analytics?.todayNewCustomers?.toString() || '0'}
-                icon="person-add-outline"
-                color="#4CAF50"
-              />
-              <DashboardCard
-                title="Current Activity"
-                value={`${analytics?.currentActivity?.level || 'Loading'} ${analytics?.currentActivity?.emoji || ''}`}
-                icon="pulse-outline"
-                color="#FF9800"
-              />
-              <DashboardCard
-                title="Rating Today"
-                value={analytics?.todayRating?.toString() || '0'}
-                icon="star-outline"
-                color="#FFC107"
-              />
-            </View>
-
-            {/* Weekly Analytics */}
-            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-              This Week's Analytics
-            </Text>
-            
-            <View style={styles.statsGrid}>
-              <DashboardCard
-                title="Total Check-ins"
-                value={analytics?.weeklyCheckIns?.toString() || '0'}
-                icon="trending-up-outline"
-                color="#2196F3"
-              />
-              <DashboardCard
-                title="Avg. Rating"
-                value={analytics?.weeklyAvgRating?.toString() || '0'}
-                icon="star-outline"
-                color="#FFC107"
-              />
-              <DashboardCard
-                title="New Favorites"
-                value={analytics?.weeklyNewFavorites?.toString() || '0'}
-                icon="heart-outline"
-                color="#E91E63"
-              />
-              <DashboardCard
-                title="Profile Views"
-                value={analytics?.weeklyProfileViews?.toString() || '0'}
-                icon="eye-outline"
-                color="#9C27B0"
-              />
-            </View>
-
-            {/* Flash Offers Card */}
+            {/* Flash Offers Card - MOVED ABOVE Today's Performance */}
             <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
               Flash Offers
             </Text>
@@ -449,39 +385,89 @@ const VenueDashboardScreen: React.FC = () => {
                   style={styles.flashOffersActionButton}
                   onPress={(e) => {
                     e.stopPropagation();
-                    navigation.navigate('FlashOfferList');
+                    setFlashOfferModalVisible(true);
                   }}
                 >
-                  <Icon name="list-outline" size={18} color={theme.colors.primary} />
+                  <Icon name="add-circle-outline" size={20} color={theme.colors.primary} />
+                  <Text style={[styles.flashOffersActionText, { color: theme.colors.primary }]}>
+                    Create Offer
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.flashOffersActionButton}
+                  onPress={() => navigation.navigate('FlashOfferList')}
+                >
+                  <Icon name="list-outline" size={20} color={theme.colors.primary} />
                   <Text style={[styles.flashOffersActionText, { color: theme.colors.primary }]}>
                     View All
                   </Text>
                 </TouchableOpacity>
-                
-                <View style={[styles.flashOffersActionDivider, { backgroundColor: theme.colors.border }]} />
-                
-                <TouchableOpacity
-                  style={styles.flashOffersActionButton}
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    setFlashOfferModalVisible(true);
-                  }}
-                  disabled={rateLimitStatus?.remaining === 0}
-                >
-                  <Icon 
-                    name="add-circle-outline" 
-                    size={18} 
-                    color={rateLimitStatus?.remaining === 0 ? theme.colors.textSecondary : theme.colors.primary} 
-                  />
-                  <Text style={[
-                    styles.flashOffersActionText, 
-                    { color: rateLimitStatus?.remaining === 0 ? theme.colors.textSecondary : theme.colors.primary }
-                  ]}>
-                    Create New
-                  </Text>
-                </TouchableOpacity>
               </View>
             </TouchableOpacity>
+
+            {/* Today's Stats */}
+            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+              Today's Performance {analyticsLoading && '(Updating...)'}
+            </Text>
+            
+            <View style={styles.statsGrid}>
+              <DashboardCard
+                title="Check-ins"
+                value={analytics?.todayCheckIns?.toString() || '0'}
+                icon="people-outline"
+                color="#2196F3"
+              />
+              <DashboardCard
+                title="New Customers"
+                value={analytics?.todayNewCustomers?.toString() || '0'}
+                icon="person-add-outline"
+                color="#4CAF50"
+              />
+              <DashboardCard
+                title="Current Activity"
+                value={`${analytics?.currentActivity?.level || 'Loading'} ${analytics?.currentActivity?.emoji || ''}`}
+                icon="pulse-outline"
+                color="#FF9800"
+              />
+              <DashboardCard
+                title="Rating Today"
+                value={analytics?.todayRating?.toString() || '0'}
+                icon="star-outline"
+                color="#FFC107"
+              />
+            </View>
+
+            {/* Weekly Analytics */}
+            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+              This Week's Analytics
+            </Text>
+            
+            <View style={styles.statsGrid}>
+              <DashboardCard
+                title="Total Check-ins"
+                value={analytics?.weeklyCheckIns?.toString() || '0'}
+                icon="trending-up-outline"
+                color="#2196F3"
+              />
+              <DashboardCard
+                title="Avg. Rating"
+                value={analytics?.weeklyAvgRating?.toString() || '0'}
+                icon="star-outline"
+                color="#FFC107"
+              />
+              <DashboardCard
+                title="New Favorites"
+                value={analytics?.weeklyNewFavorites?.toString() || '0'}
+                icon="heart-outline"
+                color="#E91E63"
+              />
+              <DashboardCard
+                title="Profile Views"
+                value={analytics?.weeklyProfileViews?.toString() || '0'}
+                icon="eye-outline"
+                color="#9C27B0"
+              />
+            </View>
 
             {/* Peak Hours */}
             <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>

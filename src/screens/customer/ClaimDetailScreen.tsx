@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Image,
+  AccessibilityInfo,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -19,6 +20,11 @@ import type { RootTabParamList } from '../../types/navigation.types';
 import { RESPONSIVE_SPACING } from '../../utils/responsive';
 import { useClaimExpirationTimer } from '../../hooks/useCountdownTimer';
 import { DetailScreenSkeleton } from '../../components/flashOffer/SkeletonLoaders';
+import { useSubscriptionManager } from '../../hooks/useSubscriptionManager';
+import { useFeedbackManager } from '../../hooks/useFeedbackManager';
+import { stateCache } from '../../utils/cache/StateCache';
+import { ConnectionWarningBanner } from '../../components/shared/ConnectionWarningBanner';
+import type { ConnectionState } from '../../services/SubscriptionManager';
 
 type ClaimDetailScreenRouteProp = RouteProp<
   { ClaimDetail: { claimId: string } },
@@ -34,6 +40,11 @@ const ClaimDetailScreen: React.FC = () => {
   const [claim, setClaim] = useState<FlashOfferClaimWithDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [connectionState, setConnectionState] = useState<ConnectionState>('disconnected');
+
+  // Get singleton instances
+  const subscriptionManager = useSubscriptionManager();
+  const feedbackManager = useFeedbackManager();
 
   // Use countdown timer hook for claim expiration
   const { timeRemaining, isExpired: timerExpired } = useClaimExpirationTimer(
@@ -41,8 +52,85 @@ const ClaimDetailScreen: React.FC = () => {
   );
 
   useEffect(() => {
+    // Initialize state cache if not already initialized
+    stateCache.initialize().catch(err => {
+      console.error('Failed to initialize state cache:', err);
+    });
+
+    // Load initial claim from cache
+    const cachedClaim = stateCache.getClaim(claimId);
+    if (cachedClaim) {
+      console.log('📦 Loaded claim from cache:', claimId);
+      // Note: We still need to load full details from server
+      // Cache only has basic claim data, not full details with venue/offer
+    }
+
+    // Load full claim details from server
     loadClaimDetails();
-  }, [claimId]);
+
+    // Set up real-time subscription using SubscriptionManager
+    console.log('📡 Setting up real-time subscription for claim:', claimId);
+    const subscription = subscriptionManager.subscribeToClaimUpdates(
+      claimId,
+      (update) => {
+        console.log('🔄 Claim update received:', update);
+        
+        // Update state cache with new data
+        stateCache.updateClaim(claimId, {
+          claimId: update.claimId,
+          status: update.status,
+          updatedAt: update.updatedAt,
+          rejectionReason: update.rejectionReason,
+        });
+        
+        // Reload full claim details to get complete data
+        loadClaimDetails();
+        
+        // Trigger appropriate feedback based on status
+        if (update.status === 'redeemed') {
+          feedbackManager.showAcceptedFeedback(claimId);
+          
+          // Announce to screen reader
+          AccessibilityInfo.announceForAccessibility(
+            'Your offer has been redeemed! Thank you for using this promotion.'
+          );
+        } else if (update.status === 'expired') {
+          // Handle expiration (no haptic, just update UI)
+          AccessibilityInfo.announceForAccessibility(
+            'This claim has expired.'
+          );
+        }
+      },
+      (error) => {
+        console.error('❌ Subscription error:', error);
+        
+        // Show connection warning for connection failures
+        if (error.type === 'connection_failed' && error.retryable) {
+          feedbackManager.showConnectionWarning();
+        }
+      }
+    );
+
+    // Monitor connection state changes
+    const unsubscribeState = subscriptionManager.onConnectionStateChange((state) => {
+      console.log('📡 Connection state changed:', state);
+      setConnectionState(state);
+      
+      // Show/hide connection warning based on state
+      if (state === 'connected') {
+        feedbackManager.hideConnectionWarning();
+      } else if (state === 'failed') {
+        feedbackManager.showConnectionWarning();
+      }
+    });
+
+    // Cleanup on unmount
+    return () => {
+      console.log('🔌 Unsubscribing from claim updates');
+      subscription.unsubscribe();
+      unsubscribeState();
+    };
+  }, [claimId, subscriptionManager, feedbackManager]);
 
   const loadClaimDetails = async () => {
     try {
@@ -183,6 +271,20 @@ const ClaimDetailScreen: React.FC = () => {
         </Text>
         <View style={styles.headerSpacer} />
       </View>
+
+      {/* Connection Warning Banner */}
+      {connectionState !== 'connected' && connectionState !== 'disconnected' && (
+        <ConnectionWarningBanner
+          message={
+            connectionState === 'reconnecting'
+              ? 'Reconnecting...'
+              : connectionState === 'failed'
+              ? 'Real-time updates unavailable'
+              : 'Connecting...'
+          }
+          onRetry={connectionState === 'failed' ? loadClaimDetails : undefined}
+        />
+      )}
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}

@@ -57,6 +57,16 @@ export const flashOfferKeys = {
 } as const;
 
 /**
+ * Flash offer claim query keys
+ * Supports user claims and individual claim details
+ */
+export const flashOfferClaimKeys = {
+  all: ['flash-offer-claims'] as const,
+  byUser: (userId: string) => [...flashOfferClaimKeys.all, 'user', userId] as const,
+  detail: (claimId: string) => [...flashOfferClaimKeys.all, claimId] as const,
+} as const;
+
+/**
  * User query keys
  * Supports user profiles, friends lists, user search, and other user-related data
  */
@@ -93,6 +103,7 @@ export const queryKeys = {
   venues: venueKeys,
   checkIns: checkInKeys,
   flashOffers: flashOfferKeys,
+  flashOfferClaims: flashOfferClaimKeys,
   users: userKeys,
   collections: collectionKeys,
   activityFeed: activityFeedKeys,

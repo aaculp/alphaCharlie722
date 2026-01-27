@@ -27,6 +27,31 @@ export type {
 } from './NotificationPayloadBuilder';
 export type { FlashOfferNotificationPreferences } from './api/notificationPreferences';
 
+// Real-time subscription exports
+export { SubscriptionManager, getSubscriptionManager } from './SubscriptionManager';
+export type {
+  ConnectionState,
+  SubscriptionError,
+  SubscriptionErrorType,
+  ClaimUpdate,
+  Subscription,
+  ClaimUpdateCallback,
+  ErrorCallback,
+  ConnectionStateCallback,
+} from './SubscriptionManager';
+
+export { ReconnectionStrategy, createReconnectionStrategy } from './ReconnectionStrategy';
+export type {
+  ReconnectionState,
+  ReconnectionResult,
+} from './ReconnectionStrategy';
+
+export { FeedbackManager, getFeedbackManager } from './FeedbackManager';
+export type {
+  ToastCallback,
+  ConnectionWarningCallback,
+} from './FeedbackManager';
+
 // Compliance exports
 export { ComplianceService } from './compliance/ComplianceService';
 export type {

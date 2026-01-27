@@ -197,5 +197,16 @@ jest.mock('@react-native-community/geolocation', () => ({
   },
 }));
 
+// Mock @react-native-community/netinfo
+jest.mock('@react-native-community/netinfo', () => ({
+  __esModule: true,
+  default: {
+    fetch: jest.fn(() => Promise.resolve({ isConnected: true })),
+    addEventListener: jest.fn(() => jest.fn()),
+  },
+  fetch: jest.fn(() => Promise.resolve({ isConnected: true })),
+  addEventListener: jest.fn(() => jest.fn()),
+}));
+
 // Mock Supabase - use the comprehensive mock from src/lib/__mocks__/supabase.ts
 jest.mock('./src/lib/supabase');
