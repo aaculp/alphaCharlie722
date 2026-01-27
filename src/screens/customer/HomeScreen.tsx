@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
   TouchableOpacity,
 } from 'react-native';
-import Animated, { useSharedValue, useAnimatedProps } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedProps, cancelAnimation } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -16,8 +16,9 @@ import type { Venue, HomeStackParamList } from '../../types';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useLocationContext } from '../../contexts/LocationContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { useCheckInStats, useNewVenues, useFlashOffers } from '../../hooks';
+import { useCheckInStats, useNewVenues } from '../../hooks';
 import { useVenuesQuery } from '../../hooks/queries/useVenuesQuery';
+import { useFlashOffersQuery } from '../../hooks/queries/useFlashOffersQuery';
 import { useLocation } from '../../hooks/useLocation';
 import { LocationService } from '../../services/locationService';
 import { CheckInService } from '../../services/api/checkins';
@@ -141,6 +142,13 @@ const HomeScreen: React.FC = () => {
     scrollEnabled: scrollEnabled.value,
   }));
 
+  // Cleanup animations on unmount to prevent "DisconnectAnimatedNodeFromView" error
+  useEffect(() => {
+    return () => {
+      cancelAnimation(scrollEnabled);
+    };
+  }, [scrollEnabled]);
+
   // Use React Query hooks for data management
   const { venues, isLoading: loading, error, refetch } = useVenuesQuery({ 
     filters: { limit: 10 },
@@ -148,16 +156,15 @@ const HomeScreen: React.FC = () => {
   });
   const { location, loading: locationLoading, error: locationError, refetch: refetchLocation } = useLocation();
   const { venues: newVenues, loading: newVenuesLoading, refetch: refetchNewVenues } = useNewVenues();
+  
+  // Use React Query hook for flash offers (replaces useFlashOffers)
   const { 
     offers: flashOffers, 
-    loading: flashOffersLoading, 
+    isLoading: flashOffersLoading, 
     refetch: refetchFlashOffers,
-    locationPermissionDenied,
-    requestLocationPermission,
-    isOffline: flashOffersOffline,
-    isEmpty: flashOffersIsEmpty,
     hasLocation: flashOffersHasLocation,
-  } = useFlashOffers({
+    isEmpty: flashOffersIsEmpty,
+  } = useFlashOffersQuery({
     radiusMiles: 10,
     enabled: true,
     sameDayMode: true,
@@ -433,19 +440,7 @@ const HomeScreen: React.FC = () => {
         </View>
 
         {/* Offline indicator for flash offers */}
-        {flashOffersOffline && user && (
-          <View style={[styles.flashOffersPrompt, { backgroundColor: '#FFF3E0' }]}>
-            <Icon name="cloud-offline-outline" size={24} color="#FF9800" />
-            <View style={{ flex: 1, marginLeft: 12 }}>
-              <Text style={[styles.promptText, { color: '#E65100', fontWeight: '600' }]}>
-                Offline Mode
-              </Text>
-              <Text style={[styles.promptSubtext, { color: '#E65100', fontSize: 14 }]}>
-                Showing cached flash offers. Connect to see latest offers.
-              </Text>
-            </View>
-          </View>
-        )}
+        {/* Note: Offline handling is now managed by React Query */}
 
         {/* Recent Check-Ins Section */}
         {user && (

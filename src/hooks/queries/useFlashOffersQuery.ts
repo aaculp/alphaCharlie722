@@ -1,128 +1,120 @@
 /**
- * useFlashOffersQuery Hook
+ * Flash Offers Query Hook
  * 
- * React Query hook for fetching flash offers with time-sensitive configuration.
- * Provides automatic caching, aggressive refetching, and loading states.
+ * React Query hook for fetching same-day flash offers with location-based sorting.
+ * Integrates with React Query cache invalidation system for real-time updates.
+ * 
+ * Requirements: 4.1, 4.2, 4.3, 4.4, 4.5
+ */
+
+import { useQuery, UseQueryResult } from '@tanstack/react-query';
+import { FlashOfferService, FlashOffer } from '../../services/api/flashOffers';
+import { queryKeys } from '../../lib/queryKeys';
+import { useLocationContext } from '../../contexts/LocationContext';
+
+export interface FlashOfferWithVenueName extends FlashOffer {
+  venue_name: string;
+  distance_miles?: number;
+}
+
+interface UseFlashOffersQueryOptions {
+  radiusMiles?: number;
+  enabled?: boolean;
+  sameDayMode?: boolean;
+}
+
+interface UseFlashOffersQueryReturn extends UseQueryResult<FlashOfferWithVenueName[], Error> {
+  offers: FlashOfferWithVenueName[];
+  hasLocation: boolean;
+  isEmpty: boolean;
+}
+
+/**
+ * React Query hook for fetching same-day flash offers
  * 
  * Features:
- * - Aggressive caching with 10s stale time (time-sensitive data)
+ * - Automatic cache invalidation when claims are redeemed
+ * - Location-based sorting when available
+ * - Offline support with cached data
  * - Automatic refetch on window focus
- * - Polling with 30s refetch interval
- * - Loading and error state management
- * - Manual refetch capability
- * - Type-safe query key generation
+ * - Stale-while-revalidate pattern
  * 
- * Usage:
- * ```tsx
- * const { flashOffers, isLoading, isFetching, isError, error, refetch } = useFlashOffersQuery({
- *   venueId: 'venue-123'
+ * @param options - Query configuration options
+ * @returns Query result with offers, loading state, and error
+ * 
+ * @example
+ * ```typescript
+ * const { offers, isLoading, refetch } = useFlashOffersQuery({
+ *   radiusMiles: 10,
+ *   sameDayMode: true,
  * });
  * ```
- * 
- * Validates Requirements: 4.1, 4.2, 4.5
- */
-
-import { useQuery } from '@tanstack/react-query';
-import { queryKeys } from '../../lib/queryKeys';
-import { FlashOfferService } from '../../services/api/flashOffers';
-import type { FlashOffer } from '../../types/flashOffer.types';
-
-/**
- * Options for useFlashOffersQuery hook
- */
-export interface UseFlashOffersQueryOptions {
-  venueId?: string;
-  enabled?: boolean;
-}
-
-/**
- * Return type for useFlashOffersQuery hook
- * Provides flash offers data and query state information
- */
-export interface UseFlashOffersQueryResult {
-  flashOffers: FlashOffer[];
-  isLoading: boolean;
-  isFetching: boolean;
-  isError: boolean;
-  error: Error | null;
-  refetch: () => Promise<void>;
-}
-
-/**
- * React Query hook for fetching flash offers
- * 
- * Configured with aggressive refetching for time-sensitive data:
- * - staleTime: 10 seconds (data considered fresh for only 10s)
- * - refetchOnWindowFocus: true (refetch when app returns to foreground)
- * - refetchInterval: 30 seconds (poll for new offers every 30s)
- * 
- * @param options - Query options including venueId and enabled state
- * @returns Flash offers data and query state
- * 
- * @example
- * // Fetch flash offers for a specific venue
- * const { flashOffers, isLoading } = useFlashOffersQuery({
- *   venueId: 'venue-123'
- * });
- * 
- * @example
- * // Conditionally fetch flash offers
- * const { flashOffers, isLoading } = useFlashOffersQuery({
- *   venueId: venueId,
- *   enabled: !!venueId
- * });
- * 
- * @example
- * // Manual refetch
- * const { flashOffers, refetch } = useFlashOffersQuery({
- *   venueId: 'venue-123'
- * });
- * 
- * // Later...
- * await refetch();
  */
 export function useFlashOffersQuery(
-  options?: UseFlashOffersQueryOptions
-): UseFlashOffersQueryResult {
-  const { venueId, enabled = true } = options || {};
+  options: UseFlashOffersQueryOptions = {}
+): UseFlashOffersQueryReturn {
+  const { radiusMiles = 10, enabled = true, sameDayMode = false } = options;
+  const { currentLocation, locationEnabled } = useLocationContext();
+
+  const hasLocation = locationEnabled && !!currentLocation;
 
   const query = useQuery({
-    // Use queryKeys.flashOffers.byVenue(venueId) for cache key
-    queryKey: queryKeys.flashOffers.byVenue(venueId || '', undefined),
+    // Query key includes location to refetch when location changes
+    queryKey: queryKeys.flashOffers.sameDayOffers(
+      hasLocation ? currentLocation : undefined,
+      radiusMiles
+    ),
     
-    // Query function that fetches flash offers
     queryFn: async () => {
-      if (!venueId) {
-        return [];
+      if (sameDayMode) {
+        // Fetch same-day offers with optional location
+        return await FlashOfferService.getSameDayOffers(
+          hasLocation
+            ? {
+                latitude: currentLocation!.latitude,
+                longitude: currentLocation!.longitude,
+                radiusMiles,
+                prioritizeNearby: true,
+              }
+            : undefined
+        );
+      } else {
+        // Original location-based mode (backward compatibility)
+        if (!hasLocation) {
+          return [];
+        }
+        
+        return await FlashOfferService.getActiveOffers(
+          currentLocation!.latitude,
+          currentLocation!.longitude,
+          radiusMiles
+        );
       }
-      
-      // Get offers for the specific venue
-      const result = await FlashOfferService.getVenueOffers(venueId, 'active');
-      return result.offers;
     },
     
-    // Time-sensitive configuration for flash offers
-    // Requirement 4.2: Set staleTime to 10 seconds
-    staleTime: 10000, // 10 seconds
+    enabled,
     
-    // Requirement 4.5: Enable refetchOnWindowFocus
+    // Requirement 4.2: Cache for 2 minutes (120 seconds)
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    
+    // Requirement 4.4: Keep cached data for 5 minutes after becoming stale
+    gcTime: 5 * 60 * 1000, // 5 minutes (formerly cacheTime)
+    
+    // Requirement 4.5: Refetch on window focus and every 2 minutes
     refetchOnWindowFocus: true,
+    refetchInterval: 2 * 60 * 1000, // 2 minutes
     
-    // Requirement 4.5: Set refetchInterval to 30 seconds for polling
-    refetchInterval: 30000, // 30 seconds
+    // Requirement 4.3: Show stale data while refetching
+    refetchOnMount: 'always',
     
-    // Allow disabling the query
-    enabled: enabled && !!venueId,
+    // Keep previous data while fetching new data
+    placeholderData: (previousData) => previousData,
   });
 
   return {
-    flashOffers: query.data || [],
-    isLoading: query.isLoading,
-    isFetching: query.isFetching,
-    isError: query.isError,
-    error: query.error,
-    refetch: async () => {
-      await query.refetch();
-    },
+    ...query,
+    offers: query.data || [],
+    hasLocation,
+    isEmpty: (query.data?.length || 0) === 0,
   };
 }

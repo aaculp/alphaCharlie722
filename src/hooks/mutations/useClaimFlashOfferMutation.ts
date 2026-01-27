@@ -233,6 +233,12 @@ export function useClaimFlashOfferMutation(
         exact: true, // Only invalidate this venue's flash offers
       });
 
+      // Invalidate same-day offers (for HomeScreen)
+      // This ensures the homescreen shows updated claimed_count immediately
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.flashOffers.all,
+      });
+
       // Invalidate user claims queries to ensure fresh data
       queryClient.invalidateQueries({
         queryKey: queryKeys.flashOfferClaims.byUser(userId),

@@ -48,12 +48,14 @@ export const checkInKeys = {
 
 /**
  * Flash offer query keys
- * Supports flash offers by venue with optional filters
+ * Supports flash offers by venue with optional filters and same-day offers
  */
 export const flashOfferKeys = {
   all: ['flash-offers'] as const,
   byVenue: (venueId: string, filters?: FlashOfferQueryOptions) => 
     [...flashOfferKeys.all, 'venue', venueId, filters] as const,
+  sameDayOffers: (location?: { latitude: number; longitude: number }, radiusMiles?: number) =>
+    [...flashOfferKeys.all, 'same-day', location, radiusMiles] as const,
 } as const;
 
 /**
