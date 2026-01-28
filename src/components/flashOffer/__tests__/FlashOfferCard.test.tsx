@@ -91,7 +91,7 @@ const createMockOffer = (overrides?: Partial<FlashOffer>): FlashOffer => {
     venue_id: 'venue-1',
     title: 'Test Flash Offer',
     description: 'Test description',
-    value_cap: '$10 off',
+    expected_value: 10.00,
     max_claims: 100,
     claimed_count: 50,
     start_time: now.toISOString(),
@@ -407,9 +407,9 @@ describe('FlashOfferCard Component - Basic Rendering', () => {
     expect(getByText('50 of 100 left')).toBeTruthy();
   });
 
-  it('should display value cap when present', () => {
+  it('should display expected value when present', () => {
     const offer = createMockOffer({
-      value_cap: '$10 off',
+      expected_value: 10.00,
     });
     
     const { getByText } = render(
@@ -420,12 +420,12 @@ describe('FlashOfferCard Component - Basic Rendering', () => {
       />
     );
     
-    expect(getByText('$10 off')).toBeTruthy();
+    expect(getByText('$10.00')).toBeTruthy();
   });
 
-  it('should handle offers without value cap', () => {
+  it('should handle offers without expected value', () => {
     const offer = createMockOffer({
-      value_cap: null,
+      expected_value: null,
     });
     
     const { queryByText } = render(

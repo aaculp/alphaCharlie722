@@ -74,7 +74,7 @@ const createMockOffer = (overrides?: Partial<FlashOffer>): FlashOffer => {
     venue_id: 'venue-1',
     title: 'Test Flash Offer',
     description: 'Test description',
-    value_cap: '$10 off',
+    expected_value: 10.00,
     max_claims: 100,
     claimed_count: 50,
     start_time: now.toISOString(),

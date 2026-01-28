@@ -95,8 +95,9 @@ export function useUserClaimsQuery(
         return [];
       }
       
-      // Get all active claims for the user
-      const result = await ClaimService.getUserClaims(userId, 'active');
+      // Get all claims for the user (both active and redeemed)
+      // Don't filter by status so we can show proper button states
+      const result = await ClaimService.getUserClaims(userId);
       return result.claims;
     },
     

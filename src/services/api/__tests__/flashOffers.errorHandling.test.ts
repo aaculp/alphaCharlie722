@@ -63,7 +63,7 @@ describe('FlashOfferService - Error Handling', () => {
           venue_id: 'venue-1',
           title: 'Test Offer',
           description: 'Test',
-          value_cap: null,
+          expected_value: null,
           max_claims: 10,
           claimed_count: 2,
           start_time: new Date(now.getTime() - 3600000).toISOString(),
@@ -119,7 +119,7 @@ describe('FlashOfferService - Error Handling', () => {
           venue_id: 'venue-1',
           title: 'Test Offer',
           description: 'Test',
-          value_cap: null,
+          expected_value: null,
           max_claims: 10,
           claimed_count: 2,
           start_time: new Date().toISOString(),
@@ -173,7 +173,7 @@ describe('FlashOfferService - Error Handling', () => {
           venue_id: 'venue-1',
           title: 'Cached Offer',
           description: 'From cache',
-          value_cap: null,
+          expected_value: null,
           max_claims: 10,
           claimed_count: 2,
           start_time: new Date().toISOString(),
@@ -212,7 +212,7 @@ describe('FlashOfferService - Error Handling', () => {
           venue_id: 'venue-1',
           title: 'Cached Offer',
           description: 'From cache',
-          value_cap: null,
+          expected_value: null,
           max_claims: 10,
           claimed_count: 2,
           start_time: new Date().toISOString(),
@@ -305,7 +305,7 @@ describe('FlashOfferService - Error Handling', () => {
           venue_id: 'venue-1',
           title: 'Test Offer',
           description: 'Test',
-          value_cap: null,
+          expected_value: null,
           max_claims: 10,
           claimed_count: 2,
           start_time: new Date(now.getTime() - 3600000).toISOString(),
@@ -354,3 +354,4 @@ describe('FlashOfferService - Error Handling', () => {
     });
   });
 });
+

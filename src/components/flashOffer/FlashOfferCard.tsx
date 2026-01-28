@@ -92,33 +92,53 @@ export const FlashOfferCard: React.FC<FlashOfferCardProps> = ({
 
   // Entrance animation on mount
   useEffect(() => {
-    Animated.parallel([
+    const entranceAnimation = Animated.parallel([
       fadeIn(fadeAnim, 300),
       scaleIn(scaleAnim, 300),
-    ]).start();
-  }, []);
+    ]);
+    
+    entranceAnimation.start();
+    
+    // Cleanup function to stop animation if component unmounts
+    return () => {
+      entranceAnimation.stop();
+    };
+  }, [fadeAnim, scaleAnim]);
 
   // Pulse animation for urgent timers
   useEffect(() => {
+    let pulseAnimation: Animated.CompositeAnimation | null = null;
+    let resetAnimation: Animated.CompositeAnimation | null = null;
+    
     if (isUrgent && !isExpired) {
-      const pulseAnimation = countdownPulse(pulseAnim);
+      pulseAnimation = countdownPulse(pulseAnim);
       pulseAnimation.start();
-      return () => pulseAnimation.stop();
     } else {
       // Reset to normal scale
-      Animated.timing(pulseAnim, {
+      resetAnimation = Animated.timing(pulseAnim, {
         toValue: 1,
         duration: 200,
         useNativeDriver: true,
-      }).start();
+      });
+      resetAnimation.start();
     }
-  }, [isUrgent, isExpired]);
+    
+    // Cleanup function to stop animations if component unmounts
+    return () => {
+      if (pulseAnimation) {
+        pulseAnimation.stop();
+      }
+      if (resetAnimation) {
+        resetAnimation.stop();
+      }
+    };
+  }, [isUrgent, isExpired, pulseAnim]);
 
   // Animate claim count changes
   useEffect(() => {
     if (prevClaimCountRef.current !== offer.claimed_count) {
       // Trigger animation when claim count changes
-      Animated.sequence([
+      const claimAnimation = Animated.sequence([
         Animated.timing(claimCountAnim, {
           toValue: 1.2,
           duration: 150,
@@ -129,11 +149,18 @@ export const FlashOfferCard: React.FC<FlashOfferCardProps> = ({
           duration: 150,
           useNativeDriver: true,
         }),
-      ]).start();
+      ]);
+      
+      claimAnimation.start();
       
       prevClaimCountRef.current = offer.claimed_count;
+      
+      // Cleanup function to stop animation if component unmounts
+      return () => {
+        claimAnimation.stop();
+      };
     }
-  }, [offer.claimed_count]);
+  }, [offer.claimed_count, claimCountAnim]);
 
   // Calculate remaining claims
   const remainingClaims = offer.max_claims - offer.claimed_count;
@@ -239,7 +266,7 @@ export const FlashOfferCard: React.FC<FlashOfferCardProps> = ({
           </View>
         )}
 
-        {/* Horizontal Row: Countdown Timer | Claim Button */}
+        {/* Horizontal Row: Countdown Timer */}
         <View style={styles.actionRow}>
           {/* Countdown Timer with pulse animation when urgent */}
           <Animated.View
@@ -255,21 +282,6 @@ export const FlashOfferCard: React.FC<FlashOfferCardProps> = ({
               {timeRemaining}
             </Text>
           </Animated.View>
-
-          {/* Claim Button */}
-          <View style={styles.claimButtonContainer}>
-            <ClaimButton
-              offer={offer}
-              userClaim={userClaim}
-              isCheckedIn={isCheckedIn}
-              compact={true}
-              onPress={() => {
-                // Navigate to venue detail screen
-                onPress();
-              }}
-              onNavigate={onNavigate}
-            />
-          </View>
         </View>
 
         {/* Claims Remaining */}
@@ -301,6 +313,21 @@ export const FlashOfferCard: React.FC<FlashOfferCardProps> = ({
             />
           </View>
         )}
+
+        {/* Claim Button - Moved below progress bar */}
+        <View style={styles.claimButtonContainer}>
+          <ClaimButton
+            offer={offer}
+            userClaim={userClaim}
+            isCheckedIn={isCheckedIn}
+            compact={true}
+            onPress={() => {
+              // Navigate to venue detail screen
+              onPress();
+            }}
+            onNavigate={onNavigate}
+          />
+        </View>
       </TouchableOpacity>
     </Animated.View>
   );
@@ -368,7 +395,7 @@ const styles = StyleSheet.create({
   actionRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
     marginBottom: 12,
     gap: 12,
   },
@@ -376,7 +403,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    flex: 1,
   },
   timerText: {
     fontSize: 14,
@@ -384,7 +410,8 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Bold',
   },
   claimButtonContainer: {
-    flex: 2,
+    width: '100%',
+    marginTop: 8,
   },
   claimsContainer: {
     flexDirection: 'row',

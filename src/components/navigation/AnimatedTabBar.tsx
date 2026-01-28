@@ -18,6 +18,7 @@ import Animated, {
   interpolate,
   withTiming,
   SharedValue,
+  cancelAnimation,
 } from 'react-native-reanimated';
 import {
   Gesture,
@@ -281,6 +282,13 @@ const AnimatedTabBar: React.FC<AnimatedTabBarProps> = ({
       }
     );
   }, [state.index, tabWidth, slidePosition]);
+
+  // Cleanup animations on unmount
+  useEffect(() => {
+    return () => {
+      cancelAnimation(slidePosition);
+    };
+  }, [slidePosition]);
 
   // Animated style for sliding indicator
   const slidingIndicatorStyle = useAnimatedStyle(() => {

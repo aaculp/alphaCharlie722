@@ -39,7 +39,7 @@ export const FlashOfferCreationModal: React.FC<FlashOfferCreationModalProps> = (
   const [step, setStep] = useState<1 | 2>(1);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [valueCap, setValueCap] = useState('');
+  const [expectedValue, setExpectedValue] = useState('');
   const [maxClaims, setMaxClaims] = useState('');
   const [durationHours, setDurationHours] = useState('2');
   const [durationMinutes, setDurationMinutes] = useState('0');
@@ -52,12 +52,21 @@ export const FlashOfferCreationModal: React.FC<FlashOfferCreationModalProps> = (
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Handle claim value change with numeric validation
+  const handleClaimValueChange = (text: string) => {
+    // Allow only numbers and one decimal point with up to 2 decimal places
+    const numericRegex = /^\d*\.?\d{0,2}$/;
+    if (numericRegex.test(text)) {
+      setExpectedValue(text);
+    }
+  };
+
   // Reset form when modal closes
   const handleClose = () => {
     setStep(1);
     setTitle('');
     setDescription('');
-    setValueCap('');
+    setExpectedValue('');
     setMaxClaims('');
     setDurationHours('2');
     setDurationMinutes('0');
@@ -83,6 +92,20 @@ export const FlashOfferCreationModal: React.FC<FlashOfferCreationModalProps> = (
       newErrors.description = 'Description must be at least 10 characters';
     } else if (description.trim().length > 500) {
       newErrors.description = 'Description must be less than 500 characters';
+    }
+
+    // Validate claim value (required)
+    if (expectedValue.trim() === '') {
+      newErrors.expectedValue = 'Claim value is required';
+    } else {
+      const claimValueNum = parseFloat(expectedValue);
+      if (isNaN(claimValueNum)) {
+        newErrors.expectedValue = 'Value must be a valid number';
+      } else if (claimValueNum < 0) {
+        newErrors.expectedValue = 'Value must be 0 or greater';
+      } else if (claimValueNum > 10000) {
+        newErrors.expectedValue = 'Value must be less than $10,000';
+      }
     }
 
     const maxClaimsNum = parseInt(maxClaims, 10);
@@ -200,7 +223,7 @@ export const FlashOfferCreationModal: React.FC<FlashOfferCreationModalProps> = (
         venue_id: venueId,
         title: title.trim(),
         description: description.trim(),
-        value_cap: valueCap.trim() || undefined,
+        claim_value: parseFloat(expectedValue.trim()),
         max_claims: parseInt(maxClaims, 10),
         start_time: startTime.toISOString(),
         end_time: endTime.toISOString(),
@@ -435,10 +458,10 @@ export const FlashOfferCreationModal: React.FC<FlashOfferCreationModalProps> = (
                 </Text>
               </View>
 
-              {/* Value Cap */}
+              {/* Claim Value */}
               <View style={styles.fieldContainer}>
                 <Text style={[styles.label, { color: theme.colors.text }]}>
-                  Value Cap (Optional)
+                  Claim Value *
                 </Text>
                 <TextInput
                   style={[
@@ -446,16 +469,20 @@ export const FlashOfferCreationModal: React.FC<FlashOfferCreationModalProps> = (
                     {
                       backgroundColor: theme.colors.surface,
                       color: theme.colors.text,
-                      borderColor: theme.colors.border,
+                      borderColor: errors.expectedValue ? '#FF6B6B' : theme.colors.border,
                     },
                   ]}
-                  placeholder="e.g., $10 off, Free appetizer"
+                  placeholder="e.g., 10.00"
                   placeholderTextColor={theme.colors.textSecondary}
-                  value={valueCap}
-                  onChangeText={setValueCap}
+                  value={expectedValue}
+                  onChangeText={handleClaimValueChange}
+                  keyboardType="decimal-pad"
                 />
+                {errors.expectedValue && (
+                  <Text style={styles.errorText}>{errors.expectedValue}</Text>
+                )}
                 <Text style={[styles.helperText, { color: theme.colors.textSecondary }]}>
-                  Optional: Specify the maximum value of the offer
+                  Enter the dollar value of this offer (USD)
                 </Text>
               </View>
 

@@ -41,6 +41,29 @@ export interface UserProfile {
   monthlyCheckInsCount?: number; // Check-ins this month
   favoritesCount: number;
   friendsCount: number;
+  
+  // Flash Offers
+  redeemedOffersCount?: number; // Offers actually redeemed
+  totalSavings?: number; // Total dollar value saved from redeemed offers
+  averageSavings?: number; // Average dollar value per redeemed offer
+  
+  // Reviews & Ratings
+  averageRatingGiven?: number; // Mean of ratings given (1-5)
+  helpfulVotesReceived?: number; // Total helpful votes on user's reviews
+  
+  // Streaks & Engagement
+  currentStreak?: number; // Consecutive days with check-ins
+  longestStreak?: number; // Best streak ever
+  
+  // Top Stats
+  topVenue?: {
+    id: string;
+    name: string;
+    visitCount: number;
+  } | null;
+  mostActiveDay?: string; // Day of week (e.g., "Monday")
+  mostActiveTime?: string; // Time period (e.g., "Evening")
+  
   createdAt: string;
   updatedAt: string;
 }

@@ -192,7 +192,7 @@ describeIfSupabase('FlashOfferService Location-Independent Display Property Test
                     venue_id: spec.venueId,
                     title: 'Test Flash Offer',
                     description: 'Test description',
-                    value_cap: null,
+                    expected_value: null,
                     max_claims: 10,
                     claimed_count: 0,
                     start_time: startTime[0],
@@ -293,7 +293,7 @@ describeIfSupabase('FlashOfferService Location-Independent Display Property Test
                   venue_id: spec.venueId,
                   title: 'Test Flash Offer',
                   description: 'Test description',
-                  value_cap: null,
+                  expected_value: null,
                   max_claims: 10,
                   claimed_count: 0,
                   start_time: startTime,
@@ -387,7 +387,7 @@ describeIfSupabase('FlashOfferService Location-Independent Display Property Test
                   venue_id: spec.venueId,
                   title: 'Test Flash Offer',
                   description: 'Test description',
-                  value_cap: null,
+                  expected_value: null,
                   max_claims: 10,
                   claimed_count: 0,
                   start_time: startTime.toISOString(),
@@ -480,7 +480,7 @@ describeIfSupabase('FlashOfferService Location-Independent Display Property Test
                   venue_id: spec.venueId,
                   title: 'Test Flash Offer',
                   description: 'Test description',
-                  value_cap: null,
+                  expected_value: null,
                   max_claims: 10,
                   claimed_count: 0,
                   start_time: startTime.toISOString(),
@@ -520,3 +520,4 @@ describeIfSupabase('FlashOfferService Location-Independent Display Property Test
     });
   });
 });
+

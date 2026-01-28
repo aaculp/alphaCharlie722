@@ -22,7 +22,7 @@ export interface FlashOffer {
   // Offer details
   title: string;
   description: string;
-  value_cap: string | null;
+  claim_value: number;
   
   // Claim limits
   max_claims: number;
@@ -58,7 +58,7 @@ export interface CreateFlashOfferInput {
   // Offer details (required)
   title: string; // 3-100 characters
   description: string; // 10-500 characters
-  value_cap?: string | null; // e.g., "$10 off", "Free appetizer"
+  claim_value: number; // Dollar value in USD (0-10000)
   
   // Claim limits (required)
   max_claims: number; // 1-1000
@@ -79,7 +79,7 @@ export interface CreateFlashOfferInput {
 export interface UpdateFlashOfferInput {
   title?: string;
   description?: string;
-  value_cap?: string | null;
+  claim_value?: number;
   max_claims?: number;
   start_time?: string;
   end_time?: string;

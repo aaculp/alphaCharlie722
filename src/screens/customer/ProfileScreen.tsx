@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   StyleSheet,
@@ -17,7 +17,8 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
 import type { ProfileStackParamList } from '../../types';
 import { ProfileService } from '../../services/api/profile';
-import { StatCard } from '../../components/profile/StatCard';
+import { StatsGrid, type StatConfig } from '../../components/profile';
+import { formatCurrency } from '../../utils/currency';
 
 const ProfileScreen: React.FC = () => {
   const { theme } = useTheme();
@@ -69,16 +70,109 @@ const ProfileScreen: React.FC = () => {
     await signOut();
   };
 
-  if (loading) {
-    return (
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-        </View>
-      </SafeAreaView>
-    );
-  }
+  // Configure stats in the desired order
+  // All stats are always visible, defaulting to 0 or empty values
+  const stats: StatConfig[] = useMemo(() => [
+    // Row 1: Avg per Offer, Total Savings
+    {
+      icon: 'trending-up',
+      label: 'Avg per Offer',
+      value: profileData?.averageSavings ? formatCurrency(profileData.averageSavings) : '$0.00',
+      iconColor: '#059669',
+      subtitle: 'Money saved',
+    },
+    {
+      icon: 'cash',
+      label: 'Total Savings',
+      value: profileData?.totalSavings ? formatCurrency(profileData.totalSavings) : '$0.00',
+      iconColor: '#10B981',
+    },
+    
+    // Row 2: Offers Redeemed, Check-ins
+    {
+      icon: 'flash',
+      label: 'Offers Redeemed',
+      value: profileData?.redeemedOffersCount || 0,
+      iconColor: '#F59E0B',
+    },
+    {
+      icon: 'location',
+      label: 'Check-ins',
+      value: profileData?.checkInsCount || 0,
+      iconColor: theme.colors.primary,
+    },
+    
+    // Row 3: Current Streak, Longest Streak
+    {
+      icon: 'flame',
+      label: 'Current Streak',
+      value: profileData?.currentStreak || 0,
+      iconColor: '#EF4444',
+      subtitle: 'Days in a row',
+    },
+    {
+      icon: 'trophy',
+      label: 'Longest Streak',
+      value: profileData?.longestStreak || 0,
+      iconColor: '#F59E0B',
+      subtitle: 'Personal best',
+    },
+    
+    // Row 4: Top Venue, Avg Rating
+    {
+      icon: 'ribbon',
+      label: 'Top Venue',
+      value: profileData?.topVenue?.visitCount || 0,
+      iconColor: '#10B981',
+      subtitle: profileData?.topVenue?.name || 'None yet',
+    },
+    {
+      icon: 'star',
+      label: 'Avg Rating',
+      value: profileData?.averageRatingGiven?.toFixed(1) || '0.0',
+      iconColor: '#8B5CF6',
+      subtitle: 'You give',
+    },
+    
+    // Row 5: Most Active, Favorite Time
+    {
+      icon: 'calendar-outline',
+      label: 'Most Active',
+      value: profileData?.mostActiveDay || 'N/A',
+      iconColor: '#6366F1',
+    },
+    {
+      icon: 'time-outline',
+      label: 'Favorite Time',
+      value: profileData?.mostActiveTime || 'N/A',
+      iconColor: '#EC4899',
+    },
+    
+    // Row 6: Venues, Favorites
+    {
+      icon: 'business',
+      label: 'Venues',
+      value: profileData?.uniqueVenuesCount || 0,
+      iconColor: theme.colors.success,
+    },
+    {
+      icon: 'heart',
+      label: 'Favorites',
+      value: profileData?.favoritesCount || 0,
+      iconColor: theme.colors.error,
+    },
+    
+    // Row 7: This Month
+    {
+      icon: 'calendar',
+      label: 'This Month',
+      value: profileData?.monthlyCheckInsCount || 0,
+      iconColor: theme.colors.warning,
+    },
+  ], [profileData, theme]);
 
+  // Show the screen immediately with default values
+  // Data will hydrate as it loads
   return (
     <View style={{ flex: 1 }}>
       <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -86,27 +180,32 @@ const ProfileScreen: React.FC = () => {
           {/* Profile Image */}
           <View style={styles.profileImageContainer}>
             <View style={[styles.profileImageWrapper, { backgroundColor: theme.colors.border }]}>
-              <Image
-                source={
-                  profileData?.profilePhotoUrl
-                    ? { uri: profileData.profilePhotoUrl }
-                    : require('../../assets/images/OTW_Block_O.png')
-                }
-                style={styles.profileImage}
-              />
+              {loading ? (
+                <ActivityIndicator size="small" color={theme.colors.primary} />
+              ) : (
+                <Image
+                  source={
+                    profileData?.profilePhotoUrl
+                      ? { uri: profileData.profilePhotoUrl }
+                      : require('../../assets/images/OTW_Block_O.png')
+                  }
+                  style={styles.profileImage}
+                />
+              )}
             </View>
           </View>
 
           {/* Name and Action Buttons */}
           <View style={styles.nameLogoutContainer}>
             <Text style={[styles.name, { color: theme.colors.text, fontFamily: theme.fonts.primary.bold }]}>
-              {profileData?.display_name || profileData?.username || 'User'}
+              {profileData?.display_name || profileData?.username || 'Loading...'}
             </Text>
             <View style={styles.iconButtonsContainer}>
               <TouchableOpacity 
                 style={styles.iconButton} 
                 onPress={handleEditProfile}
                 activeOpacity={0.7}
+                disabled={loading}
               >
                 <Icon name="create-outline" size={24} color={theme.colors.text} />
               </TouchableOpacity>
@@ -114,6 +213,7 @@ const ProfileScreen: React.FC = () => {
                 style={styles.iconButton} 
                 onPress={() => navigation.navigate('Settings' as never)}
                 activeOpacity={0.7}
+                disabled={loading}
               >
                 <Icon name="settings-outline" size={24} color={theme.colors.text} />
               </TouchableOpacity>
@@ -121,6 +221,7 @@ const ProfileScreen: React.FC = () => {
                 style={styles.iconButton} 
                 onPress={handleLogout}
                 activeOpacity={0.7}
+                disabled={loading}
               >
                 <Icon name="log-out-outline" size={24} color={theme.colors.error} />
               </TouchableOpacity>
@@ -130,36 +231,11 @@ const ProfileScreen: React.FC = () => {
 
           {/* Email */}
           <Text style={[styles.email, { color: theme.colors.textSecondary, fontFamily: theme.fonts.secondary.regular }]}>
-            {user?.email || 'email@example.com'}
+            {user?.email || 'Loading...'}
           </Text>
 
-          {/* Stats Cards */}
-          <View style={styles.statsContainer}>
-            <StatCard
-              icon="location"
-              label="Check-ins"
-              value={profileData?.checkInsCount || 0}
-              iconColor={theme.colors.primary}
-            />
-            <StatCard
-              icon="business"
-              label="Venues"
-              value={profileData?.uniqueVenuesCount || 0}
-              iconColor={theme.colors.success}
-            />
-            <StatCard
-              icon="calendar"
-              label="This Month"
-              value={profileData?.monthlyCheckInsCount || 0}
-              iconColor={theme.colors.warning}
-            />
-            <StatCard
-              icon="heart"
-              label="Favorites"
-              value={profileData?.favoritesCount || 0}
-              iconColor={theme.colors.error}
-            />
-          </View>
+          {/* Stats Grid */}
+          <StatsGrid stats={stats} />
 
           <View style={{ height: 100 }} />
         </ScrollView>

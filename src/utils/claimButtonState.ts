@@ -48,7 +48,8 @@ export function deriveClaimButtonState(
     return 'loading';
   }
 
-  // Priority 2: Claimed state (user has already claimed)
+  // Priority 2: Claimed state (user has an active or redeemed claim)
+  // Show as claimed if user has any claim for this offer
   if (userClaim !== null) {
     return 'claimed';
   }
@@ -72,6 +73,6 @@ export function deriveClaimButtonState(
   }
 
   // Priority 6: Claimable (default eligible state)
-  // User is checked in, hasn't claimed, and offer is available
+  // User is checked in, hasn't claimed (or claim not yet redeemed), and offer is available
   return 'claimable';
 }

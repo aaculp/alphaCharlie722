@@ -32,6 +32,8 @@ const TokenRedemptionScreen: React.FC<TokenRedemptionScreenProps> = ({ navigatio
   const [redeeming, setRedeeming] = useState(false);
   const [claim, setClaim] = useState<FlashOfferClaim | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [redeemSuccess, setRedeemSuccess] = useState(false);
+  const [redeemError, setRedeemError] = useState<string | null>(null);
   
   const inputRef = useRef<TextInput>(null);
   const shakeAnimation = useRef(new Animated.Value(0)).current;
@@ -187,79 +189,58 @@ const TokenRedemptionScreen: React.FC<TokenRedemptionScreenProps> = ({ navigatio
     // Trigger light haptic feedback for button press
     triggerLightHaptic();
 
-    Alert.alert(
-      'Confirm Redemption',
-      'Are you sure you want to redeem this token? This action cannot be undone.',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Redeem',
-          style: 'default',
-          onPress: async () => {
-            setRedeeming(true);
-            try {
-              await ClaimService.redeemClaim(claim.id, user.id);
-              
-              // Trigger success haptic feedback for successful redemption
-              triggerSuccessHaptic();
-              
-              // Show success message
-              Alert.alert(
-                'Success!',
-                'Token redeemed successfully.',
-                [
-                  {
-                    text: 'OK',
-                    onPress: () => {
-                      // Navigate back instead of resetting form
-                      navigation.goBack();
-                    },
-                  },
-                ]
-              );
-            } catch (err) {
-              console.error('Error redeeming claim:', err);
-              
-              // Check for race condition errors
-              const raceConditionError = detectRaceCondition(err);
-              if (raceConditionError) {
-                Alert.alert(
-                  'Token Status Changed',
-                  raceConditionError.message,
-                  [
-                    {
-                      text: 'OK',
-                      onPress: () => {
-                        // Reset form
-                        setToken('');
-                        setClaim(null);
-                        setError(null);
-                        inputRef.current?.focus();
-                      },
-                    },
-                  ]
-                );
-                return;
-              }
-              
-              const errorMessage = err instanceof Error ? err.message : 'Failed to redeem token';
-              Alert.alert('Error', errorMessage);
-            } finally {
-              setRedeeming(false);
-            }
-          },
-        },
-      ]
-    );
+    setRedeeming(true);
+    setRedeemError(null);
+    setRedeemSuccess(false);
+
+    try {
+      await ClaimService.redeemClaim(claim.id, user.id);
+      
+      // Trigger success haptic feedback for successful redemption
+      triggerSuccessHaptic();
+      
+      // Show success state
+      setRedeemSuccess(true);
+      
+      // Navigate back after a short delay to show success state
+      setTimeout(() => {
+        navigation.goBack();
+      }, 2000);
+    } catch (err) {
+      console.error('Error redeeming claim:', err);
+      
+      // Trigger error haptic feedback
+      triggerErrorHaptic();
+      
+      // Check for race condition errors
+      const raceConditionError = detectRaceCondition(err);
+      if (raceConditionError) {
+        setRedeemError(raceConditionError.message);
+        
+        // Reset form after showing error
+        setTimeout(() => {
+          setToken('');
+          setClaim(null);
+          setError(null);
+          setRedeemError(null);
+          inputRef.current?.focus();
+        }, 3000);
+        return;
+      }
+      
+      const errorMessage = err instanceof Error ? err.message : 'Failed to redeem token';
+      setRedeemError(errorMessage);
+    } finally {
+      setRedeeming(false);
+    }
   };
 
   const handleClear = () => {
     setToken('');
     setClaim(null);
     setError(null);
+    setRedeemSuccess(false);
+    setRedeemError(null);
     inputRef.current?.focus();
   };
 
@@ -406,15 +387,29 @@ const TokenRedemptionScreen: React.FC<TokenRedemptionScreenProps> = ({ navigatio
               styles.claimDetailsContainer,
               {
                 backgroundColor: theme.colors.surface,
-                borderColor: theme.colors.border,
+                borderColor: redeemSuccess ? '#4CAF50' : redeemError ? '#F44336' : theme.colors.border,
+                borderWidth: redeemSuccess || redeemError ? 2 : 1,
               },
             ]}
           >
-            {/* Success Header */}
-            <View style={[styles.successHeader, { backgroundColor: '#4CAF50' + '20' }]}>
-              <Icon name="checkmark-circle" size={32} color="#4CAF50" />
-              <Text style={[styles.successTitle, { color: '#4CAF50' }]}>Valid Token</Text>
-            </View>
+            {/* Success/Error Header */}
+            {redeemSuccess ? (
+              <View style={[styles.successHeader, { backgroundColor: '#4CAF50' + '20' }]}>
+                <Icon name="checkmark-circle" size={32} color="#4CAF50" />
+                <Text style={[styles.successTitle, { color: '#4CAF50' }]}>Redeemed Successfully!</Text>
+              </View>
+            ) : redeemError ? (
+              <View style={[styles.errorHeader, { backgroundColor: '#F44336' + '20' }]}>
+                <Icon name="close-circle" size={32} color="#F44336" />
+                <Text style={[styles.errorTitle, { color: '#F44336' }]}>Redemption Failed</Text>
+                <Text style={[styles.errorMessage, { color: '#F44336' }]}>{redeemError}</Text>
+              </View>
+            ) : (
+              <View style={[styles.successHeader, { backgroundColor: '#4CAF50' + '20' }]}>
+                <Icon name="checkmark-circle" size={32} color="#4CAF50" />
+                <Text style={[styles.successTitle, { color: '#4CAF50' }]}>Valid Token</Text>
+              </View>
+            )}
 
             {/* Token Display */}
             <View style={styles.claimSection}>
@@ -461,43 +456,80 @@ const TokenRedemptionScreen: React.FC<TokenRedemptionScreenProps> = ({ navigatio
               </View>
             </View>
 
-            {/* Redeem Button */}
-            <TouchableOpacity
-              style={[
-                styles.redeemButton,
-                {
-                  backgroundColor: '#4CAF50',
-                  opacity: redeeming ? 0.6 : 1,
-                },
-              ]}
-              onPress={handleRedeemClaim}
-              disabled={redeeming}
-            >
-              {redeeming ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : (
-                <>
-                  <Icon name="checkmark-done" size={20} color="#fff" />
-                  <Text style={styles.redeemButtonText}>Confirm Redemption</Text>
-                </>
-              )}
-            </TouchableOpacity>
+            {/* Action Buttons */}
+            {!redeemSuccess && !redeemError && (
+              <>
+                {/* Redeem Button */}
+                <TouchableOpacity
+                  style={[
+                    styles.redeemButton,
+                    {
+                      backgroundColor: '#4CAF50',
+                      opacity: redeeming ? 0.6 : 1,
+                    },
+                  ]}
+                  onPress={handleRedeemClaim}
+                  disabled={redeeming}
+                >
+                  {redeeming ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <>
+                      <Icon name="checkmark-done" size={20} color="#fff" />
+                      <Text style={styles.redeemButtonText}>Confirm Redemption</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
 
-            {/* Cancel Button */}
-            <TouchableOpacity
-              style={[
-                styles.cancelButton,
-                {
-                  borderColor: theme.colors.border,
-                },
-              ]}
-              onPress={handleClear}
-              disabled={redeeming}
-            >
-              <Text style={[styles.cancelButtonText, { color: theme.colors.text }]}>
-                Cancel
-              </Text>
-            </TouchableOpacity>
+                {/* Cancel Button */}
+                <TouchableOpacity
+                  style={[
+                    styles.cancelButton,
+                    {
+                      borderColor: theme.colors.border,
+                    },
+                  ]}
+                  onPress={handleClear}
+                  disabled={redeeming}
+                >
+                  <Text style={[styles.cancelButtonText, { color: theme.colors.text }]}>
+                    Cancel
+                  </Text>
+                </TouchableOpacity>
+              </>
+            )}
+
+            {/* Success State - New Token Button */}
+            {redeemSuccess && (
+              <TouchableOpacity
+                style={[
+                  styles.newTokenButton,
+                  {
+                    backgroundColor: theme.colors.primary,
+                  },
+                ]}
+                onPress={handleClear}
+              >
+                <Icon name="add-circle" size={20} color="#fff" />
+                <Text style={styles.newTokenButtonText}>Redeem Another Token</Text>
+              </TouchableOpacity>
+            )}
+
+            {/* Error State - Try Again Button */}
+            {redeemError && (
+              <TouchableOpacity
+                style={[
+                  styles.tryAgainButton,
+                  {
+                    backgroundColor: theme.colors.primary,
+                  },
+                ]}
+                onPress={handleClear}
+              >
+                <Icon name="refresh" size={20} color="#fff" />
+                <Text style={styles.tryAgainButtonText}>Try Again</Text>
+              </TouchableOpacity>
+            )}
           </View>
         )}
       </ScrollView>
@@ -616,6 +648,25 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontFamily: 'Poppins-Bold',
   },
+  errorHeader: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 24,
+    gap: 8,
+  },
+  errorTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    fontFamily: 'Poppins-Bold',
+  },
+  errorMessage: {
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+    textAlign: 'center',
+    marginTop: 4,
+  },
   claimSection: {
     marginBottom: 20,
   },
@@ -683,6 +734,36 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   cancelButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    fontFamily: 'Inter-SemiBold',
+  },
+  newTokenButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    borderRadius: 12,
+    gap: 8,
+    marginTop: 8,
+  },
+  newTokenButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    fontFamily: 'Inter-SemiBold',
+  },
+  tryAgainButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    borderRadius: 12,
+    gap: 8,
+    marginTop: 8,
+  },
+  tryAgainButtonText: {
+    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
     fontFamily: 'Inter-SemiBold',

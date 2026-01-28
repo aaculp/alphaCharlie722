@@ -18,6 +18,7 @@ import { type FlashOfferClaim } from '../../services/api/flashOfferClaims';
 import { supabase } from '../../lib/supabase';
 import { DetailScreenSkeleton } from '../../components/flashOffer/SkeletonLoaders';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { formatCurrency } from '../../utils/currency';
 
 type FlashOfferDetailScreenProps = {
   navigation: any;
@@ -311,14 +312,12 @@ const FlashOfferDetailScreen: React.FC<FlashOfferDetailScreenProps> = ({ navigat
           <Text style={[styles.offerDescription, { color: theme.colors.textSecondary }]}>
             {offer.description}
           </Text>
-          {offer.value_cap && (
-            <View style={[styles.valueCapBadge, { backgroundColor: theme.colors.primary + '20' }]}>
-              <Icon name="pricetag" size={16} color={theme.colors.primary} />
-              <Text style={[styles.valueCapText, { color: theme.colors.primary }]}>
-                {offer.value_cap}
-              </Text>
-            </View>
-          )}
+          <View style={[styles.valueCapBadge, { backgroundColor: theme.colors.primary + '20' }]}>
+            <Icon name="pricetag" size={16} color={theme.colors.primary} />
+            <Text style={[styles.valueCapText, { color: theme.colors.primary }]}>
+              {formatCurrency(offer.claim_value)}
+            </Text>
+          </View>
         </View>
 
         {/* Stats Grid */}

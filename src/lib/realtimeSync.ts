@@ -176,6 +176,13 @@ function subscribeToFlashOfferUpdates(queryClient: QueryClient): RealtimeChannel
             exact: true, // Only invalidate this specific venue
           });
         }
+        
+        // IMPORTANT: Invalidate same-day offers query for HomeScreen
+        // This ensures new flash offers appear immediately on the homescreen
+        // without waiting for the 2-minute refetch interval
+        queryClient.invalidateQueries({ 
+          queryKey: queryKeys.flashOffers.sameDayOffers(),
+        });
       }
     )
     .subscribe((status, error) => {

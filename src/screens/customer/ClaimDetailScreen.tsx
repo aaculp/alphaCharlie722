@@ -25,6 +25,7 @@ import { useFeedbackManager } from '../../hooks/useFeedbackManager';
 import { stateCache } from '../../utils/cache/StateCache';
 import { ConnectionWarningBanner } from '../../components/shared/ConnectionWarningBanner';
 import type { ConnectionState } from '../../services/SubscriptionManager';
+import { formatCurrency } from '../../utils/currency';
 
 type ClaimDetailScreenRouteProp = RouteProp<
   { ClaimDetail: { claimId: string } },
@@ -428,18 +429,16 @@ const ClaimDetailScreen: React.FC = () => {
             {claim.offer.description}
           </Text>
 
-          {claim.offer.value_cap && (
-            <View style={[styles.valueCapBadge, { backgroundColor: theme.colors.primary }]}>
-              <Text
-                style={[
-                  styles.valueCapText,
-                  { fontFamily: theme.fonts.secondary.semiBold },
-                ]}
-              >
-                {claim.offer.value_cap}
-              </Text>
-            </View>
-          )}
+          <View style={[styles.valueCapBadge, { backgroundColor: theme.colors.primary }]}>
+            <Text
+              style={[
+                styles.valueCapText,
+                { color: '#FFFFFF', fontFamily: theme.fonts.secondary.semiBold },
+              ]}
+            >
+              {formatCurrency(claim.offer.claim_value)}
+            </Text>
+          </View>
         </View>
 
         {/* Venue Details */}

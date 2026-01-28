@@ -31,8 +31,8 @@ export interface CreateFlashOfferInput {
   title: string;
   /** Description of the offer (10-500 characters) */
   description: string;
-  /** Optional value cap (e.g., "$10 off", "Free drink") */
-  value_cap?: string;
+  /** Dollar value of the claim in USD (0-10000, required) */
+  claim_value: number;
   /** Maximum number of claims allowed (1-1000) */
   max_claims: number;
   /** ISO 8601 timestamp when offer becomes active */
@@ -55,8 +55,8 @@ export interface UpdateFlashOfferInput {
   title?: string;
   /** Updated description */
   description?: string;
-  /** Updated value cap */
-  value_cap?: string;
+  /** Updated claim value in USD (0-10000) */
+  claim_value?: number;
   /** Updated maximum claims */
   max_claims?: number;
   /** Updated start time */
@@ -81,8 +81,8 @@ export interface FlashOffer {
   title: string;
   /** Description of the offer */
   description: string;
-  /** Optional value cap */
-  value_cap: string | null;
+  /** Dollar value of the claim in USD (0-10000, required) */
+  claim_value: number;
   /** Maximum number of claims allowed */
   max_claims: number;
   /** Current number of claims */
@@ -131,7 +131,7 @@ export interface FlashOfferWithStats extends FlashOffer {
  * const offer = await FlashOfferService.createFlashOffer('venue-123', {
  *   title: 'Happy Hour Special',
  *   description: 'Get 50% off all drinks for the next 2 hours!',
- *   value_cap: '$20 maximum discount',
+ *   claim_value: 20.00, // Dollar value in USD
  *   max_claims: 50,
  *   start_time: new Date().toISOString(),
  *   end_time: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
@@ -168,6 +168,7 @@ export class FlashOfferService {
    * const offer = await FlashOfferService.createFlashOffer('venue-123', {
    *   title: 'Flash Sale!',
    *   description: 'Limited time offer - 30% off all appetizers',
+   *   expected_value: 15.00, // Dollar value in USD
    *   max_claims: 25,
    *   start_time: new Date().toISOString(),
    *   end_time: new Date(Date.now() + 60 * 60 * 1000).toISOString()
@@ -185,7 +186,7 @@ export class FlashOfferService {
           venue_id: venueId,
           title: offerData.title,
           description: offerData.description,
-          value_cap: offerData.value_cap || null,
+          claim_value: offerData.claim_value,
           max_claims: offerData.max_claims,
           start_time: offerData.start_time,
           end_time: offerData.end_time,

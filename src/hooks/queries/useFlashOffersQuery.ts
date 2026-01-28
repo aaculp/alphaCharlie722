@@ -94,15 +94,15 @@ export function useFlashOffersQuery(
     
     enabled,
     
-    // Requirement 4.2: Cache for 2 minutes (120 seconds)
-    staleTime: 2 * 60 * 1000, // 2 minutes
+    // Requirement 4.2: Cache for 30 seconds (more responsive for new offers)
+    staleTime: 30 * 1000, // 30 seconds
     
     // Requirement 4.4: Keep cached data for 5 minutes after becoming stale
     gcTime: 5 * 60 * 1000, // 5 minutes (formerly cacheTime)
     
-    // Requirement 4.5: Refetch on window focus and every 2 minutes
+    // Requirement 4.5: Refetch on window focus and every 30 seconds
     refetchOnWindowFocus: true,
-    refetchInterval: 2 * 60 * 1000, // 2 minutes
+    refetchInterval: 30 * 1000, // 30 seconds
     
     // Requirement 4.3: Show stale data while refetching
     refetchOnMount: 'always',

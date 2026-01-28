@@ -139,7 +139,7 @@ const PulseLikeButton: React.FC<PulseLikeButtonProps> = ({
   useEffect(() => {
     if (likeCount !== prevLikeCount) {
       // Button scale animation
-      Animated.sequence([
+      const scaleAnimation = Animated.sequence([
         Animated.timing(likeAnimation, {
           toValue: 1.3,
           duration: 150,
@@ -150,11 +150,13 @@ const PulseLikeButton: React.FC<PulseLikeButtonProps> = ({
           duration: 150,
           useNativeDriver: true,
         }),
-      ]).start();
+      ]);
+      
+      scaleAnimation.start();
 
       // Fire animation for hot content
       if (currentState.showFireAnimation && likeCount > prevLikeCount) {
-        Animated.sequence([
+        const fireAnim = Animated.sequence([
           Animated.timing(fireAnimation, {
             toValue: 1,
             duration: 400,
@@ -165,13 +167,25 @@ const PulseLikeButton: React.FC<PulseLikeButtonProps> = ({
             duration: 400,
             useNativeDriver: true,
           }),
-        ]).start();
+        ]);
+        
+        fireAnim.start();
+        
+        // Cleanup function to stop animation if component unmounts
+        return () => {
+          fireAnim.stop();
+          scaleAnimation.stop();
+        };
       }
 
       setPrevLikeCount(likeCount);
+      
+      // Cleanup function for scale animation only
+      return () => {
+        scaleAnimation.stop();
+      };
     }
-  }, [likeCount, prevLikeCount, currentState.showFireAnimation]); // eslint-disable-line react-hooks/exhaustive-deps
-  // Note: fireAnimation and likeAnimation are Animated.Value refs (stable references that don't need to be in dependencies)
+  }, [likeCount, prevLikeCount, currentState.showFireAnimation, likeAnimation, fireAnimation]);
 
   const handlePress = () => {
     if (!disabled) {

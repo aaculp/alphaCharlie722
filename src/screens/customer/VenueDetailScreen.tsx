@@ -9,6 +9,7 @@ import {
   Linking,
   ActivityIndicator,
   Alert,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, RouteProp } from '@react-navigation/native';
@@ -184,6 +185,7 @@ const VenueDetailScreen: React.FC = () => {
   const [loadingUserReview, setLoadingUserReview] = useState(false);
   const [recentReviews, setRecentReviews] = useState<ReviewWithReviewer[]>([]);
   const [loadingReviews, setLoadingReviews] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Flash offers state
   const [flashOffers, setFlashOffers] = useState<FlashOffer[]>([]);
@@ -351,6 +353,55 @@ const VenueDetailScreen: React.FC = () => {
     }
   };
 
+  /**
+   * Handle pull-to-refresh
+   * Refreshes all data on the screen
+   */
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    
+    try {
+      // Refresh venue data
+      await refetchVenue();
+      
+      // Refresh check-in stats
+      await refetchCheckInStats();
+      
+      // Refresh user review
+      if (user?.id) {
+        try {
+          const review = await ReviewService.getUserReviewForVenue(user.id, venueId);
+          setUserReview(review);
+        } catch (error) {
+          console.error('Error refreshing user review:', error);
+        }
+      }
+      
+      // Refresh recent reviews
+      try {
+        const response = await ReviewService.getVenueReviews({
+          venueId,
+          limit: 3,
+          offset: 0,
+          sortBy: 'recent',
+        });
+        setRecentReviews(response.reviews);
+      } catch (error) {
+        console.error('Error refreshing recent reviews:', error);
+      }
+      
+      // Refresh flash offers
+      try {
+        const response = await FlashOfferService.getVenueOffers(venueId, 'active');
+        setFlashOffers(response.offers);
+      } catch (error) {
+        console.error('Error refreshing flash offers:', error);
+      }
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   // Scroll to top when screen loads
   useEffect(() => {
     if (scrollViewRef.current) {
@@ -402,6 +453,14 @@ const VenueDetailScreen: React.FC = () => {
         ref={scrollViewRef}
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={theme.colors.primary}
+            colors={[theme.colors.primary]}
+          />
+        }
       >
         {/* Hero Image with Back Button Overlay */}
         <View style={styles.heroImageContainer}>

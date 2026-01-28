@@ -6,11 +6,12 @@ import { useTheme } from '../../contexts/ThemeContext';
 interface StatCardProps {
   icon: string;
   label: string;
-  value: number;
+  value: number | string;
   iconColor: string;
+  subtitle?: string; // Optional subtitle for additional context
 }
 
-export const StatCard: React.FC<StatCardProps> = ({ icon, label, value, iconColor }) => {
+export const StatCard: React.FC<StatCardProps> = ({ icon, label, value, iconColor, subtitle }) => {
   const { theme } = useTheme();
 
   return (
@@ -26,6 +27,11 @@ export const StatCard: React.FC<StatCardProps> = ({ icon, label, value, iconColo
       <Text style={[styles.statValue, { color: theme.colors.text, fontFamily: theme.fonts.primary.bold }]}>
         {value}
       </Text>
+      {subtitle && (
+        <Text style={[styles.subtitle, { color: theme.colors.textSecondary, fontFamily: theme.fonts.secondary.regular }]}>
+          {subtitle}
+        </Text>
+      )}
     </View>
   );
 };
@@ -54,5 +60,9 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontSize: 32,
+  },
+  subtitle: {
+    fontSize: 11,
+    marginTop: 4,
   },
 });

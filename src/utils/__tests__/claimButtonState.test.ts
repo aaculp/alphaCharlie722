@@ -15,7 +15,7 @@ function createMockOffer(overrides: Partial<FlashOffer> = {}): FlashOffer {
     venue_id: 'venue-456',
     title: 'Test Offer',
     description: 'Test Description',
-    value_cap: '$10 off',
+    expected_value: 10.00,
     max_claims: 50,
     claimed_count: 10,
     start_time: '2024-01-01T00:00:00Z',

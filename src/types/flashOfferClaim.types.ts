@@ -55,7 +55,7 @@ export interface FlashOfferClaimWithDetails extends FlashOfferClaim {
     id: string;
     title: string;
     description: string;
-    value_cap: string | null;
+    claim_value: number;
     venue_id: string;
     start_time: string;
     end_time: string;

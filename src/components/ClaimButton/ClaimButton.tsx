@@ -64,7 +64,7 @@ function getButtonConfig(
   switch (state) {
     case 'claimable':
       return {
-        label: 'Claim Offer',
+        label: 'Claim',
         variant: 'primary',
         icon: 'flash',
         disabled: false,
@@ -73,12 +73,12 @@ function getButtonConfig(
       };
     case 'claimed':
       return {
-        label: 'View Claim',
+        label: 'Claimed',
         variant: 'success',
         icon: 'checkmark-circle',
         disabled: false,
-        accessibilityLabel: 'View your claim details',
-        accessibilityHint: 'Double tap to view your claim token and redemption details',
+        accessibilityLabel: 'View your claim',
+        accessibilityHint: 'Double tap to view your claim token and details',
       };
     case 'loading':
       return {
@@ -268,7 +268,14 @@ const ClaimButtonComponent: React.FC<ClaimButtonProps> = ({
       return;
     }
 
-    // If button is in claimable state, trigger the mutation
+    // If user has an active claim (not redeemed), show the modal with their claim
+    if (userClaim && userClaim.status !== 'redeemed') {
+      setSuccessClaim(userClaim);
+      setShowSuccessModal(true);
+      return;
+    }
+
+    // If button is in claimable state and no active claim, trigger the mutation
     if (buttonState === 'claimable' && user?.id) {
       claimOffer({
         offerId: offer.id,
@@ -276,8 +283,9 @@ const ClaimButtonComponent: React.FC<ClaimButtonProps> = ({
         venueId: offer.venue_id,
       });
     } else if (buttonState === 'claimed' && userClaim) {
-      // For claimed state, navigate to ClaimDetailScreen
-      navigation.navigate('ClaimDetail' as any, { claimId: userClaim.id });
+      // For redeemed claims, show the modal
+      setSuccessClaim(userClaim);
+      setShowSuccessModal(true);
     } else if (buttonState === 'not_checked_in' && onNavigate) {
       // For not checked in state, trigger navigation to check-in
       // Requirements: 1.2 - Guide users to check in
@@ -286,7 +294,7 @@ const ClaimButtonComponent: React.FC<ClaimButtonProps> = ({
       // For other states, use custom handler
       onPress();
     }
-  }, [config.disabled, buttonState, user?.id, claimOffer, offer.id, offer.venue_id, userClaim, navigation, onNavigate, onPress]);
+  }, [config.disabled, buttonState, user?.id, claimOffer, offer.id, offer.venue_id, userClaim, onNavigate, onPress]);
 
   // Handle retry button press (stable reference with useCallback)
   const handleRetry = useCallback(() => {

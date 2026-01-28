@@ -17,7 +17,6 @@ import {
   StyleSheet,
   Dimensions,
   Clipboard,
-  Alert,
   AccessibilityInfo,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -54,6 +53,7 @@ const ClaimFeedbackModal: React.FC<ClaimFeedbackModalProps> = ({
   const { theme } = useTheme();
   const [copied, setCopied] = useState(false);
   const [claimStatus, setClaimStatus] = useState<string>(claim?.status || 'active');
+  const [redeemSuccess, setRedeemSuccess] = useState(false);
 
   // Set up real-time subscription for claim status updates
   useEffect(() => {
@@ -76,33 +76,18 @@ const ClaimFeedbackModal: React.FC<ClaimFeedbackModalProps> = ({
           const newStatus = payload.new.status;
           setClaimStatus(newStatus);
           
-          // If claim was redeemed, show celebration and auto-close
+          // If claim was redeemed, show success state
           if (newStatus === 'redeemed' && payload.old.status !== 'redeemed') {
+            setRedeemSuccess(true);
+            
             AccessibilityInfo.announceForAccessibility(
               'Congratulations! Your offer has been redeemed. Enjoy your promotion!'
             );
             
-            // Show alert and close modal
+            // Auto-close after showing success for 3 seconds
             setTimeout(() => {
-              Alert.alert(
-                '🎉 Redeemed!',
-                'Your offer has been successfully redeemed. Enjoy!',
-                [
-                  {
-                    text: 'View Details',
-                    onPress: () => {
-                      onClose();
-                      onViewDetails();
-                    },
-                  },
-                  {
-                    text: 'Done',
-                    onPress: onClose,
-                    style: 'cancel',
-                  },
-                ]
-              );
-            }, 500);
+              onClose();
+            }, 3000);
           }
         }
       )
@@ -112,7 +97,7 @@ const ClaimFeedbackModal: React.FC<ClaimFeedbackModalProps> = ({
       console.log('🔌 Unsubscribing from claim updates');
       claimSubscription.unsubscribe();
     };
-  }, [claim?.id, visible]);
+  }, [claim?.id, visible, onClose]);
 
   // Update local status when claim prop changes
   useEffect(() => {
@@ -192,24 +177,29 @@ const ClaimFeedbackModal: React.FC<ClaimFeedbackModalProps> = ({
     >
       <View style={styles.overlay}>
         <View 
-          style={[styles.modalContainer, { backgroundColor: theme.colors.surface }]}
+          style={[
+            styles.modalContainer, 
+            { 
+              backgroundColor: theme.colors.surface,
+              borderColor: redeemSuccess ? theme.colors.success : 'transparent',
+              borderWidth: redeemSuccess ? 2 : 0,
+            }
+          ]}
           accessible={true}
           accessibilityRole="alert"
           accessibilityLabel="Offer claimed successfully"
         >
-          {/* Success Icon */}
-          <View style={[styles.iconContainer, { backgroundColor: claimStatus === 'redeemed' ? theme.colors.success + '20' : theme.colors.primary + '20' }]}>
+          {/* Icon & Title - Inline */}
+          <View style={[styles.headerRow, { backgroundColor: redeemSuccess ? theme.colors.success + '20' : claimStatus === 'redeemed' ? theme.colors.success + '20' : theme.colors.primary + '20' }]}>
             <Icon
-              name={claimStatus === 'redeemed' ? 'checkmark-done-circle' : 'checkmark-circle'}
-              size={64}
-              color={claimStatus === 'redeemed' ? theme.colors.success : theme.colors.primary}
+              name={redeemSuccess || claimStatus === 'redeemed' ? 'checkmark-done-circle' : 'flash'}
+              size={48}
+              color={redeemSuccess || claimStatus === 'redeemed' ? theme.colors.success : theme.colors.primary}
             />
+            <Text style={[styles.title, { color: theme.colors.text }]}>
+              {redeemSuccess || claimStatus === 'redeemed' ? '🎉 Redeemed!' : 'Claiming...'}
+            </Text>
           </View>
-
-          {/* Title */}
-          <Text style={[styles.title, { color: theme.colors.text }]}>
-            {claimStatus === 'redeemed' ? '🎉 Redeemed!' : 'Offer Claimed!'}
-          </Text>
 
           {/* Offer Title */}
           <Text style={[styles.offerTitle, { color: theme.colors.textSecondary }]}>
@@ -217,7 +207,7 @@ const ClaimFeedbackModal: React.FC<ClaimFeedbackModalProps> = ({
           </Text>
 
           {/* Token Display (only if not redeemed) */}
-          {claimStatus !== 'redeemed' && (
+          {!redeemSuccess && claimStatus !== 'redeemed' && (
             <>
               {/* Claim Token Section */}
               <View style={[styles.tokenContainer, { backgroundColor: theme.colors.background }]}>
@@ -305,7 +295,7 @@ const ClaimFeedbackModal: React.FC<ClaimFeedbackModalProps> = ({
           )}
 
           {/* Redeemed Message */}
-          {claimStatus === 'redeemed' && (
+          {(redeemSuccess || claimStatus === 'redeemed') && (
             <View 
               style={[styles.redeemedContainer, { backgroundColor: theme.colors.success + '10' }]}
               accessible={true}
@@ -328,39 +318,55 @@ const ClaimFeedbackModal: React.FC<ClaimFeedbackModalProps> = ({
           )}
 
           {/* Actions */}
-          <View style={styles.actions}>
+          {!redeemSuccess && (
+            <View style={styles.actions}>
+              <TouchableOpacity
+                style={[styles.secondaryButton, { borderColor: theme.colors.border }]}
+                onPress={onClose}
+                accessible={true}
+                accessibilityRole="button"
+                accessibilityLabel="Done"
+                accessibilityHint="Double tap to close this modal"
+              >
+                <Text style={[styles.secondaryButtonText, { color: theme.colors.textSecondary }]}>
+                  Done
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.primaryButton, { backgroundColor: theme.colors.primary }]}
+                onPress={onViewDetails}
+                accessible={true}
+                accessibilityRole="button"
+                accessibilityLabel="View claim details"
+                accessibilityHint="Double tap to view full claim details and redemption information"
+              >
+                <Icon
+                  name="eye-outline"
+                  size={20}
+                  color="white"
+                  accessible={false}
+                />
+                <Text style={styles.primaryButtonText}>
+                  View Details
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Success State - Close Button */}
+          {redeemSuccess && (
             <TouchableOpacity
-              style={[styles.secondaryButton, { borderColor: theme.colors.border }]}
+              style={[styles.closeButton, { backgroundColor: theme.colors.success }]}
               onPress={onClose}
               accessible={true}
               accessibilityRole="button"
-              accessibilityLabel="Done"
+              accessibilityLabel="Close"
               accessibilityHint="Double tap to close this modal"
             >
-              <Text style={[styles.secondaryButtonText, { color: theme.colors.textSecondary }]}>
-                Done
-              </Text>
+              <Text style={styles.closeButtonText}>Close</Text>
             </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.primaryButton, { backgroundColor: theme.colors.primary }]}
-              onPress={onViewDetails}
-              accessible={true}
-              accessibilityRole="button"
-              accessibilityLabel="View claim details"
-              accessibilityHint="Double tap to view full claim details and redemption information"
-            >
-              <Icon
-                name="eye-outline"
-                size={20}
-                color="white"
-                accessible={false}
-              />
-              <Text style={styles.primaryButtonText}>
-                View Details
-              </Text>
-            </TouchableOpacity>
-          </View>
+          )}
         </View>
       </View>
     </Modal>
@@ -390,6 +396,16 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
     elevation: 10,
   },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'stretch',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    marginBottom: 20,
+    gap: 16,
+  },
   iconContainer: {
     width: 96,
     height: 96,
@@ -400,10 +416,9 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   title: {
-    fontSize: 28,
+    fontSize: 24,
     fontFamily: 'Poppins-SemiBold',
-    textAlign: 'center',
-    marginBottom: 8,
+    flex: 1,
   },
   offerTitle: {
     fontSize: 16,
@@ -513,6 +528,19 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   primaryButtonText: {
+    fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
+    color: 'white',
+  },
+  closeButton: {
+    width: '100%',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+  },
+  closeButtonText: {
     fontSize: 16,
     fontFamily: 'Inter-SemiBold',
     color: 'white',

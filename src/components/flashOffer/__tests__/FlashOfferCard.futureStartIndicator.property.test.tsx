@@ -166,7 +166,7 @@ const flashOfferArbitrary = (
     venue_id: fc.uuid(),
     title: fc.string({ minLength: 3, maxLength: 100 }),
     description: fc.string({ minLength: 10, maxLength: 500 }),
-    value_cap: fc.option(fc.string({ maxLength: 50 }), { nil: null }),
+    expected_value: fc.option(fc.double({ min: 0, max: 1000, noNaN: true }), { nil: null }),
     max_claims: fc.integer({ min: 10, max: 1000 }),
     claimed_count: fc.integer({ min: 0, max: 100 }),
     start_time: startTimeGen,

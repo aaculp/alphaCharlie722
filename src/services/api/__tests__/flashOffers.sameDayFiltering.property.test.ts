@@ -76,7 +76,7 @@ const flashOfferArbitrary = (
     venue_id: uuidArbitrary(),
     title: fc.string({ minLength: 3, maxLength: 100 }),
     description: fc.string({ minLength: 10, maxLength: 500 }),
-    value_cap: fc.option(fc.string({ maxLength: 50 }), { nil: null }),
+    expected_value: fc.option(fc.double({ min: 0, max: 1000, noNaN: true }), { nil: null }),
     max_claims: fc.integer({ min: 1, max: 1000 }),
     claimed_count: fc.integer({ min: 0, max: 100 }),
     start_time: startDateGen,
@@ -281,7 +281,7 @@ describeIfSupabase('FlashOfferService Property-Based Tests', () => {
                   venue_id: venueId,
                   title: 'Test Flash Offer',
                   description: 'Test description for flash offer',
-                  value_cap: null,
+                  expected_value: null,
                   max_claims: 10,
                   claimed_count: 0,
                   start_time: spec.startDate,
@@ -513,3 +513,4 @@ describeIfSupabase('FlashOfferService Property-Based Tests', () => {
     });
   });
 });
+

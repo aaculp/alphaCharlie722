@@ -70,7 +70,7 @@ describe('FlashOfferService.getSameDayOffers', () => {
           venue_id: 'venue-1',
           title: 'Morning Special',
           description: 'Early bird discount',
-          value_cap: null,
+          expected_value: null,
           max_claims: 10,
           claimed_count: 2,
           start_time: new Date(now.getTime() - 3600000).toISOString(), // 1 hour ago
@@ -94,7 +94,7 @@ describe('FlashOfferService.getSameDayOffers', () => {
           venue_id: 'venue-2',
           title: 'Afternoon Deal',
           description: 'Lunch special',
-          value_cap: '$10 off',
+          expected_value: '10.00',
           max_claims: 20,
           claimed_count: 5,
           start_time: new Date(now.getTime() + 1800000).toISOString(), // 30 min from now
@@ -153,7 +153,7 @@ describe('FlashOfferService.getSameDayOffers', () => {
           venue_id: 'venue-1',
           title: 'Nearby Offer',
           description: 'Close to you',
-          value_cap: null,
+          expected_value: null,
           max_claims: 10,
           claimed_count: 2,
           start_time: new Date(now.getTime() - 3600000).toISOString(),
@@ -177,7 +177,7 @@ describe('FlashOfferService.getSameDayOffers', () => {
           venue_id: 'venue-2',
           title: 'Far Offer',
           description: 'Further away',
-          value_cap: '$10 off',
+          expected_value: '10.00',
           max_claims: 20,
           claimed_count: 5,
           start_time: new Date(now.getTime() + 1800000).toISOString(),
@@ -242,7 +242,7 @@ describe('FlashOfferService.getSameDayOffers', () => {
           venue_id: 'venue-1',
           title: 'Cached Offer',
           description: 'From cache',
-          value_cap: null,
+          expected_value: null,
           max_claims: 10,
           claimed_count: 2,
           start_time: new Date(now.getTime() - 3600000).toISOString(),
@@ -294,7 +294,7 @@ describe('FlashOfferService.getSameDayOffers', () => {
           venue_id: 'venue-1',
           title: 'Fresh Offer',
           description: 'Newly fetched',
-          value_cap: null,
+          expected_value: null,
           max_claims: 10,
           claimed_count: 2,
           start_time: new Date(now.getTime() - 3600000).toISOString(),
@@ -339,7 +339,7 @@ describe('FlashOfferService.getSameDayOffers', () => {
           venue_id: 'venue-1',
           title: 'Test Offer',
           description: 'Test',
-          value_cap: null,
+          expected_value: null,
           max_claims: 10,
           claimed_count: 2,
           start_time: new Date(now.getTime() - 3600000).toISOString(),
@@ -387,7 +387,7 @@ describe('FlashOfferService.getSameDayOffers', () => {
           venue_id: 'venue-far',
           title: 'Far Offer',
           description: 'Outside radius',
-          value_cap: null,
+          expected_value: null,
           max_claims: 10,
           claimed_count: 2,
           start_time: new Date(now.getTime() - 3600000).toISOString(),
@@ -411,7 +411,7 @@ describe('FlashOfferService.getSameDayOffers', () => {
           venue_id: 'venue-near',
           title: 'Near Offer',
           description: 'Within radius',
-          value_cap: '$10 off',
+          expected_value: '10.00',
           max_claims: 20,
           claimed_count: 5,
           start_time: new Date(now.getTime() + 1800000).toISOString(),
@@ -462,7 +462,7 @@ describe('FlashOfferService.getSameDayOffers', () => {
           venue_id: 'venue-1',
           title: 'Later Offer',
           description: 'Starts later',
-          value_cap: null,
+          expected_value: null,
           max_claims: 10,
           claimed_count: 2,
           start_time: new Date(now.getTime() + 7200000).toISOString(), // 2 hours from now
@@ -486,7 +486,7 @@ describe('FlashOfferService.getSameDayOffers', () => {
           venue_id: 'venue-2',
           title: 'Sooner Offer',
           description: 'Starts sooner',
-          value_cap: '$10 off',
+          expected_value: '10.00',
           max_claims: 20,
           claimed_count: 5,
           start_time: new Date(now.getTime() + 1800000).toISOString(), // 30 min from now
@@ -522,3 +522,4 @@ describe('FlashOfferService.getSameDayOffers', () => {
     });
   });
 });
+

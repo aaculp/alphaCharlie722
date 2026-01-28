@@ -18,6 +18,7 @@ import Animated, {
   useDerivedValue,
   interpolate,
   SharedValue,
+  cancelAnimation,
 } from 'react-native-reanimated';
 
 interface NewFloatingTabBarProps {
@@ -152,6 +153,13 @@ const NewFloatingTabBar: React.FC<NewFloatingTabBarProps> = ({
       mass: 0.8,
     });
   }, [state.index, activeIndex]);
+
+  // Cleanup animations on unmount
+  React.useEffect(() => {
+    return () => {
+      cancelAnimation(activeIndex);
+    };
+  }, [activeIndex]);
 
   // Calculate indicator position
   const indicatorPosition = useDerivedValue(() => {

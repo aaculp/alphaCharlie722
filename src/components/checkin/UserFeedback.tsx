@@ -98,32 +98,32 @@ const UserFeedback: React.FC<UserFeedbackProps> = ({ venue }) => {
   const [likingTags, setLikingTags] = useState<Set<string>>(new Set());
   const [tablesExist, setTablesExist] = useState(true);
 
-  const loadTags = useCallback(async () => {
-    try {
-      setLoading(true);
-      const venueTags = await UserFeedbackService.getVenueTags(venue.id, user?.id);
-      setTags(venueTags);
-      setTablesExist(true);
-    } catch (error) {
-      console.error('Error loading tags:', error);
-      // Check if it's a table doesn't exist error
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      if (errorMessage.includes('relation') && errorMessage.includes('does not exist')) {
-        console.warn('User feedback tables not set up yet. Hiding community tags section.');
-        setTablesExist(false);
-        setTags([]);
-      } else {
-        Alert.alert('Error', 'Failed to load community tags');
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [venue.id, user?.id]);
-
-  // Load tags when component mounts
+  // Load tags when component mounts or when venue/user changes
   useEffect(() => {
-    loadTags();
-  }, [loadTags]);
+    const fetchTags = async () => {
+      try {
+        setLoading(true);
+        const venueTags = await UserFeedbackService.getVenueTags(venue.id, user?.id);
+        setTags(venueTags);
+        setTablesExist(true);
+      } catch (error) {
+        console.error('Error loading tags:', error);
+        // Check if it's a table doesn't exist error
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        if (errorMessage.includes('relation') && errorMessage.includes('does not exist')) {
+          console.warn('User feedback tables not set up yet. Hiding community tags section.');
+          setTablesExist(false);
+          setTags([]);
+        } else {
+          Alert.alert('Error', 'Failed to load community tags');
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTags();
+  }, [venue.id, user?.id]);
 
   const handleCreateTag = async () => {
     if (!user) {

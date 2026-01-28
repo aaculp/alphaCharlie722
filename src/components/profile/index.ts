@@ -12,3 +12,5 @@ export { FollowersCard } from './FollowersCard';
 export { StatisticsCard } from './StatisticsCard';
 export { SettingsMenu } from './SettingsMenu';
 export { StatCard } from './StatCard';
+export { StatsGrid } from './StatsGrid';
+export type { StatConfig } from './StatsGrid';
