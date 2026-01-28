@@ -6,7 +6,7 @@ import { CheckInService } from './api/checkins';
 export interface VenueAnalytics {
   // Today's Performance
   todayCheckIns: number;
-  todayNewCustomers: number;
+  todayNewFavorites: number;
   currentActivity: {
     level: 'Low-key' | 'Vibey' | 'Poppin' | 'Lit' | 'Maxed';
     emoji: string;
@@ -147,8 +147,14 @@ export class VenueAnalyticsService {
 
     if (checkInError) throw checkInError;
 
-    // Get unique users who checked in today (new customers approximation)
-    const uniqueUsers = new Set(todayCheckIns?.map(c => c.user_id) || []);
+    // Get today's new favorites
+    const { data: todayFavorites, error: favError } = await supabase
+      .from('favorites')
+      .select('id')
+      .eq('venue_id', venueId)
+      .gte('created_at', startOfDay.toISOString());
+
+    if (favError) throw favError;
     
     // Get today's reviews for rating
     const { data: todayReviews, error: reviewError } = await supabase
@@ -178,7 +184,7 @@ export class VenueAnalyticsService {
 
     return {
       todayCheckIns: todayCheckIns?.length || 0,
-      todayNewCustomers: Math.floor(uniqueUsers.size * 0.3), // Estimate 30% are new
+      todayNewFavorites: todayFavorites?.length || 0,
       todayRating: Math.round(avgRating * 10) / 10
     };
   }
@@ -997,7 +1003,7 @@ export class VenueAnalyticsService {
   static getMockAnalytics(): VenueAnalytics {
     return {
       todayCheckIns: 47,
-      todayNewCustomers: 12,
+      todayNewFavorites: 8,
       currentActivity: {
         level: 'Poppin',
         emoji: '🎉',

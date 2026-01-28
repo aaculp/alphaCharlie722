@@ -34,6 +34,28 @@ const VenueDashboardScreen: React.FC = () => {
   const [flashOffersLoading, setFlashOffersLoading] = useState(false);
   const [rateLimitStatus, setRateLimitStatus] = useState<VenueRateLimitStatus | null>(null);
 
+  // Calculate monthly push credits info
+  const getMonthlyCreditsInfo = () => {
+    const tier = venueBusinessAccount?.subscription_tier || 'free';
+    const tierLimits: Record<string, number> = {
+      free: 0,
+      core: 20,
+      pro: 60,
+      revenue: -1 // unlimited
+    };
+    
+    const monthlyLimit = tierLimits[tier];
+    const remaining = venueBusinessAccount?.push_credits_remaining || 0;
+    const used = venueBusinessAccount?.push_credits_used || 0;
+    
+    return {
+      monthlyLimit,
+      remaining,
+      used,
+      isUnlimited: monthlyLimit === -1
+    };
+  };
+
   // Load analytics data
   useEffect(() => {
     const loadAnalytics = async () => {
@@ -276,6 +298,9 @@ const VenueDashboardScreen: React.FC = () => {
       case 'overview':
         return (
           <View>
+            {/* Top Spacing */}
+            <View style={styles.topSpacing} />
+            
             {/* Status Card */}
             <View style={[
               styles.statusCard, 
@@ -291,19 +316,45 @@ const VenueDashboardScreen: React.FC = () => {
               }
             ]}>
               <View style={styles.statusHeader}>
-                <Icon name="checkmark-circle" size={24} color="#4CAF50" />
+                <Icon 
+                  name={getMonthlyCreditsInfo().isUnlimited ? "infinite" : "flash"} 
+                  size={24} 
+                  color={
+                    getMonthlyCreditsInfo().isUnlimited 
+                      ? "#4CAF50" 
+                      : getMonthlyCreditsInfo().remaining === 0 
+                        ? "#F44336" 
+                        : getMonthlyCreditsInfo().remaining <= 5
+                          ? "#FF9800"
+                          : "#4CAF50"
+                  } 
+                />
                 <Text style={[styles.statusTitle, { color: theme.colors.text }]}>
-                  Venue Status
+                  Monthly Push Credits
                 </Text>
               </View>
-              <Text style={[styles.statusText, { color: theme.colors.textSecondary }]}>
-                {venueBusinessAccount?.account_status === 'active' 
-                  ? '✅ Active and visible to customers'
-                  : '✅ Demo Mode - Active and visible to customers'
+              <Text style={[styles.statusText, { color: theme.colors.text }]}>
+                {getMonthlyCreditsInfo().isUnlimited 
+                  ? '∞ Unlimited push notifications' 
+                  : `${getMonthlyCreditsInfo().remaining} credits remaining this month`
                 }
               </Text>
+              {!getMonthlyCreditsInfo().isUnlimited && (
+                <Text style={[styles.creditsUsedText, { color: theme.colors.textSecondary }]}>
+                  {getMonthlyCreditsInfo().used} of {getMonthlyCreditsInfo().monthlyLimit} used
+                </Text>
+              )}
+              {!getMonthlyCreditsInfo().isUnlimited && getMonthlyCreditsInfo().remaining === 0 && (
+                <Text style={[styles.resetText, { color: '#F44336' }]}>
+                  ⚠️ Out of credits - Upgrade to send more
+                </Text>
+              )}
               <Text style={[styles.subscriptionText, { color: theme.colors.textSecondary }]}>
-                Subscription: {venueBusinessAccount?.subscription_tier?.toUpperCase() || 'FREE'}
+                {venueBusinessAccount?.subscription_tier?.toUpperCase() || 'FREE'} Plan • ${
+                  venueBusinessAccount?.subscription_tier === 'core' ? '79' :
+                  venueBusinessAccount?.subscription_tier === 'pro' ? '179' :
+                  venueBusinessAccount?.subscription_tier === 'revenue' ? '299' : '0'
+                }/mo
               </Text>
             </View>
 
@@ -418,10 +469,10 @@ const VenueDashboardScreen: React.FC = () => {
                 color="#2196F3"
               />
               <DashboardCard
-                title="New Customers"
-                value={analytics?.todayNewCustomers?.toString() || '0'}
-                icon="person-add-outline"
-                color="#4CAF50"
+                title="Newly Favorited"
+                value={analytics?.todayNewFavorites?.toString() || '0'}
+                icon="heart-outline"
+                color="#E91E63"
               />
               <DashboardCard
                 title="Current Activity"
@@ -444,28 +495,30 @@ const VenueDashboardScreen: React.FC = () => {
             
             <View style={styles.statsGrid}>
               <DashboardCard
-                title="Total Check-ins"
+                title="Check-ins"
                 value={analytics?.weeklyCheckIns?.toString() || '0'}
-                icon="trending-up-outline"
+                icon="people-outline"
                 color="#2196F3"
+              />
+              <DashboardCard
+                title="Newly Favorited"
+                value={analytics?.weeklyNewFavorites?.toString() || '0'}
+                icon="heart-outline"
+                color="#E91E63"
+              />
+              <DashboardCard
+                title="Avg. Activity"
+                value={analytics?.weeklyCheckIns ? 
+                  `${Math.round((analytics.weeklyCheckIns / 7) * 100 / (analytics.currentActivity?.capacity || 100))}%` 
+                  : '0%'}
+                icon="pulse-outline"
+                color="#FF9800"
               />
               <DashboardCard
                 title="Avg. Rating"
                 value={analytics?.weeklyAvgRating?.toString() || '0'}
                 icon="star-outline"
                 color="#FFC107"
-              />
-              <DashboardCard
-                title="New Favorites"
-                value={analytics?.weeklyNewFavorites?.toString() || '0'}
-                icon="heart-outline"
-                color="#E91E63"
-              />
-              <DashboardCard
-                title="Profile Views"
-                value={analytics?.weeklyProfileViews?.toString() || '0'}
-                icon="eye-outline"
-                color="#9C27B0"
               />
             </View>
 
@@ -1510,6 +1563,16 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Regular',
     marginBottom: 8,
   },
+  creditsUsedText: {
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+    marginBottom: 8,
+  },
+  resetText: {
+    fontSize: 14,
+    fontFamily: 'Inter-Medium',
+    marginBottom: 8,
+  },
   subscriptionText: {
     fontSize: 14,
     fontFamily: 'Inter-Medium',
@@ -1900,6 +1963,9 @@ const styles = StyleSheet.create({
   },
   bottomSpacing: {
     height: 100,
+  },
+  topSpacing: {
+    height: 20,
   },
   flashOffersCard: {
     borderRadius: 16,
