@@ -13,7 +13,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { VenueAnalyticsService, type VenueAnalytics } from '../../services/venueAnalyticsService';
-import { FlashOfferCreationModal } from '../../components/venue';
+import { FlashOfferCreationModal, PerformanceSlider } from '../../components/venue';
 import { FlashOfferService, type FlashOffer } from '../../services/api/flashOffers';
 import { RateLimitsService, type VenueRateLimitStatus } from '../../services/api/rateLimits';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -297,10 +297,7 @@ const VenueDashboardScreen: React.FC = () => {
     switch (activeTab) {
       case 'overview':
         return (
-          <View>
-            {/* Top Spacing */}
-            <View style={styles.topSpacing} />
-            
+          <View style={styles.overviewContainer}>
             {/* Status Card */}
             <View style={[
               styles.statusCard, 
@@ -358,29 +355,30 @@ const VenueDashboardScreen: React.FC = () => {
               </Text>
             </View>
 
-            {/* Flash Offers Card - MOVED ABOVE Today's Performance */}
-            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-              Flash Offers
-            </Text>
-            
-            <TouchableOpacity
-              style={[
-                styles.flashOffersCard,
-                {
-                  backgroundColor: theme.colors.surface,
-                  shadowColor: theme.colors.shadow,
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: isDark ? 0 : 0.1,
-                  shadowRadius: 8,
-                  elevation: isDark ? 0 : 4,
-                  borderWidth: isDark ? 0 : 1,
-                  borderColor: theme.colors.border,
-                },
-              ]}
-              onPress={() => navigation.navigate('FlashOfferList')}
-            >
-              <View style={styles.flashOffersHeader}>
-                <View style={[styles.flashOffersIconContainer, { backgroundColor: '#FF9800' + '20' }]}>
+            {/* Flash Offers Section */}
+            <View>
+              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+                Flash Offers
+              </Text>
+              
+              <TouchableOpacity
+                style={[
+                  styles.flashOffersCard,
+                  {
+                    backgroundColor: theme.colors.surface,
+                    shadowColor: theme.colors.shadow,
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: isDark ? 0 : 0.1,
+                    shadowRadius: 8,
+                    elevation: isDark ? 0 : 4,
+                    borderWidth: isDark ? 0 : 1,
+                    borderColor: theme.colors.border,
+                  },
+                ]}
+                onPress={() => navigation.navigate('FlashOfferList')}
+              >
+                <View style={styles.flashOffersHeader}>
+                  <View style={[styles.flashOffersIconContainer, { backgroundColor: '#FF9800' + '20' }]}>
                   <Icon name="flash" size={32} color="#FF9800" />
                 </View>
                 <View style={styles.flashOffersContent}>
@@ -454,82 +452,24 @@ const VenueDashboardScreen: React.FC = () => {
                   </Text>
                 </TouchableOpacity>
               </View>
-            </TouchableOpacity>
-
-            {/* Today's Stats */}
-            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-              Today's Performance {analyticsLoading && '(Updating...)'}
-            </Text>
-            
-            <View style={styles.statsGrid}>
-              <DashboardCard
-                title="Check-ins"
-                value={analytics?.todayCheckIns?.toString() || '0'}
-                icon="people-outline"
-                color="#2196F3"
-              />
-              <DashboardCard
-                title="Newly Favorited"
-                value={analytics?.todayNewFavorites?.toString() || '0'}
-                icon="heart-outline"
-                color="#E91E63"
-              />
-              <DashboardCard
-                title="Current Activity"
-                value={`${analytics?.currentActivity?.level || 'Loading'} ${analytics?.currentActivity?.emoji || ''}`}
-                icon="pulse-outline"
-                color="#FF9800"
-              />
-              <DashboardCard
-                title="Rating Today"
-                value={analytics?.todayRating?.toString() || '0'}
-                icon="star-outline"
-                color="#FFC107"
-              />
+              </TouchableOpacity>
             </View>
 
-            {/* Weekly Analytics */}
-            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-              This Week's Analytics
-            </Text>
-            
-            <View style={styles.statsGrid}>
-              <DashboardCard
-                title="Check-ins"
-                value={analytics?.weeklyCheckIns?.toString() || '0'}
-                icon="people-outline"
-                color="#2196F3"
-              />
-              <DashboardCard
-                title="Newly Favorited"
-                value={analytics?.weeklyNewFavorites?.toString() || '0'}
-                icon="heart-outline"
-                color="#E91E63"
-              />
-              <DashboardCard
-                title="Avg. Activity"
-                value={analytics?.weeklyCheckIns ? 
-                  `${Math.round((analytics.weeklyCheckIns / 7) * 100 / (analytics.currentActivity?.capacity || 100))}%` 
-                  : '0%'}
-                icon="pulse-outline"
-                color="#FF9800"
-              />
-              <DashboardCard
-                title="Avg. Rating"
-                value={analytics?.weeklyAvgRating?.toString() || '0'}
-                icon="star-outline"
-                color="#FFC107"
-              />
-            </View>
+            {/* Performance Slider - Today's Performance & This Week's Analysis */}
+            <PerformanceSlider 
+              analytics={analytics} 
+              analyticsLoading={analyticsLoading} 
+            />
 
-            {/* Peak Hours */}
-            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-              Peak Hours Analysis
-            </Text>
-            <View style={[
-              styles.peakHoursCard,
-              { 
-                backgroundColor: theme.colors.surface,
+            {/* Peak Hours Section */}
+            <View>
+              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+                Peak Hours Analysis
+              </Text>
+              <View style={[
+                styles.peakHoursCard,
+                { 
+                  backgroundColor: theme.colors.surface,
                 shadowColor: theme.colors.shadow,
                 shadowOffset: { width: 0, height: 2 },
                 shadowOpacity: isDark ? 0 : 0.05,
@@ -550,24 +490,26 @@ const VenueDashboardScreen: React.FC = () => {
                   No peak hours data available
                 </Text>
               )}
+              </View>
             </View>
 
-            {/* Customer Insights */}
-            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-              Customer Insights
-            </Text>
-            <View style={[
-              styles.insightsCard,
-              { 
-                backgroundColor: theme.colors.surface,
-                shadowColor: theme.colors.shadow,
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: isDark ? 0 : 0.05,
-                shadowRadius: 4,
-                elevation: isDark ? 0 : 2,
-                borderWidth: isDark ? 0 : 1,
-                borderColor: theme.colors.border,
-              }
+            {/* Customer Insights Section */}
+            <View>
+              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+                Customer Insights
+              </Text>
+              <View style={[
+                styles.insightsCard,
+                { 
+                  backgroundColor: theme.colors.surface,
+                  shadowColor: theme.colors.shadow,
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: isDark ? 0 : 0.05,
+                  shadowRadius: 4,
+                  elevation: isDark ? 0 : 2,
+                  borderWidth: isDark ? 0 : 1,
+                  borderColor: theme.colors.border,
+                }
             ]}>
               <View style={styles.insightItem}>
                 <Icon name="people" size={20} color="#2196F3" />
@@ -604,11 +546,12 @@ const VenueDashboardScreen: React.FC = () => {
                   </Text>
                 </View>
               </View>
+              </View>
             </View>
 
-            {/* Recent Reviews */}
+            {/* Recent Reviews Section */}
             {analytics?.recentReviews && analytics.recentReviews.length > 0 && (
-              <>
+              <View>
                 <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
                   Recent Reviews
                 </Text>
@@ -700,12 +643,12 @@ const VenueDashboardScreen: React.FC = () => {
                     </View>
                   ))}
                 </View>
-              </>
+              </View>
             )}
 
-            {/* Rating Distribution */}
+            {/* Rating Distribution Section */}
             {analytics?.ratingDistribution && (
-              <>
+              <View>
                 <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
                   Rating Distribution
                 </Text>
@@ -760,7 +703,7 @@ const VenueDashboardScreen: React.FC = () => {
                     );
                   })}
                 </View>
-              </>
+              </View>
             )}
           </View>
         );
@@ -1542,10 +1485,14 @@ const styles = StyleSheet.create({
   tabContent: {
     flex: 1,
   },
+  overviewContainer: {
+    flexDirection: 'column',
+    gap: 24,
+    paddingTop: 20,
+  },
   statusCard: {
     padding: 20,
     borderRadius: 16,
-    marginBottom: 24,
   },
   statusHeader: {
     flexDirection: 'row',
@@ -1581,7 +1528,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     fontFamily: 'Poppins-Bold',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   statsGrid: {
     flexDirection: 'row',
@@ -1613,7 +1560,6 @@ const styles = StyleSheet.create({
   peakHoursCard: {
     padding: 20,
     borderRadius: 16,
-    marginBottom: 24,
   },
   peakHourItem: {
     flexDirection: 'row',
@@ -1776,7 +1722,6 @@ const styles = StyleSheet.create({
   insightsCard: {
     padding: 20,
     borderRadius: 16,
-    marginBottom: 24,
   },
   insightItem: {
     flexDirection: 'row',
@@ -1904,7 +1849,6 @@ const styles = StyleSheet.create({
   },
   section: {
     borderRadius: 16,
-    marginBottom: 24,
     overflow: 'hidden',
   },
   settingItem: {
@@ -1969,7 +1913,6 @@ const styles = StyleSheet.create({
   },
   flashOffersCard: {
     borderRadius: 16,
-    marginBottom: 24,
     overflow: 'hidden',
   },
   flashOffersHeader: {
@@ -2050,7 +1993,6 @@ const styles = StyleSheet.create({
   },
   reviewsCard: {
     borderRadius: 16,
-    marginBottom: 24,
     overflow: 'hidden',
   },
   reviewItem: {
@@ -2136,7 +2078,6 @@ const styles = StyleSheet.create({
   distributionCard: {
     padding: 20,
     borderRadius: 16,
-    marginBottom: 24,
   },
   distributionRow: {
     flexDirection: 'row',

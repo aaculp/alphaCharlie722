@@ -14,3 +14,6 @@ export { default as ReviewCard } from './ReviewCard';
 export { default as ReviewList } from './ReviewList';
 export { default as AggregateRatingDisplay } from './AggregateRatingDisplay';
 export { default as VenueSearchCard } from './VenueSearchCard';
+export { TodaysPerformance } from './TodaysPerformance';
+export { ThisWeeksAnalysis } from './ThisWeeksAnalysis';
+export { PerformanceSlider } from './PerformanceSlider';
